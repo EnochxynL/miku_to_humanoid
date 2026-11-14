@@ -177,7 +177,11 @@ def read_reference_offsets(path: Path):
 ZUP_TO_YUP = np.array([[1.0, 0.0, 0.0], [0.0, 0.0, 1.0], [0.0, -1.0, 0.0]])   # R_x(-90 deg)
 
 
-def build_bvh(glb: Path, out: Path, fps: float, animation_index: int, proportions_from: Path | None = None):
+MIRROR_MATRIX = np.diag([1.0, 1.0, -1.0])
+
+
+def build_bvh(glb: Path, out: Path, fps: float, animation_index: int,
+              proportions_from: Path | None = None, mirror_rotations: bool = False):
     doc, binary = load_glb(glb)
     nodes = doc['nodes']
     clip = Clip(doc, binary, animation_index)
@@ -220,7 +224,12 @@ def build_bvh(glb: Path, out: Path, fps: float, animation_index: int, proportion
             # on some nodes; ignoring it made the bind pose disagree with the animation)
             s = np.asarray(node.get('scale', [1, 1, 1]), dtype=float)
             p = p + R @ (np.asarray(t, dtype=float) * s)
-            R = R @ quat_to_matrix(np.asarray(q, dtype=float))
+            local = quat_to_matrix(np.asarray(q, dtype=float))
+            if mirror_rotations:
+                # the source GLB mirrors positions (z -> -z) but leaves rotations alone; express
+                # each rotation in the mirrored frame so the pose is no longer reflected
+                local = MIRROR_MATRIX @ local @ MIRROR_MATRIX
+            R = R @ local
         # NOTE: an extra Z-up -> Y-up rotation was tried here and removed again. It was based on
         # reading the GLB's quaternions as (w, x, y, z); they are (x, y, z, w), so the "90 deg
         # error" it was correcting did not exist. Measured on the source: the hips->spine2
@@ -322,10 +331,14 @@ if __name__ == '__main__':
     parser.add_argument('--out', required=True)
     parser.add_argument('--fps', type=float, default=30.0)
     parser.add_argument('--animation', type=int, default=0)
+    parser.add_argument('--mirror-z-rotations', action='store_true',
+                        help='the source GLB mirrors positions (z -> -z) but leaves the animation '
+                             'rotations untouched; this conjugates every sampled rotation by that '
+                             'mirror so the pose is no longer reflected')
     # --proportions-from was tried and removed: LaFAN1's bones are laid out along +X with the
     # orientation carried in the channels, so substituting its offsets under our rotations
     # scrambles the skeleton. Fixing proportions needs a pose transfer onto a LaFAN1-shaped
     # skeleton, not an offset swap.
     args = parser.parse_args()
     print(json.dumps(build_bvh(Path(args.glb), Path(args.out), args.fps, args.animation,
-                               None), indent=2))
+                               None, args.mirror_z_rotations), indent=2))
