@@ -174,6 +174,9 @@ def read_reference_offsets(path: Path):
 
 
 # ---------------------------------------------------------------- export
+ZUP_TO_YUP = np.array([[1.0, 0.0, 0.0], [0.0, 0.0, 1.0], [0.0, -1.0, 0.0]])   # R_x(-90 deg)
+
+
 def build_bvh(glb: Path, out: Path, fps: float, animation_index: int, proportions_from: Path | None = None):
     doc, binary = load_glb(glb)
     nodes = doc['nodes']
@@ -213,8 +216,15 @@ def build_bvh(glb: Path, out: Path, fps: float, animation_index: int, proportion
                     t = np.asarray(node.get('translation', [0, 0, 0]), dtype=float)
                 if q is None:
                     q = np.asarray(node.get('rotation', [0, 0, 0, 1]), dtype=float)
-            p = p + R @ np.asarray(t, dtype=float)
+            # TRS, with the node's scale applied to its translation (MMD exports carry scale
+            # on some nodes; ignoring it made the bind pose disagree with the animation)
+            s = np.asarray(node.get('scale', [1, 1, 1]), dtype=float)
+            p = p + R @ (np.asarray(t, dtype=float) * s)
             R = R @ quat_to_matrix(np.asarray(q, dtype=float))
+        # NOTE: an extra Z-up -> Y-up rotation was tried here and removed again. It was based on
+        # reading the GLB's quaternions as (w, x, y, z); they are (x, y, z, w), so the "90 deg
+        # error" it was correcting did not exist. Measured on the source: the hips->spine2
+        # direction and that bone's local Y axis agree to 12.6 deg, i.e. the GLB is consistent.
         return p, R
 
     PARENT = dict(LAFAN1_TREE)
@@ -224,9 +234,17 @@ def build_bvh(glb: Path, out: Path, fps: float, animation_index: int, proportion
     for name, parent_name in LAFAN1_TREE:
         if parent_name is None:
             offsets[name] = np.zeros(3)
-        elif name in rest and parent_name in rest:
-            R_parent = rest[parent_name][1]
-            offsets[name] = R_parent.T @ (rest[name][0] - rest[parent_name][0])
+        elif name in rest:
+            # a synthetic parent (Spine1) has no geometry: measure the offset from the nearest
+            # *present* ancestor, otherwise the joint collapses onto its parent
+            ancestor = parent_name
+            while ancestor is not None and ancestor not in rest:
+                ancestor = PARENT[ancestor]
+            if ancestor is None:
+                offsets[name] = np.zeros(3)
+            else:
+                R_parent = rest[ancestor][1]
+                offsets[name] = R_parent.T @ (rest[name][0] - rest[ancestor][0])
         else:
             offsets[name] = np.zeros(3)          # synthetic link (Spine1)
 
