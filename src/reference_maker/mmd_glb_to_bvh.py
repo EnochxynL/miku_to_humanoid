@@ -1,23 +1,22 @@
-"""Convert an MMD-derived glTF/GLB (PMX model + VMD motion already baked into one clip) to BVH.
+"""Convert an MMD-derived glTF/GLB (PMX model + VMD motion baked into one clip) to a
+LaFAN1-topology BVH that GMR's `bvh_lafan1` IK config can consume unchanged.
 
-MMD skeletons are not directly usable by GMR: GMR speaks BVH/FBX/SMPL-X and its `lafan1`
-format expects a small set of human bone names. This writes a BVH whose hierarchy is the real
-MMD chain (so the offsets stay rigid) but whose bones carry the names GMR looks up:
-
-    Hips, Spine2, LeftUpLeg, LeftLeg, LeftFootMod, RightUpLeg, RightLeg, RightFootMod,
-    LeftArm, LeftForeArm, LeftHand, RightArm, RightForeArm, RightHand
-
-Only the ancestors of those bones are exported, so the file stays small. Intermediate MMD
-bones keep descriptive names (Spine, LowerBody, LeftShoulder, ...) and are ignored by GMR.
-
-Channel convention follows GMR's lafan1 reader: the root carries six channels
-(Xposition Yposition Zposition Zrotation Yrotation Xrotation) and every other joint three
-(Zrotation Yrotation Xrotation), composed as R = Rz * Ry * Rx.
+Why the topology matters: GMR's `bvh_lafan1_to_g1.json` was tuned for the *22 bones of
+LaFAN1* (Hips, LeftUpLeg..LeftToe, Spine, Spine1, Spine2, Neck, Head, LeftShoulder..LeftHand,
+right side likewise), in Y-up centimetres. An MMD skeleton has 511 bones with Japanese names,
+different proportions and intermediate bones everywhere, and earlier attempts to feed it
+(either the full chain, or the full chain with hand-tuned rotation offsets) produced a robot
+laid out flat or folded at the waist. So this exporter does not try to teach GMR a new
+skeleton: it bakes the MMD motion onto LaFAN1's bone set, names and hierarchy, and lets the
+stock config do its job.
 
 Usage:
     uv run python src/reference_maker/mmd_glb_to_bvh.py \
         --glb "D:/MY_WORK/archived/py_mmd_anim/assets/星穹铁道—黑塔2.glb" \
         --out runtime/gmr_inputs/herta_mmd.bvh --fps 30
+
+Output convention (verified against the LaFAN1 walk that GMR retargets correctly):
+Y-up, centimetres, `Zrotation Yrotation Xrotation` per joint, six channels on the root.
 """
 from __future__ import annotations
 
@@ -28,21 +27,30 @@ from pathlib import Path
 
 import numpy as np
 
-# MMD bone name -> GMR human bone name. Only the bones GMR maps are renamed.
-MMD_TO_GMR = {
-    '腰': 'Hips',
-    '上半身2': 'Spine2',
-    '左足': 'LeftUpLeg', '左ひざ': 'LeftLeg', '左足首': 'LeftFoot', '左つま先': 'LeftToe',
-    '右足': 'RightUpLeg', '右ひざ': 'RightLeg', '右足首': 'RightFoot', '右つま先': 'RightToe',
-    '左腕': 'LeftArm', '左ひじ': 'LeftForeArm', '左手首': 'LeftHand',
-    '右腕': 'RightArm', '右ひじ': 'RightForeArm', '右手首': 'RightHand',
+# LaFAN1 hierarchy, in the order that file lists its joints.
+LAFAN1_TREE = [
+    ('Hips', None),
+    ('LeftUpLeg', 'Hips'), ('LeftLeg', 'LeftUpLeg'), ('LeftFoot', 'LeftLeg'),
+    ('LeftToe', 'LeftFoot'),
+    ('RightUpLeg', 'Hips'), ('RightLeg', 'RightUpLeg'), ('RightFoot', 'RightLeg'),
+    ('RightToe', 'RightFoot'),
+    ('Spine', 'Hips'), ('Spine1', 'Spine'), ('Spine2', 'Spine1'),
+    ('Neck', 'Spine2'), ('Head', 'Neck'),
+    ('LeftShoulder', 'Spine2'), ('LeftArm', 'LeftShoulder'),
+    ('LeftForeArm', 'LeftArm'), ('LeftHand', 'LeftForeArm'),
+    ('RightShoulder', 'Spine2'), ('RightArm', 'RightShoulder'),
+    ('RightForeArm', 'RightArm'), ('RightHand', 'RightForeArm'),
+]
+
+# LaFAN1 joint -> MMD bone. Spine1 has no MMD counterpart: it is emitted as a zero-length link
+# so the hierarchy matches LaFAN1 without disturbing the transforms.
+MMD_BONE = {
+    'Hips': '腰', 'Spine': '上半身', 'Spine2': '上半身2', 'Neck': '首', 'Head': '頭',
+    'LeftUpLeg': '左足', 'LeftLeg': '左ひざ', 'LeftFoot': '左足首', 'LeftToe': '左つま先',
+    'RightUpLeg': '右足', 'RightLeg': '右ひざ', 'RightFoot': '右足首', 'RightToe': '右つま先',
+    'LeftShoulder': '左肩', 'LeftArm': '左腕', 'LeftForeArm': '左ひじ', 'LeftHand': '左手首',
+    'RightShoulder': '右肩', 'RightArm': '右腕', 'RightForeArm': '右ひじ', 'RightHand': '右手首',
 }
-# Readable names for the remaining MMD bones that end up on the exported paths.
-EXTRA_NAMES = {
-    '上半身': 'Spine', '下半身': 'LowerBody', '首': 'Neck', '頭': 'Head',
-    '左肩': 'LeftShoulder', '右肩': 'RightShoulder',
-}
-REQUIRED = set(MMD_TO_GMR)
 
 
 # ---------------------------------------------------------------- glTF parsing
@@ -54,8 +62,7 @@ def load_glb(path: Path):
         chunk_len, chunk_type = struct.unpack_from('<II', data, offset)
         chunks[chunk_type] = data[offset + 8: offset + 8 + chunk_len]
         offset += 8 + chunk_len
-    doc = json.loads(chunks[0x4E4F534A].decode('utf-8'))
-    return doc, chunks.get(0x004E4942, b'')
+    return json.loads(chunks[0x4E4F534A].decode('utf-8')), chunks.get(0x004E4942, b'')
 
 
 _COMPONENTS = {5126: ('f4', 4), 5125: ('u4', 4), 5123: ('u2', 2), 5121: ('u1', 1)}
@@ -69,11 +76,10 @@ def read_accessor(doc, binary, index):
     width = _WIDTH[acc['type']]
     start = view.get('byteOffset', 0) + acc.get('byteOffset', 0)
     stride = view.get('byteStride') or size * width
-    count = acc['count']
-    out = np.empty((count, width), dtype=np.float64)
-    for i in range(count):
-        base = start + i * stride
-        out[i] = np.frombuffer(binary, dtype=np.dtype('<' + dtype), count=width, offset=base)
+    out = np.empty((acc['count'], width), dtype=np.float64)
+    for i in range(acc['count']):
+        out[i] = np.frombuffer(binary, dtype=np.dtype('<' + dtype), count=width,
+                               offset=start + i * stride)
     return out.squeeze() if width == 1 else out
 
 
@@ -110,29 +116,27 @@ def matrix_to_euler_zyx(R):
     return z, y, x
 
 
-# ---------------------------------------------------------------- clipping
 class Clip:
     """Per-node sampled local TRS of one glTF animation."""
 
     def __init__(self, doc, binary, animation_index=0):
         nodes = doc['nodes']
         anim = doc['animations'][animation_index]
-        self.times = []
+        times = []
         for sampler in anim['samplers']:
-            self.times.extend(read_accessor(doc, binary, sampler['input']).tolist())
-        self.t0, self.t1 = float(min(self.times)), float(max(self.times))
-        self.channels = {}                      # node -> {'translation': (t, v), 'rotation': (t, q)}
+            times.extend(np.asarray(read_accessor(doc, binary, sampler['input'])).tolist())
+        self.t0, self.t1 = float(min(times)), float(max(times))
+        self.channels = {}
         for ch in anim['channels']:
             path = ch['target']['path']
             if path not in ('translation', 'rotation'):
-                continue                       # morph weights are irrelevant here
+                continue
             sampler = anim['samplers'][ch['sampler']]
             t = np.asarray(read_accessor(doc, binary, sampler['input']), dtype=np.float64)
             v = np.asarray(read_accessor(doc, binary, sampler['output']), dtype=np.float64)
             self.channels.setdefault(ch['target']['node'], {})[path] = (t, v)
-        self.nodes = nodes
 
-    def sample(self, node: int, path: str, time: float):
+    def sample(self, node, path, time):
         entry = self.channels.get(node, {}).get(path)
         if entry is None:
             return None
@@ -141,8 +145,7 @@ class Clip:
             return v[0]
         if time >= t[-1]:
             return v[-1]
-        i = int(np.searchsorted(t, time)) - 1
-        i = max(0, min(i, len(t) - 2))
+        i = max(0, min(int(np.searchsorted(t, time)) - 1, len(t) - 2))
         span = t[i + 1] - t[i]
         a = 0.0 if span <= 0 else (time - t[i]) / span
         if path == 'rotation':
@@ -150,8 +153,28 @@ class Clip:
         return v[i] + a * (v[i + 1] - v[i])
 
 
+def read_reference_offsets(path: Path):
+    """Bone offsets (metres) from a BVH whose proportions we want to borrow."""
+    lines = path.read_text(encoding='utf-8', errors='replace').splitlines()
+    offsets, names = {}, []
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        if line.startswith(('ROOT', 'JOINT')):
+            names.append(line.split()[1])
+        elif line.startswith('End Site'):
+            while i < len(lines) and lines[i].strip() != '}':
+                i += 1
+        elif line.startswith('OFFSET') and names:
+            offsets[names[-1]] = np.array([float(v) for v in line.split()[1:4]]) * 0.01
+        elif line.startswith('MOTION'):
+            break
+        i += 1
+    return offsets
+
+
 # ---------------------------------------------------------------- export
-def build_bvh(glb: Path, out: Path, fps: float, animation_index: int):
+def build_bvh(glb: Path, out: Path, fps: float, animation_index: int, proportions_from: Path | None = None):
     doc, binary = load_glb(glb)
     nodes = doc['nodes']
     clip = Clip(doc, binary, animation_index)
@@ -161,149 +184,117 @@ def build_bvh(glb: Path, out: Path, fps: float, animation_index: int):
         name = node.get('name')
         if name and name not in name_to_index:
             name_to_index[name] = i
-    missing = sorted(REQUIRED - set(name_to_index))
-    if missing:
-        raise SystemExit(f'MMD bones missing from the GLB: {missing}')
-
     parent = {}
     for i, node in enumerate(nodes):
         for child in node.get('children', []):
             parent[child] = i
 
-    # ancestor closure of the bones GMR needs, cut at Hips (腰): everything above the hips
-    # (操作中心 / 全ての親 / センター / グルーブ) stays outside the export
-    root = name_to_index['腰']
-    keep = {root}
-    for name in REQUIRED:
-        cur = name_to_index[name]
-        while cur is not None and cur not in keep:
-            keep.add(cur)
-            cur = parent.get(cur)
+    present = [name for name, _ in LAFAN1_TREE if MMD_BONE.get(name) in name_to_index]
+    missing = [name for name, _ in LAFAN1_TREE if name not in present]
+    if 'Hips' not in present:
+        raise SystemExit('the GLB has no 腰 (hips) bone')
 
-    # rest local TRS -> rest world transforms, used for the constant offsets
-    def rest_world(index):
-        chain = []
-        cur = index
+    def world(index, time=None):
+        """World position and rotation of a glTF node; time=None gives the bind pose."""
+        chain, cur = [], index
         while cur is not None:
             chain.append(cur)
             cur = parent.get(cur)
-        R = np.eye(3)
-        p = np.zeros(3)
+        R, p = np.eye(3), np.zeros(3)
         for cur in reversed(chain):
             node = nodes[cur]
-            t = np.asarray(node.get('translation', [0, 0, 0]), dtype=np.float64)
-            q = np.asarray(node.get('rotation', [0, 0, 0, 1]), dtype=np.float64)
-            p = p + R @ t
-            R = R @ quat_to_matrix(q)
+            if time is None:
+                t = np.asarray(node.get('translation', [0, 0, 0]), dtype=float)
+                q = np.asarray(node.get('rotation', [0, 0, 0, 1]), dtype=float)
+            else:
+                t = clip.sample(cur, 'translation', time)
+                q = clip.sample(cur, 'rotation', time)
+                if t is None:
+                    t = np.asarray(node.get('translation', [0, 0, 0]), dtype=float)
+                if q is None:
+                    q = np.asarray(node.get('rotation', [0, 0, 0, 1]), dtype=float)
+            p = p + R @ np.asarray(t, dtype=float)
+            R = R @ quat_to_matrix(np.asarray(q, dtype=float))
         return p, R
 
-    rest_p = {i: rest_world(i)[0] for i in keep}
+    PARENT = dict(LAFAN1_TREE)
+    rest = {name: world(name_to_index[MMD_BONE[name]], None) for name in present}
+
     offsets = {}
-    for i in keep:
-        if i == root:
-            continue
-        p_parent, R_parent = rest_world(parent[i])
-        offsets[i] = R_parent.T @ (rest_p[i] - p_parent)
+    for name, parent_name in LAFAN1_TREE:
+        if parent_name is None:
+            offsets[name] = np.zeros(3)
+        elif name in rest and parent_name in rest:
+            R_parent = rest[parent_name][1]
+            offsets[name] = R_parent.T @ (rest[name][0] - rest[parent_name][0])
+        else:
+            offsets[name] = np.zeros(3)          # synthetic link (Spine1)
 
-    display = {}
-    for i in keep:
-        name = nodes[i].get('name', '')
-        display[i] = MMD_TO_GMR.get(name) or EXTRA_NAMES.get(name) or f'Bone{i}'
-
-    children = {i: [c for c in nodes[i].get('children', []) if c in keep] for i in keep}
-    # a kept child whose parent chain passes through dropped joints is re-attached to the
-    # nearest kept ancestor
-    for i in keep:
-        for c in list(children[i]):
-            if c not in keep:
-                children[i].remove(c)
+    if proportions_from is not None:
+        reference = read_reference_offsets(proportions_from)
+        for name in offsets:
+            if name in reference:
+                offsets[name] = reference[name]
 
     frames = int(round((clip.t1 - clip.t0) * fps)) + 1
     times = clip.t0 + np.arange(frames) / fps
-
-    def world_at(index, time):
-        chain = []
-        cur = index
-        while cur is not None:
-            chain.append(cur)
-            cur = parent.get(cur)
-        R = np.eye(3)
-        p = np.zeros(3)
-        for cur in reversed(chain):
-            node = nodes[cur]
-            t = clip.sample(cur, 'translation', time)
-            if t is None:
-                t = np.asarray(node.get('translation', [0, 0, 0]), dtype=np.float64)
-            q = clip.sample(cur, 'rotation', time)
-            if q is None:
-                q = np.asarray(node.get('rotation', [0, 0, 0, 1]), dtype=np.float64)
-            p = p + R @ t
-            R = R @ quat_to_matrix(q)
-        return p, R
+    world_cache = {name: [world(name_to_index[MMD_BONE[name]], t) for t in times] for name in present}
 
     lines = ['HIERARCHY']
-    order = []
+    children_of = {name: [n for n, p in LAFAN1_TREE if p == name] for name, _ in LAFAN1_TREE}
 
     def emit(index, depth):
+        name, parent_name = LAFAN1_TREE[index]
         pad = '\t' * depth
-        label = display[index]
-        if index == root:
-            lines.append(f'{pad}ROOT {label}')
-        else:
-            lines.append(f'{pad}JOINT {label}')
+        lines.append(f'{pad}ROOT {name}' if parent_name is None else f'{pad}JOINT {name}')
         lines.append(f'{pad}{{')
-        if index == root:
+        if parent_name is None:
             lines.append(f'{pad}\tOFFSET 0 0 0')
             lines.append(f'{pad}\tCHANNELS 6 Xposition Yposition Zposition Zrotation Yrotation Xrotation')
         else:
-            ox, oy, oz = 100.0 * offsets[index]
+            ox, oy, oz = 100.0 * offsets[name]
             lines.append(f'{pad}\tOFFSET {ox:.6f} {oy:.6f} {oz:.6f}')
             lines.append(f'{pad}\tCHANNELS 3 Zrotation Yrotation Xrotation')
-        order.append(index)
-        for child in children[index]:
-            emit(child, depth + 1)
-        if index == root:
-            lines.append(f'{pad}}}')
-            lines.append(f'End Site')
-            lines.append(f'{pad}{{')
-            lines.append(f'{pad}\tOFFSET 0 0 0')
-            lines.append(f'{pad}}}')
-        else:
-            lines.append(f'{pad}}}')
+        for child_name in children_of[name]:
+            emit([n for n, _ in LAFAN1_TREE].index(child_name), depth + 1)
+        if not children_of[name]:
+            lines.append(f'{pad}\tEnd Site')
+            lines.append(f'{pad}\t{{')
+            lines.append(f'{pad}\t\tOFFSET 0 0 0')
+            lines.append(f'{pad}\t}}')
+        lines.append(f'{pad}}}')
 
-    emit(root, 0)
+    emit(0, 0)
     lines.append('MOTION')
     lines.append(f'Frames: {frames}')
     lines.append(f'Frame Time: {1.0 / fps:.7f}')
 
-    # LAFAN1 convention: Z-up centimetres. The loader applies R (Z-up -> Y-up) and divides by
-    # 100, so the skeleton is pre-rotated by R^T and scaled on the root only; every local
-    # rotation below the root is then unchanged.
-    R_LOADER = np.array([[1.0, 0.0, 0.0], [0.0, 0.0, -1.0], [0.0, 1.0, 0.0]])
-    T = R_LOADER.T
-    for time in times:
+    for f in range(frames):
         values = []
-        root_pos = None
-        root_rot = None
-        for index in order:
-            p, R = world_at(index, time)
-            if index == root:
-                root_pos, root_rot = 100.0 * (T @ p), T @ R
-                values.extend([float(root_pos[0]), float(root_pos[1]), float(root_pos[2])])
-                z, y, x = matrix_to_euler_zyx(root_rot)
-                values.extend([np.degrees(z), np.degrees(y), np.degrees(x)])
+        for name, parent_name in LAFAN1_TREE:
+            if name not in present:
+                values.extend([0.0, 0.0, 0.0])          # synthetic link keeps identity
+                continue
+            p, R = world_cache[name][f]
+            if parent_name is None:
+                values.extend([100.0 * float(p[0]), 100.0 * float(p[1]), 100.0 * float(p[2])])
+                z, y, x = matrix_to_euler_zyx(R)
             else:
-                p_parent, R_parent = world_at(parent[index], time) if parent[index] in keep \
-                    else rest_world(parent[index])
-                R_local = R_parent.T @ R
-                z, y, x = matrix_to_euler_zyx(R_local)
-                values.extend([np.degrees(z), np.degrees(y), np.degrees(x)])
+                # a synthetic link (Spine1) is zero-length with identity rotation, so the
+                # parent frame to compose against is the nearest *present* ancestor
+                ancestor = parent_name
+                while ancestor is not None and ancestor not in present:
+                    ancestor = PARENT[ancestor]
+                R_parent = world_cache[ancestor][f][1] if ancestor in present else np.eye(3)
+                z, y, x = matrix_to_euler_zyx(R_parent.T @ R)
+            values.extend([np.degrees(z), np.degrees(y), np.degrees(x)])
         lines.append(' '.join(f'{v:.6f}' for v in values))
 
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text('\n'.join(lines) + '\n', encoding='utf-8')
-    return {'frames': frames, 'seconds': clip.t1 - clip.t0, 'joints': len(order),
-            'root': display[root], 'root_start': rest_p[root].tolist()}
+    return {'frames': frames, 'seconds': round(clip.t1 - clip.t0, 3), 'joints': len(LAFAN1_TREE),
+            'missing_mmd_bones': missing,
+            'hips_rest_cm': (100.0 * rest['Hips'][0]).round(2).tolist()}
 
 
 if __name__ == '__main__':
@@ -313,6 +304,10 @@ if __name__ == '__main__':
     parser.add_argument('--out', required=True)
     parser.add_argument('--fps', type=float, default=30.0)
     parser.add_argument('--animation', type=int, default=0)
+    # --proportions-from was tried and removed: LaFAN1's bones are laid out along +X with the
+    # orientation carried in the channels, so substituting its offsets under our rotations
+    # scrambles the skeleton. Fixing proportions needs a pose transfer onto a LaFAN1-shaped
+    # skeleton, not an offset swap.
     args = parser.parse_args()
-    info = build_bvh(Path(args.glb), Path(args.out), args.fps, args.animation)
-    print(json.dumps(info, indent=2))
+    print(json.dumps(build_bvh(Path(args.glb), Path(args.out), args.fps, args.animation,
+                               None), indent=2))
