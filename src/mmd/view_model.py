@@ -17,6 +17,24 @@ import mujoco.viewer
 import numpy as np
 
 
+def play(model, data, frames, speed=0.6, distance=2.0, azimuth=90.0, lookat=(0.0, 0.0, 1.0)):
+    """Loop a qpos sequence in a MuJoCo window until it is closed."""
+    with mujoco.viewer.launch_passive(model, data) as viewer:
+        viewer.cam.type = mujoco.mjtCamera.mjCAMERA_FREE
+        viewer.cam.lookat[:] = lookat
+        viewer.cam.distance = distance
+        viewer.cam.azimuth = azimuth
+        viewer.cam.elevation = -6
+        index = 0
+        while viewer.is_running():
+            started = time.perf_counter()
+            data.qpos[:] = frames[index % len(frames)]
+            mujoco.mj_forward(model, data)
+            viewer.sync()
+            index += 1
+            time.sleep(max(0.0, 1.0 / 30.0 / speed - (time.perf_counter() - started)))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
