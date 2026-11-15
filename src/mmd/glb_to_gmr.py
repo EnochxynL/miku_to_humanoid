@@ -241,7 +241,14 @@ def main():
 
     if not args.bake_out:
         return
-    cache = [np.array(retargeter.retarget(frame)) for frame in frames]
+    # GMR warm-starts each solve from the previous solution, and over a long clip that drifts: the
+    # same config that retargets the last frame correctly on its own produced a bent-over pose when
+    # solved sequentially. Reset to the rest pose every frame so the clip matches the per-frame solve.
+    rest = np.array(retargeter.model.qpos0)
+    cache = []
+    for frame in frames:
+        retargeter.configuration.update(rest)
+        cache.append(np.array(retargeter.retarget(frame)))
     if args.smooth > 0:
         alpha = float(args.smooth)
         filtered = [cache[0].copy()]
