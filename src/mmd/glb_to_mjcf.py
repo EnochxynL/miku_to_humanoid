@@ -133,7 +133,7 @@ def main():
            '<mujoco model="glb_skeleton">',
            '  <compiler angle="radian" autolimits="true" meshdir="assets" texturedir="assets" />',
            '  <visual>',
-           '    <headlight ambient="0.5 0.5 0.5" diffuse="0.6 0.6 0.6" />',
+           '    <headlight ambient="0.45 0.45 0.45" diffuse="0.55 0.55 0.55" specular="0.05 0.05 0.05" />',
            '    <map znear="0.01" zfar="20" />',
            '  </visual>',
            '  <statistic center="0 0 0.9" extent="0.9" />']
@@ -180,7 +180,8 @@ def main():
                     texture_ref = f' texture="tex_{source:02d}"'
             rgba = f'{factor[0]:.4g} {factor[1]:.4g} {factor[2]:.4g} {factor[3]:.4g}'
             material_lines.append(
-                f'    <material name="mat_{i:02d}" rgba="{rgba}"{texture_ref} />')
+                f'    <material name="mat_{i:02d}" rgba="{rgba}" specular="0" shininess="0"'
+                f'{texture_ref} />')
         assets += texture_lines + material_lines
 
         masks = load_alpha_masks(doc, binary, asset_dir)
@@ -266,7 +267,8 @@ def main():
     out += assets
     out.append('  </asset>')
     out.append('  <worldbody>')
-    out.append(f'    <light pos="1 -1 2" dir="-0.4 0.4 -1" directional="true" diffuse="0.7 0.7 0.7" />')
+    # no extra light on purpose: a calibration plane showed ambient+diffuse = 1.0 reproduces the
+    # texture exactly, while adding one directional light clips every channel to 255 (skin looked grey)
     out.append('    <geom name="floor" type="plane" size="3 3 0.05" rgba="0.30 0.32 0.36 1" '
                'contype="0" conaffinity="0" />')
     out.append(f'    <body name="glb_root" pos="0 0 0" quat="{ROT_Y_UP_TO_Z_UP}">')
