@@ -6,12 +6,12 @@
     "pelvis": {
       "bone": "腰",
       "pos_w": 0,
-      "rot_w": 300.0,
+      "rot_w": 10.0,
       "C_quat_wxyz": [
-        0.707107,
-        -0.707107,
-        0.0,
-        0.0
+        0.481412,
+        -0.481412,
+        -0.517921,
+        -0.517921
       ]
     },
     "left_hip_yaw_link": {
@@ -185,8 +185,25 @@
       1.3,
       1.6
     ],
-    "legs": "8-27 (knee hinge plane is under-determined because the MMD bind pose has nearly straight legs)",
+    "legs": "5/8/5 (hip-line fix also improved the legs); knee hinge plane still under-determined because the MMD bind pose has nearly straight legs",
     "hands": "not retargeted: GMR receives no palm bones"
   },
-  "weights_note": "pelvis needs rot_w>=300 or the leg tasks drag the whole body yaw by 14-21 deg; arms use pos_w=0 (GMR convention) - no position hack needed once C is right"
+  "weights_note": "all links at GMR convention: pelvis rot_w=10, torso 100, arms orientation-only (pos_w=0). No weight tuning and no position hack - the earlier pos_w=300 and pelvis rot_w=300 attempts were workarounds for the missing root yaw and are gone.",
+  "root_calibration": {
+    "why": "the pelvis is the floating root; every child target is an absolute world orientation, so a wrong root is invisible on the torso and arms - the spine absorbs it and only hips/legs stay twisted",
+    "how": "closed-form yaw from the bilateral axis: rotate the robot hip line (left->right) onto the source bind hip line; applied to pelvis only",
+    "value_deg": -94.2,
+    "measured_before_after_hip_line_deg": [
+      [
+        73,
+        68,
+        75
+      ],
+      [
+        8,
+        10,
+        8
+      ]
+    ]
+  }
 }

@@ -121,6 +121,22 @@ def main():
         got /= np.linalg.norm(got)
         errors.append(np.degrees(np.arccos(np.clip(got @ target, -1.0, 1.0))))
 
+    # --- the root (= pelvis) needs the bilateral axis matched too --------------------------------
+    # Every child link's target is an absolute world orientation, so a wrong root cannot be seen on
+    # the torso or the arms - the spine simply absorbs it and only the hips and legs stay twisted.
+    # The root therefore has to be matched on a *bilateral* axis (left hip -> right hip), which is
+    # independent of any per-bone frame convention.
+    def hip_line(model_data, left, right):
+        v = model_data.xpos[right] - model_data.xpos[left]
+        return v / np.linalg.norm(v)
+
+    robot_hip = hip_line(robot_data, robot_body('left_hip_yaw_link'),
+                         robot_body('right_hip_yaw_link'))
+    source_hip = (src_data.xpos[source_body('右足')] - src_data.xpos[source_body('左足')])
+    source_hip /= np.linalg.norm(source_hip)
+    delta = np.arctan2(np.cross(robot_hip, source_hip)[2], robot_hip @ source_hip)
+    root_fix = R.from_euler('z', np.degrees(delta), degrees=True)
+
     # --- C = the robot link's orientation in the matched pose -----------------------------------
     bone_for_link = {link: spec[0] for link, spec in LINKS.items()}
     config_path = Path(args.config)
@@ -140,6 +156,9 @@ def main():
             source_bind = R.from_matrix(np.array(
                 src_data.xmat[source_body(bone_for_link[link])]).reshape(3, 3))
         constant = source_bind.inv() * R.from_matrix(np.array(robot_data.xmat[body]).reshape(3, 3))
+        if link == 'pelvis':
+            # the root carries the bilateral-axis correction; children are absolute and unaffected
+            constant = constant * root_fix
         q = constant.as_quat()
         for table in ('ik_match_table1', 'ik_match_table2'):
             if link in config.get(table, {}):
@@ -162,6 +181,7 @@ def main():
         for (src_a, _b, _c, _d, _j), err in zip(LIMBS, errors):
             print('%-8s %9.1f' % (src_a, err))
         print()
+        print('root yaw correction %.1f deg' % np.degrees(delta))
         print(f"{'link':<26}{'C (deg)':>9}")
         for link, angle in report:
             print(f'{link:<26}{angle:8.1f}')
