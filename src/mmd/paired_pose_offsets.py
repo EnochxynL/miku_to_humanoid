@@ -121,11 +121,13 @@ def main():
         got /= np.linalg.norm(got)
         errors.append(np.degrees(np.arccos(np.clip(got @ target, -1.0, 1.0))))
 
-    # --- the root (= pelvis) needs the bilateral axis matched too --------------------------------
+    # --- the links that the pose solve does not move need the bilateral axis matched -------------
     # Every child link's target is an absolute world orientation, so a wrong root cannot be seen on
     # the torso or the arms - the spine simply absorbs it and only the hips and legs stay twisted.
-    # The root therefore has to be matched on a *bilateral* axis (left hip -> right hip), which is
-    # independent of any per-bone frame convention.
+    # The pelvis and the torso are never moved by the limb solve, so their C would otherwise be
+    # "rest against bind" and would miss the world-frame yaw. It is measured on *bilateral* axes,
+    # which are independent of any per-bone frame convention: hips for the root, shoulders for the
+    # torso. Links whose joints the solve does move already carry that yaw inside their C.
     def hip_line(model_data, left, right):
         v = model_data.xpos[right] - model_data.xpos[left]
         return v / np.linalg.norm(v)
@@ -156,8 +158,8 @@ def main():
             source_bind = R.from_matrix(np.array(
                 src_data.xmat[source_body(bone_for_link[link])]).reshape(3, 3))
         constant = source_bind.inv() * R.from_matrix(np.array(robot_data.xmat[body]).reshape(3, 3))
-        if link == 'pelvis':
-            # the root carries the bilateral-axis correction; children are absolute and unaffected
+        if link in ('pelvis', 'torso_link'):
+            # pelvis and torso carry the bilateral-axis correction; the limbs already have it
             constant = constant * root_fix
         q = constant.as_quat()
         for table in ('ik_match_table1', 'ik_match_table2'):
