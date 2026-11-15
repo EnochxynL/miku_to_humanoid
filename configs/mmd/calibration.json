@@ -1,0 +1,192 @@
+{
+  "method": "paired pose at the MMD bind pose; robot joints solved to match limb directions (0.0-0.3 deg), then C = R_src(bind)^-1 * R_link(matched)",
+  "why": "MMD bones carry no rest rotation, so at bind every bone frame is the identity: C collapses to a single reading instead of a fit",
+  "source_bind_note": "the GLB rig hangs under Rx90, so R_src(bind) = Rx90 and must be divided out (forgetting this gives arms 48 deg off)",
+  "links": {
+    "pelvis": {
+      "bone": "腰",
+      "pos_w": 0,
+      "rot_w": 300.0,
+      "C_quat_wxyz": [
+        0.707107,
+        -0.707107,
+        0.0,
+        0.0
+      ]
+    },
+    "left_hip_yaw_link": {
+      "bone": "左足",
+      "pos_w": 0,
+      "rot_w": 10,
+      "C_quat_wxyz": [
+        0.398888,
+        -0.584949,
+        -0.581644,
+        -0.400516
+      ]
+    },
+    "left_knee_link": {
+      "bone": "左ひざ",
+      "pos_w": 0,
+      "rot_w": 10,
+      "C_quat_wxyz": [
+        0.522379,
+        -0.476699,
+        -0.473859,
+        -0.524725
+      ]
+    },
+    "left_ankle_roll_link": {
+      "bone": "左足首",
+      "pos_w": 50,
+      "rot_w": 10,
+      "C_quat_wxyz": [
+        0.522379,
+        -0.476699,
+        -0.473859,
+        -0.524725
+      ]
+    },
+    "right_hip_yaw_link": {
+      "bone": "右足",
+      "pos_w": 0,
+      "rot_w": 10,
+      "C_quat_wxyz": [
+        0.470355,
+        -0.61961,
+        -0.538275,
+        -0.324205
+      ]
+    },
+    "right_knee_link": {
+      "bone": "右ひざ",
+      "pos_w": 0,
+      "rot_w": 10,
+      "C_quat_wxyz": [
+        0.581634,
+        -0.528338,
+        -0.415544,
+        -0.458132
+      ]
+    },
+    "right_ankle_roll_link": {
+      "bone": "右足首",
+      "pos_w": 50,
+      "rot_w": 10,
+      "C_quat_wxyz": [
+        0.581634,
+        -0.528338,
+        -0.415544,
+        -0.458132
+      ]
+    },
+    "torso_link": {
+      "bone": "上半身2",
+      "pos_w": 0,
+      "rot_w": 100,
+      "C_quat_wxyz": [
+        0.707107,
+        -0.707107,
+        0.0,
+        0.0
+      ]
+    },
+    "left_shoulder_yaw_link": {
+      "bone": "左腕",
+      "pos_w": 0.0,
+      "rot_w": 100.0,
+      "C_quat_wxyz": [
+        0.738991,
+        -0.170492,
+        -0.598981,
+        -0.256993
+      ]
+    },
+    "left_elbow_link": {
+      "bone": "左ひじ",
+      "pos_w": 0.0,
+      "rot_w": 10.0,
+      "C_quat_wxyz": [
+        0.950253,
+        0.015254,
+        -0.043655,
+        -0.308026
+      ]
+    },
+    "left_wrist_yaw_link": {
+      "bone": "左手首",
+      "pos_w": 0.0,
+      "rot_w": 10.0,
+      "C_quat_wxyz": [
+        0.950253,
+        0.015254,
+        -0.043655,
+        -0.308026
+      ]
+    },
+    "right_shoulder_yaw_link": {
+      "bone": "右腕",
+      "pos_w": 0.0,
+      "rot_w": 100.0,
+      "C_quat_wxyz": [
+        0.278988,
+        -0.606877,
+        -0.142386,
+        -0.730474
+      ]
+    },
+    "right_elbow_link": {
+      "bone": "右ひじ",
+      "pos_w": 0.0,
+      "rot_w": 10.0,
+      "C_quat_wxyz": [
+        0.309038,
+        -0.054769,
+        0.051024,
+        -0.948099
+      ]
+    },
+    "right_wrist_yaw_link": {
+      "bone": "右手首",
+      "pos_w": 0.0,
+      "rot_w": 10.0,
+      "C_quat_wxyz": [
+        0.309038,
+        -0.054769,
+        0.051024,
+        -0.948099
+      ]
+    }
+  },
+  "measured_errors_deg": {
+    "upper_arm_left_right": [
+      0.0,
+      0.0
+    ],
+    "forearm_left_right_frames_0_159_318": [
+      [
+        2,
+        13,
+        2
+      ],
+      [
+        6,
+        20,
+        6
+      ]
+    ],
+    "pelvis_yaw": [
+      0.0,
+      0.1,
+      0.0
+    ],
+    "torso_yaw": [
+      1.6,
+      1.3,
+      1.6
+    ],
+    "legs": "8-27 (knee hinge plane is under-determined because the MMD bind pose has nearly straight legs)",
+    "hands": "not retargeted: GMR receives no palm bones"
+  },
+  "weights_note": "pelvis needs rot_w>=300 or the leg tasks drag the whole body yaw by 14-21 deg; arms use pos_w=0 (GMR convention) - no position hack needed once C is right"
+}
