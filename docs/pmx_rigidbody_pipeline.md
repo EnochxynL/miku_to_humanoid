@@ -84,11 +84,11 @@
 
 ```powershell
 # ① ② PMX → qpos（--view 开窗口）
-uv run python src/reference_maker/pmx_to_mjcf.py --pmx <model.pmx> --out runtime/pmx/herta.xml --tree runtime/pmx/herta_tree.json
-uv run python src/reference_maker/bake_pmx_vmd.py --pmx <model.pmx> --vmd <motion.vmd> --xml runtime/pmx/herta.xml --tree runtime/pmx/herta_tree.json --out runtime/pmx/herta_qpos.npz --view
+uv run python src/mmd/pmx_to_mjcf.py --pmx <model.pmx> --out runtime/pmx/herta.xml --tree runtime/pmx/herta_tree.json
+uv run python src/mmd/bake_pmx_vmd.py --pmx <model.pmx> --vmd <motion.vmd> --xml runtime/pmx/herta.xml --tree runtime/pmx/herta_tree.json --out runtime/pmx/herta_qpos.npz --view
 
 # ③ ④ 重定向到 G1 并播放（在 GMR venv 下）
-<gmr>/.venv/Scripts/python.exe src/reference_maker/pmx_to_gmr.py \
+<gmr>/.venv/Scripts/python.exe src/mmd/pmx_to_gmr.py \
   --pmx-xml runtime/pmx/herta.xml --tree runtime/pmx/herta_tree.json --qpos runtime/pmx/herta_qpos.npz \
   --config-out runtime/gmr_inputs/pmx_to_g1.json --retarget --bake-out runtime/pmx/g1_qpos.npz --view
 ```

@@ -71,10 +71,10 @@
 
 | 文件 | 作用 |
 |---|---|
-| `src/reference_maker/gmr_derive_offsets.py` | 从几何推导 `rot_offset`（distal / distal+hinge 两种模式）|
-| `src/reference_maker/score_config.py` | 给任意配置打分：**目标误差**（配置对不对）与**实际误差**（求解器跟不跟得上）分离 |
+| `（已删除）` | 从几何推导 `rot_offset`（distal / distal+hinge 两种模式）|
+| `（已删除）` | 给任意配置打分：**目标误差**（配置对不对）与**实际误差**（求解器跟不跟得上）分离 |
 | `runtime/gmr_inputs/_derived.json` | distal 推导产物（目标误差 4.6°，姿态仍不对）|
-| `src/reference_maker/offset_editor.py` | 逐骨调整的可视化编辑器（含 facing 读数）|
+| `（已删除）` | 逐骨调整的可视化编辑器（含 facing 读数）|
 
 ### 2.5 又排除一个：转换器的左右手没问题
 
