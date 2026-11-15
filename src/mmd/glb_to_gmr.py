@@ -85,12 +85,6 @@ ROLL_REF = {
 }
 
 
-# the two body axes that pin a limb's roll: left-right shoulder line, and left-right hip line
-SOURCE_LATERAL = {'shoulder': ('左腕', '右腕'), 'hip': ('左足', '右足')}
-ROBOT_LATERAL = {'shoulder': ('left_shoulder_yaw_link', 'right_shoulder_yaw_link'),
-                 'hip': ('left_hip_yaw_link', 'right_hip_yaw_link')}
-
-
 def frame_from_pair(first, second):
     """Right-handed basis from two directions (neither needs to be axis aligned)."""
     u = first / (np.linalg.norm(first) or 1.0)
@@ -99,25 +93,13 @@ def frame_from_pair(first, second):
     return np.column_stack([u, v, np.cross(u, v)])
 
 
-def build_config(base, robot_xml, glb_xml, nodes_path, two_axis=False,
-                 anim_path=None, reference_frame=-1, args_yaw_correction=(0.0,)):
+def build_config(base, robot_xml, glb_xml, nodes_path, two_axis=False):
     robot = mujoco.MjModel.from_xml_path(robot_xml)
     robot_data = mujoco.MjData(robot)
     mujoco.mj_forward(robot, robot_data)
     src = mujoco.MjModel.from_xml_path(glb_xml)
     src_data = mujoco.MjData(src)
     mujoco.mj_forward(src, src_data)
-    # the *bind* pose decides the limb frame conventions, but it is the wrong reference for the
-    # body's facing: the clip does not start in the bind pose, so a yaw taken from bind leaves the
-    # robot standing at an angle (measured 57 deg off). The spine yaw therefore comes from a real
-    # animated frame.
-    src_ref = mujoco.MjModel.from_xml_path(glb_xml)
-    src_ref_data = mujoco.MjData(src_ref)
-    src_ref_data.qpos[:] = src.qpos0
-    if anim_path and reference_frame >= 0:
-        reference = np.load(anim_path)['qpos']
-        src_ref_data.qpos[:] = reference[min(reference_frame, len(reference) - 1)]
-    mujoco.mj_forward(src_ref, src_ref_data)
     mapping = json.loads(Path(nodes_path).read_text(encoding='utf-8'))
     index_of = {e['name']: e['index'] for e in mapping['nodes'] if e.get('name')}
 
@@ -149,44 +131,26 @@ def build_config(base, robot_xml, glb_xml, nodes_path, two_axis=False,
             bone, child, robot_child = LINKS[link]
             rest = R.from_matrix(np.array(robot_data.xmat[robot_body(link)]).reshape(3, 3))
             align = R.identity()
+            pair = MEASURE.get(link)
+            if pair is None and link in LINKS:
+                # wrists have no MEASURE entry, but they still need an alignment: build it from the
+                # link's own segment, using LINKS for the source/robot pair
+                bone_, child_, robot_child_ = LINKS[link]
+                pair = (bone_, child_, link, robot_child_)
             if link in ('pelvis', 'torso_link'):
                 pair = None
                 # The spine must take the rig's *yaw* (the glTF rig is turned ~90 deg from the
                 # robot's rest) but not its tilt (this rig binds with the spine leaning). Yaw has to
                 # come from a horizontal axis - deriving it from the near-vertical spine direction is
                 # meaningless and silently produced 0 deg, which left the torso fighting every limb.
-                src_axis = (src_ref_data.xpos[src_body('右足')] -
-                            src_ref_data.xpos[src_body('左足')])
+                src_axis = src_data.xpos[src_body('右足')] - src_data.xpos[src_body('左足')]
                 robot_axis = (robot_data.xpos[robot_body('right_hip_yaw_link')] -
                               robot_data.xpos[robot_body('left_hip_yaw_link')])
                 # same convention as the limbs: rotate the robot's axis onto the source's axis.
                 # Both axes are horizontal, so the minimal rotation between them is exactly the yaw.
+                align = rotation_between(robot_axis, src_axis)
                 report.append((link, float(np.degrees(align.magnitude()))))
-            else:
-                # Limbs: the segment direction plus the body's lateral axis. The lateral axis is the
-                # key - the limb's own next segment is collinear with it at the bind pose (the arm is
-                # straight), so a second axis taken from the chain degenerates and the roll stays
-                # arbitrary. That arbitrary roll is exactly the "arms and legs are sideways" symptom.
-                pair = MEASURE.get(link)
-                if pair is None:
-                    bone_, child_, robot_child_ = LINKS[link]
-                    pair = (bone_, child_, link, robot_child_)
-                src_a, src_b, robot_a, robot_b = pair
-                src_dir = (src_data.xpos[src_body(src_b)] - src_data.xpos[src_body(src_a)])
-                robot_dir = (robot_data.xpos[robot_body(robot_b)] -
-                             robot_data.xpos[robot_body(robot_a)])
-                kind = 'shoulder' if any(k in link for k in ('shoulder', 'elbow', 'wrist')) else 'hip'
-                src_pair, robot_pair = SOURCE_LATERAL[kind], ROBOT_LATERAL[kind]
-                second_src = (src_data.xpos[src_body(src_pair[1])] -
-                              src_data.xpos[src_body(src_pair[0])])
-                second_robot = (robot_data.xpos[robot_body(robot_pair[1])] -
-                                robot_data.xpos[robot_body(robot_pair[0])])
-                if np.linalg.norm(second_src) > 1e-6 and np.linalg.norm(second_robot) > 1e-6:
-                    align = R.from_matrix(frame_from_pair(src_dir, second_src) @
-                                          frame_from_pair(robot_dir, second_robot).T)
-                else:
-                    align = rotation_between(robot_dir, src_dir)
-                report.append((link, float(np.degrees(align.magnitude()))))
+                pair = None
             # The PMX rig has no bind rotation (identity), so ``C = R_rest * align`` worked there.
             # This rig hangs under a root that applies Y-up -> Z-up, so its bind world orientation is
             # Rx90; without dividing it out the target is pitched 90 deg (the robot lay down).
@@ -208,10 +172,6 @@ def main():
     parser.add_argument('--gmr-root', default=r'D:\MY_TOOL\GitHub_Tools\GMR')
     parser.add_argument('--config-out', required=True)
     parser.add_argument('--bake-out', default=None)
-    parser.add_argument('--reference-frame', type=int, default=-1,
-                        help='animated frame whose facing defines the spine yaw; -1 uses the bind pose')
-    parser.add_argument('--yaw-correction', type=float, default=0.0,
-                        help='extra yaw (deg) added to the spine constant, for a measured closure')
     parser.add_argument('--two-axis', action='store_true',
                         help='also align the bending plane (experimental: currently collapses to '
                              'identity, so the single-axis alignment is the default)')
@@ -232,9 +192,7 @@ def main():
     base = json.loads(base_path.read_text(encoding='utf-8'))
 
     config, report = build_config(base, robot_xml, args.glb_xml, args.nodes,
-                                  two_axis=args.two_axis, anim_path=args.anim,
-                                  reference_frame=args.reference_frame,
-                                  args_yaw_correction=(args.yaw_correction,))
+                                  two_axis=args.two_axis)
     print(f"{'link':<26}{'align':>8}")
     for link, angle in report:
         print(f'{link:<26}{angle:7.1f}')
