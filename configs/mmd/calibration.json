@@ -185,7 +185,43 @@
       1.3,
       1.6
     ],
-    "legs": "5/8/5 (hip-line fix also improved the legs); knee hinge plane still under-determined because the MMD bind pose has nearly straight legs",
+    "legs": {
+      "thigh_direction_median_max": [
+        6.7,
+        9.4
+      ],
+      "shin_direction_median_max": [
+        5.6,
+        10.1
+      ],
+      "knee_bend_error_median": 3.9,
+      "cause": "NOT the straight bind pose (the arms are straight too and reach 0 deg). It is the ankle position weight: arms carry pos_w=0, the ankle carries pos_w=50.",
+      "tradeoff": {
+        "ankle_pos_w_50_official": {
+          "foot_position_error_m": [
+            0.013,
+            0.02
+          ],
+          "shin_error_deg": 5.6
+        },
+        "ankle_pos_w_10": {
+          "foot_position_error_m": [
+            0.061,
+            0.114
+          ],
+          "shin_error_deg": 2.8
+        },
+        "ankle_pos_w_0": {
+          "foot_position_error_m": [
+            0.078,
+            0.15
+          ],
+          "shin_error_deg": 1.3
+        }
+      },
+      "decision": "keep pos_w=50: 5.6 deg of leg orientation error buys 1-2 cm foot placement; lowering it slides the feet by 6-15 cm",
+      "retracted_claim": "an earlier note in this file blamed the near-straight legs in the MMD bind pose; that explanation was wrong and is replaced by the measurement above"
+    },
     "hands": "not retargeted: GMR receives no palm bones",
     "bilateral_axes": {
       "hip_line": [
