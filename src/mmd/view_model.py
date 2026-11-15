@@ -18,9 +18,11 @@ import numpy as np
 
 
 def play(model, data, frames, speed=0.6, distance=2.0, azimuth=90.0,
-         lookat=(0.0, 0.0, 1.0), stride=1):
+         lookat=(0.0, 0.0, 1.0), stride=1, show_ui=False):
     """Loop a qpos sequence in a MuJoCo window until it is closed."""
-    with mujoco.viewer.launch_passive(model, data) as viewer:
+    # show_left_ui / show_right_ui hide the viewer panels; MuJoCo 3.13 has no handle property for it
+    with mujoco.viewer.launch_passive(model, data, show_left_ui=show_ui,
+                                      show_right_ui=show_ui) as viewer:
         viewer.cam.type = mujoco.mjtCamera.mjCAMERA_FREE
         viewer.cam.lookat[:] = lookat
         viewer.cam.distance = distance
@@ -43,6 +45,8 @@ def main():
     parser.add_argument('--qpos', default=None, help='npz with a qpos array to play')
     parser.add_argument('--speed', type=float, default=0.6,
                         help='playback rate; above ~5x the window becomes render bound')
+    parser.add_argument('--show-ui', action='store_true',
+                        help='keep the viewer panels (hidden by default for a clean picture)')
     parser.add_argument('--stride', type=int, default=1,
                         help='frames to advance per redraw - the reliable way to go very fast')
     parser.add_argument('--loop', action='store_true')
@@ -62,7 +66,8 @@ def main():
     lookat = [float(v) for v in args.camera_lookat.split()]
     if not frames:
         # nothing to play: just show the model and let the human orbit it
-        with mujoco.viewer.launch_passive(model, data) as viewer:
+        with mujoco.viewer.launch_passive(model, data, show_left_ui=args.show_ui,
+                                          show_right_ui=args.show_ui) as viewer:
             viewer.cam.type = mujoco.mjtCamera.mjCAMERA_FREE
             viewer.cam.lookat[:] = lookat
             viewer.cam.distance = args.camera_distance
@@ -75,7 +80,8 @@ def main():
     # single playback loop, so --speed always applies (it used to be ignored here: this function
     # ran its own loop with a hard-coded 1/60 s interval)
     play(model, data, frames, speed=args.speed, stride=max(1, args.stride),
-         distance=args.camera_distance, azimuth=args.camera_azimuth, lookat=lookat)
+         distance=args.camera_distance, azimuth=args.camera_azimuth, lookat=lookat,
+         show_ui=args.show_ui)
 
 
 if __name__ == '__main__':
