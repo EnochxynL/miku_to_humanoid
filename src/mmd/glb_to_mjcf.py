@@ -172,6 +172,7 @@ def main():
             texture_lines.append(f'    <texture name="tex_{i:02d}" type="2d" file="tex_{i:02d}{suffix}" />')
 
         material_lines = []
+        low_alpha = set()
         for i, material in enumerate(doc.get('materials', [])):
             pbr = material.get('pbrMetallicRoughness', {})
             factor = pbr.get('baseColorFactor', [1, 1, 1, 1])
@@ -182,6 +183,11 @@ def main():
                 if source is not None and (asset_dir / f'tex_{source:02d}.png').exists():
                     texture_ref = f' texture="tex_{source:02d}"'
             rgba = f'{factor[0]:.4g} {factor[1]:.4g} {factor[2]:.4g} {factor[3]:.4g}'
+            if float(factor[3]) < 0.5:
+                # MMD uses these as faint overlays (目影 is a 30% black eye shadow); MuJoCo blends them
+                # far more heavily than MMD does, which greyed out the whole face
+                low_alpha.add(i)
+                continue
             material_lines.append(
                 f'    <material name="mat_{i:02d}" rgba="{rgba}" specular="0" shininess="0"'
                 f'{texture_ref} />')
@@ -272,6 +278,8 @@ def main():
         for node_index, groups in sorted(pending.items()):
             for material, verts, uvs, faces, normals in groups:
                 name = f'mesh_{node_index:03d}_{mesh_index:02d}'
+                if material in low_alpha:
+                    continue
                 mesh_index += 1
                 obj = []
                 for v, t in zip(verts, uvs):

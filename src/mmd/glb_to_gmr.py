@@ -105,28 +105,23 @@ def build_config(base, robot_xml, glb_xml, nodes_path):
             align = R.identity()
             pair = MEASURE.get(link)
             if link in ('pelvis', 'torso_link'):
-                # The spine must not inherit a *tilt* from the source bind pose (this rig binds with
-                # its spine leaning), but it does need the yaw: the glTF rig is turned ~90 deg
-                # relative to the robot's rest, and leaving that out made every limb target fight
-                # the spine orientation (measured 24-120 deg errors).
-                if link in LINKS:
-                    bone, child, _ = LINKS[link]
-                    if bone in index_of and child in index_of:
-                        src_dir = src_data.xpos[src_body(child)] - src_data.xpos[src_body(bone)]
-                        full = rotation_between(np.array([0.0, 0.0, 1.0]), src_dir)
-                        yaw = float(full.as_euler('zyx', degrees=True)[0])
-                        align = R.from_euler('z', yaw, degrees=True)
-                        report.append((link, yaw))
+                # The spine must take the rig's *yaw* (the glTF rig is turned ~90 deg from the
+                # robot's rest) but not its tilt (this rig binds with the spine leaning). Yaw has to
+                # come from a horizontal axis - deriving it from the near-vertical spine direction is
+                # meaningless and silently produced 0 deg, which left the torso fighting every limb.
+                src_axis = src_data.xpos[src_body('右足')] - src_data.xpos[src_body('左足')]
+                robot_axis = (robot_data.xpos[robot_body('right_hip_yaw_link')] -
+                              robot_data.xpos[robot_body('left_hip_yaw_link')])
+                # same convention as the limbs: rotate the robot's axis onto the source's axis.
+                # Both axes are horizontal, so the minimal rotation between them is exactly the yaw.
+                align = rotation_between(robot_axis, src_axis)
+                report.append((link, float(np.degrees(align.magnitude()))))
                 pair = None
-            if pair is not None:
-                src_a, src_b, robot_a, robot_b = pair
-                if src_a in index_of and src_b in index_of:
-                    robot_dir = (robot_data.xpos[robot_body(robot_b)] -
-                                 robot_data.xpos[robot_body(robot_a)])
-                    src_dir = src_data.xpos[src_body(src_b)] - src_data.xpos[src_body(src_a)]
-                    align = rotation_between(robot_dir, src_dir)
-                    report.append((link, float(np.degrees(align.magnitude()))))
-            constant = rest * align
+            # The PMX rig has no bind rotation (identity), so ``C = R_rest * align`` worked there.
+            # This rig hangs under a root that applies Y-up -> Z-up, so its bind world orientation is
+            # Rx90; without dividing it out the target is pitched 90 deg (the robot lay down).
+            source_bind = R.from_matrix(np.array(src_data.xmat[src_body(bone)]).reshape(3, 3))
+            constant = source_bind.inv() * rest * align
             x, y, z, w = constant.as_quat()
             base[table][link][0] = bone
             base[table][link][4] = [float(w), float(x), float(y), float(z)]
