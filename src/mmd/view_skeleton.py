@@ -41,6 +41,33 @@ def skeleton_edges(nodes_path):
     return edges, roots
 
 
+def connect_subset(names, nodes_path):
+    """Connect each bone of a subset to its nearest ancestor that is also in the subset."""
+    mapping = json.loads(Path(nodes_path).read_text(encoding='utf-8'))
+    entries = mapping['nodes']
+    name_of = {e['index']: e.get('name', '') for e in entries}
+    parent_of = {e['index']: e.get('parent', -1) for e in entries}
+    index_of = {}
+    for e in entries:
+        name = e.get('name', '')
+        if name and name not in index_of:
+            index_of[name] = e['index']
+    wanted = set(names)
+    edges = []
+    for name in names:
+        index = index_of.get(name)
+        if index is None:
+            continue
+        parent = parent_of.get(index, -1)
+        while parent in name_of and parent >= 0:
+            parent_name = name_of[parent]
+            if parent_name in wanted:
+                edges.append((parent_name, name))
+                break
+            parent = parent_of.get(parent, -1)
+    return edges
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -57,6 +84,9 @@ def main():
     parser.add_argument('--radius', type=float, default=0.012)
     parser.add_argument('--distance', type=float, default=2.8)
     parser.add_argument('--azimuth', type=float, default=88.1)
+    parser.add_argument('--source', choices=('gmr', 'raw'), default='gmr',
+                        help='gmr = draw exactly what GMR feeds the IK (scaled_human_data); '
+                             'raw = draw the whole MMD rig from the clip')
     parser.add_argument('--exclude', default='下擺,髪,帽,袖,裙,飾',
                         help='comma separated name fragments to leave out (clothing/cage bones flood '
                              'the view: the skirt alone is 224 bones)')
@@ -70,9 +100,12 @@ def main():
 
     gmrmod.IK_CONFIG_DICT.setdefault('glb', {})[args.robot] = str(Path(args.config).resolve())
     frames = load_glb_frames(args.glb_xml, args.nodes, args.anim)
-    edges, roots = skeleton_edges(args.nodes)
-    skip = [s for s in args.exclude.split(',') if s]
-    edges = [(a, b) for a, b in edges if not any(s in a or s in b for s in skip)]
+    if args.source == 'raw':
+        edges, roots = skeleton_edges(args.nodes)
+        skip = [s for s in args.exclude.split(',') if s]
+        edges = [(a, b) for a, b in edges if not any(s in a or s in b for s in skip)]
+    else:
+        edges, roots = [], []
     print(f'{len(frames)} frames, {len(edges)} bone connections')
 
     retargeter = GMR(src_human='glb', tgt_robot=args.robot,
@@ -92,6 +125,12 @@ def main():
         while viewer.is_running():
             for frame in frames:
                 qpos = retargeter.retarget(frame)
+                if args.source == 'gmr':
+                    # the data GMR actually solves against, not the raw clip
+                    human = {k: v for k, v in retargeter.scaled_human_data.items()}
+                    if not edges:
+                        edges.extend(connect_subset(list(human.keys()), args.nodes))
+                    frame = human
                 data.qpos[:] = qpos
                 mujoco.mj_forward(model, data)
 

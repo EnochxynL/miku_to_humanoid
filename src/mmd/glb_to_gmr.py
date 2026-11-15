@@ -112,16 +112,15 @@ def build_config(base, robot_xml, glb_xml, nodes_path, two_axis=False):
     base['human_root_name'] = '腰'
     base['human_height_assumption'] = float(src_data.xpos[src_body('頭')][2])
     base['ground_height'] = 0.0
-    scales = {'腰': 1.0}
-    for link, (bone, child, robot_child) in LINKS.items():
-        if link == 'pelvis':
-            continue
-        robot_length = np.linalg.norm(robot_data.xpos[robot_body(robot_child)] -
-                                      robot_data.xpos[robot_body(link)])
-        src_length = np.linalg.norm(src_data.xpos[src_body(child)] - src_data.xpos[src_body(bone)])
-        if src_length > 1e-6:
-            scales.setdefault(bone, float(robot_length / src_length))
-    base['human_scale_table'] = scales
+    # human_scale_table is a *uniform body* scale, not a per-segment ratio: GMR computes
+    # (bone_pos - root_pos) * scale[bone], so a per-bone ratio collapses whichever chain has a small
+    # ratio (the torso got 0.27 and shrank into the hips). Use one factor for the whole body, derived
+    # from the robot's standing height over the source's.
+    head_height = float(robot_data.xpos[:, 2].max())      # tallest robot body point
+    source_head_height = float(src_data.xpos[src_body('頭')][2])
+    factor = head_height / source_head_height if source_head_height > 1e-6 else 0.9
+    base['human_scale_table'] = {bone: float(factor) for bone in
+                                 {v[0] for v in LINKS.values()} | {'腰', '上半身2'}}
 
     report = []
     for table in ('ik_match_table1', 'ik_match_table2'):
