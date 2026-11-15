@@ -172,6 +172,9 @@ def main():
     parser.add_argument('--gmr-root', default=r'D:\MY_TOOL\GitHub_Tools\GMR')
     parser.add_argument('--config-out', required=True)
     parser.add_argument('--bake-out', default=None)
+    parser.add_argument('--no-limb-align', action='store_true',
+                        help="do not rotate the limbs onto the source's bind pose; transfer only the "
+                             'motion delta so the robot keeps its own rest posture (arms down)')
     parser.add_argument('--two-axis', action='store_true',
                         help='also align the bending plane (experimental: currently collapses to '
                              'identity, so the single-axis alignment is the default)')
