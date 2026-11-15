@@ -48,6 +48,46 @@ def quat_matrix(q):
     ])
 
 
+def load_alpha_masks(doc, binary, asset_dir):
+    """Per-image alpha arrays, plus which materials are alpha-tested."""
+    import io
+    from PIL import Image as PILImage
+    alphas = {}
+    for i, image in enumerate(doc.get('images', [])):
+        view = doc['bufferViews'][image['bufferView']]
+        start = view.get('byteOffset', 0)
+        data = binary[start:start + view['byteLength']]
+        try:
+            with PILImage.open(io.BytesIO(data)) as img:
+                rgba = img.convert('RGBA')
+                alphas[i] = np.asarray(rgba.split()[-1], dtype=float)
+        except Exception:
+            continue
+    # Any texture with real transparency is treated as a cut-out, not only alphaMode MASK: this
+    # model's hair cards are BLEND and would otherwise render as solid sheets (observed).
+    masked = {}
+    for index, material in enumerate(doc.get('materials', [])):
+        pbr = material.get('pbrMetallicRoughness', {})
+        base = pbr.get('baseColorTexture')
+        if base is None:
+            continue
+        source = doc['textures'][base['index']].get('source')
+        alpha = alphas.get(source)
+        if alpha is None:
+            continue
+        if float(alpha.min()) < 0.5 or float(alpha.mean()) < 250.0:
+            masked[index] = alpha
+    return masked
+
+
+def sample_alpha(alpha, uv):
+    """Nearest-neighbour alpha lookup; glTF UV origin is top-left with v down."""
+    height, width = alpha.shape
+    x = int(np.clip(uv[0], 0.0, 0.999999) * width)
+    y = int(np.clip(uv[1], 0.0, 0.999999) * height)
+    return alpha[y, x]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -140,6 +180,9 @@ def main():
                 f'    <material name="mat_{i:02d}" rgba="{rgba}"{texture_ref} />')
         assets += texture_lines + material_lines
 
+        masks = load_alpha_masks(doc, binary, asset_dir)
+        removed = 0
+
         # ---- mesh, split by (dominant joint, material) ------------------------------
         pending = {}          # node -> list of (material, vertices, uvs, faces)
         for p_index, primitive in enumerate(doc['meshes'][0]['primitives']):
@@ -159,40 +202,40 @@ def main():
                 joints = joints.reshape(len(position), -1)
             material = primitive.get('material', -1)
 
-            dominant = joints[np.arange(len(joints)), np.argmax(weights, axis=1)]
-            # move each vertex into its bone's bind frame
-            local = np.empty_like(position)
-            local_normal = np.empty_like(normal)
-            for slot in np.unique(dominant):
-                mask = dominant == slot
-                homogeneous = np.concatenate([position[mask], np.ones((mask.sum(), 1))], axis=1)
-                local[mask] = (inverse_bind[slot] @ homogeneous.T).T[:, :3]
-                rotated = (inverse_bind[slot][:3, :3] @ normal[mask].T).T
-                lengths = np.linalg.norm(rotated, axis=1, keepdims=True)
-                local_normal[mask] = rotated / np.where(lengths > 1e-9, lengths, 1.0)
-
+            # Group by the *triangle's* bone, not each vertex's own: a vertex transformed by a
+            # bone that does not own it still lands exactly right at bind pose, so keeping every
+            # triangle closes the surface (dropping mixed triangles shredded it instead - observed).
+            slot_of_vertex = joints[np.arange(len(joints)), np.argmax(weights, axis=1)]
             triangles = index.reshape(-1, 3)
-            # a triangle may only join a bone when all three vertices belong to that bone: every
-            # vertex above was moved into *its own* bone frame, so a mixed triangle would be
-            # attached to the wrong body and fly off as a shard (observed)
-            coherent = ((dominant[triangles[:, 0]] == dominant[triangles[:, 1]]) &
-                        (dominant[triangles[:, 0]] == dominant[triangles[:, 2]]))
-            triangles = triangles[coherent]
+            triangles = triangles[(triangles[:, 0] != triangles[:, 1]) &
+                                  (triangles[:, 1] != triangles[:, 2]) &
+                                  (triangles[:, 0] != triangles[:, 2])]
+            if material in masks and len(triangles):
+                alpha = masks[material]
+                transparent = np.ones(len(triangles), dtype=bool)
+                for t_index in range(3):
+                    values = np.array([sample_alpha(alpha, uv[v]) for v in triangles[:, t_index]])
+                    transparent &= values < 0.5
+                removed += int(transparent.sum())
+                triangles = triangles[~transparent]
             if len(triangles) == 0:
                 continue
-            # JOINTS_0 indexes the *skin slot*, not the node: map slot -> node before attaching
-            slot_to_node = np.asarray(joint_nodes)[dominant]
-            tri_node = slot_to_node[triangles[:, 0]]
-            for node_index in np.unique(tri_node):
-                sel = triangles[tri_node == node_index]
-                sel = sel[(sel[:, 0] != sel[:, 1]) & (sel[:, 1] != sel[:, 2]) & (sel[:, 0] != sel[:, 2])]
-                if len(sel) == 0 or len(np.unique(sel)) < 4:
+            tri_slot = slot_of_vertex[triangles[:, 0]]
+            for slot in np.unique(tri_slot):
+                sel = triangles[tri_slot == slot]
+                if len(sel) < 4:
                     continue
                 used = np.unique(sel)
+                homogeneous = np.concatenate([position[used], np.ones((len(used), 1))], axis=1)
+                moved = (inverse_bind[slot] @ homogeneous.T).T[:, :3]
+                rotated = (inverse_bind[slot][:3, :3] @ normal[used].T).T
+                lengths = np.linalg.norm(rotated, axis=1, keepdims=True)
+                moved_normal = rotated / np.where(lengths > 1e-9, lengths, 1.0)
                 remap = {old: new for new, old in enumerate(used)}
                 faces = np.vectorize(remap.get)(sel)
-                pending.setdefault(int(node_index), []).append(
-                    (material, local[used], uv[used], faces, local_normal[used]))
+                node_index = int(np.asarray(joint_nodes)[slot])
+                pending.setdefault(node_index, []).append(
+                    (material, moved, uv[used], faces, moved_normal))
 
         mesh_index = 0
         for node_index, groups in sorted(pending.items()):
@@ -203,7 +246,7 @@ def main():
                 for v, t in zip(verts, uvs):
                     obj.append(f'v {v[0]:.6f} {v[1]:.6f} {v[2]:.6f}')
                 for t in uvs:
-                    obj.append(f'vt {t[0]:.6f} {1.0 - t[1]:.6f}')
+                    obj.append(f'vt {t[0]:.6f} {t[1]:.6f}')
                 for n in normals:
                     obj.append(f'vn {n[0]:.6f} {n[1]:.6f} {n[2]:.6f}')
                 for f in faces + 1:
@@ -271,6 +314,7 @@ def main():
     Path(args.nodes).write_text(json.dumps(mapping, indent=2, ensure_ascii=False), encoding='utf-8')
     print(json.dumps({'nodes': count, 'roots': mapping['roots'],
                       'scaled_nodes': len(non_unit), 'mesh_groups': mapping['mesh_groups'],
+                      'alpha_trimmed_triangles': removed if args.mesh else 0,
                       'xml': str(xml_path)}, ensure_ascii=False))
 
 
