@@ -95,6 +95,9 @@ def main():
     parser.add_argument('--xml', required=True)
     parser.add_argument('--nodes', required=True)
     parser.add_argument('--mesh', action='store_true', help='include the textured mesh')
+    parser.add_argument('--no-flip-v', dest='flip_v', action='store_false',
+                        help='keep V as-is; the default flips it, which is what makes the face read '
+                             'correctly (glTF UV origin is top-left, MuJoCo textures bottom-left)')
     parser.add_argument('--sphere-radius', type=float, default=0.008,
                         help='when --mesh is off, a sphere per bone keeps the skeleton visible')
     args = parser.parse_args()
@@ -246,7 +249,8 @@ def main():
                 for v, t in zip(verts, uvs):
                     obj.append(f'v {v[0]:.6f} {v[1]:.6f} {v[2]:.6f}')
                 for t in uvs:
-                    obj.append(f'vt {t[0]:.6f} {t[1]:.6f}')
+                    v = (1.0 - t[1]) if args.flip_v else t[1]
+                    obj.append(f'vt {t[0]:.6f} {v:.6f}')
                 for n in normals:
                     obj.append(f'vn {n[0]:.6f} {n[1]:.6f} {n[2]:.6f}')
                 for f in faces + 1:
