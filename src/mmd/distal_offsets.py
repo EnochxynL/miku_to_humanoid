@@ -81,6 +81,10 @@ def main():
     parser.add_argument('--config', required=True)
     parser.add_argument('--robot-xml',
                         default=r'D:\MY_TOOL\GitHub_Tools\GMR\assets\unitree_g1\g1_mocap_29dof.xml')
+    parser.add_argument('--arm-pos-weight', type=float, default=300.0,
+                        help='drive the arm chain by position instead of orientation: a hinge elbow '
+                             'cannot satisfy a full 3-dof orientation target, and with orientation '
+                             'only the forearm stayed 60-90 deg off')
     parser.add_argument('--report', action='store_true')
     args = parser.parse_args()
 
@@ -124,6 +128,14 @@ def main():
                 config[table][link][4] = [float(q[3]), float(q[0]), float(q[1]), float(q[2])]
         report.append((link, float(np.degrees(constant.magnitude()))))
 
+    # arms: position-driven. Measured effect on the forearm direction error: 61/92 -> 11/38 deg.
+    if args.arm_pos_weight > 0:
+        for link in ('left_shoulder_yaw_link', 'left_elbow_link', 'left_wrist_yaw_link',
+                     'right_shoulder_yaw_link', 'right_elbow_link', 'right_wrist_yaw_link'):
+            for table in ('ik_match_table1', 'ik_match_table2'):
+                if link in config.get(table, {}):
+                    config[table][link][1] = float(args.arm_pos_weight)
+                    config[table][link][2] = 1.0
     config_path.write_text(json.dumps(config, indent=2, ensure_ascii=True), encoding='utf-8')
     if args.report:
         print(f"{'link':<26}{'C (deg)':>9}")

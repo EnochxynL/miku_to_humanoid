@@ -1,0 +1,3603 @@
+{
+  "source": "星穹铁道—黑塔2.glb",
+  "node_count": 513,
+  "roots": [
+    "星穹铁道—黑塔",
+    "星穹铁道—黑塔_skeleton"
+  ],
+  "scaled_nodes": [],
+  "mesh_groups": 0,
+  "nodes": [
+    {
+      "index": 0,
+      "name": "操作中心",
+      "body": "glb_body_000",
+      "joint": "glb_joint_000",
+      "parent": 512
+    },
+    {
+      "index": 1,
+      "name": "全ての親",
+      "body": "glb_body_001",
+      "joint": "glb_joint_001",
+      "parent": 512
+    },
+    {
+      "index": 2,
+      "name": "センター",
+      "body": "glb_body_002",
+      "joint": "glb_joint_002",
+      "parent": 1
+    },
+    {
+      "index": 3,
+      "name": "グルーブ",
+      "body": "glb_body_003",
+      "joint": "glb_joint_003",
+      "parent": 2
+    },
+    {
+      "index": 4,
+      "name": "腰",
+      "body": "glb_body_004",
+      "joint": "glb_joint_004",
+      "parent": 3
+    },
+    {
+      "index": 5,
+      "name": "右足IK親",
+      "body": "glb_body_005",
+      "joint": "glb_joint_005",
+      "parent": 1
+    },
+    {
+      "index": 6,
+      "name": "右足ＩＫ",
+      "body": "glb_body_006",
+      "joint": "glb_joint_006",
+      "parent": 5
+    },
+    {
+      "index": 7,
+      "name": "右つま先ＩＫ",
+      "body": "glb_body_007",
+      "joint": "glb_joint_007",
+      "parent": 6
+    },
+    {
+      "index": 8,
+      "name": "左足IK親",
+      "body": "glb_body_008",
+      "joint": "glb_joint_008",
+      "parent": 1
+    },
+    {
+      "index": 9,
+      "name": "左足ＩＫ",
+      "body": "glb_body_009",
+      "joint": "glb_joint_009",
+      "parent": 8
+    },
+    {
+      "index": 10,
+      "name": "左つま先ＩＫ",
+      "body": "glb_body_010",
+      "joint": "glb_joint_010",
+      "parent": 9
+    },
+    {
+      "index": 11,
+      "name": "下半身",
+      "body": "glb_body_011",
+      "joint": "glb_joint_011",
+      "parent": 4
+    },
+    {
+      "index": 12,
+      "name": "上半身",
+      "body": "glb_body_012",
+      "joint": "glb_joint_012",
+      "parent": 4
+    },
+    {
+      "index": 13,
+      "name": "上半身1",
+      "body": "glb_body_013",
+      "joint": "glb_joint_013",
+      "parent": 12
+    },
+    {
+      "index": 14,
+      "name": "上半身2",
+      "body": "glb_body_014",
+      "joint": "glb_joint_014",
+      "parent": 13
+    },
+    {
+      "index": 15,
+      "name": "首",
+      "body": "glb_body_015",
+      "joint": "glb_joint_015",
+      "parent": 14
+    },
+    {
+      "index": 16,
+      "name": "頭",
+      "body": "glb_body_016",
+      "joint": "glb_joint_016",
+      "parent": 15
+    },
+    {
+      "index": 17,
+      "name": "右肩P",
+      "body": "glb_body_017",
+      "joint": "glb_joint_017",
+      "parent": 14
+    },
+    {
+      "index": 18,
+      "name": "右肩",
+      "body": "glb_body_018",
+      "joint": "glb_joint_018",
+      "parent": 17
+    },
+    {
+      "index": 19,
+      "name": "右肩C",
+      "body": "glb_body_019",
+      "joint": "glb_joint_019",
+      "parent": 18
+    },
+    {
+      "index": 20,
+      "name": "右腕",
+      "body": "glb_body_020",
+      "joint": "glb_joint_020",
+      "parent": 19
+    },
+    {
+      "index": 21,
+      "name": "右腕捩",
+      "body": "glb_body_021",
+      "joint": "glb_joint_021",
+      "parent": 20
+    },
+    {
+      "index": 22,
+      "name": "右腕捩1",
+      "body": "glb_body_022",
+      "joint": "glb_joint_022",
+      "parent": 20
+    },
+    {
+      "index": 23,
+      "name": "右腕捩2",
+      "body": "glb_body_023",
+      "joint": "glb_joint_023",
+      "parent": 20
+    },
+    {
+      "index": 24,
+      "name": "右腕捩3",
+      "body": "glb_body_024",
+      "joint": "glb_joint_024",
+      "parent": 20
+    },
+    {
+      "index": 25,
+      "name": "右上袖",
+      "body": "glb_body_025",
+      "joint": "glb_joint_025",
+      "parent": 23
+    },
+    {
+      "index": 26,
+      "name": "右ひじ",
+      "body": "glb_body_026",
+      "joint": "glb_joint_026",
+      "parent": 21
+    },
+    {
+      "index": 27,
+      "name": "右手捩",
+      "body": "glb_body_027",
+      "joint": "glb_joint_027",
+      "parent": 26
+    },
+    {
+      "index": 28,
+      "name": "右手捩1",
+      "body": "glb_body_028",
+      "joint": "glb_joint_028",
+      "parent": 26
+    },
+    {
+      "index": 29,
+      "name": "右手捩2",
+      "body": "glb_body_029",
+      "joint": "glb_joint_029",
+      "parent": 26
+    },
+    {
+      "index": 30,
+      "name": "右手捩3",
+      "body": "glb_body_030",
+      "joint": "glb_joint_030",
+      "parent": 26
+    },
+    {
+      "index": 31,
+      "name": "右手首",
+      "body": "glb_body_031",
+      "joint": "glb_joint_031",
+      "parent": 27
+    },
+    {
+      "index": 32,
+      "name": "右ダミー",
+      "body": "glb_body_032",
+      "joint": "glb_joint_032",
+      "parent": 31
+    },
+    {
+      "index": 33,
+      "name": "右手先",
+      "body": "glb_body_033",
+      "joint": "glb_joint_033",
+      "parent": 31
+    },
+    {
+      "index": 34,
+      "name": "右中指１",
+      "body": "glb_body_034",
+      "joint": "glb_joint_034",
+      "parent": 31
+    },
+    {
+      "index": 35,
+      "name": "右中指２",
+      "body": "glb_body_035",
+      "joint": "glb_joint_035",
+      "parent": 34
+    },
+    {
+      "index": 36,
+      "name": "右中指３",
+      "body": "glb_body_036",
+      "joint": "glb_joint_036",
+      "parent": 35
+    },
+    {
+      "index": 37,
+      "name": "右親指０",
+      "body": "glb_body_037",
+      "joint": "glb_joint_037",
+      "parent": 31
+    },
+    {
+      "index": 38,
+      "name": "右親指１",
+      "body": "glb_body_038",
+      "joint": "glb_joint_038",
+      "parent": 37
+    },
+    {
+      "index": 39,
+      "name": "右親指２",
+      "body": "glb_body_039",
+      "joint": "glb_joint_039",
+      "parent": 38
+    },
+    {
+      "index": 40,
+      "name": "右人指１",
+      "body": "glb_body_040",
+      "joint": "glb_joint_040",
+      "parent": 31
+    },
+    {
+      "index": 41,
+      "name": "右人指２",
+      "body": "glb_body_041",
+      "joint": "glb_joint_041",
+      "parent": 40
+    },
+    {
+      "index": 42,
+      "name": "右人指３",
+      "body": "glb_body_042",
+      "joint": "glb_joint_042",
+      "parent": 41
+    },
+    {
+      "index": 43,
+      "name": "右薬指１",
+      "body": "glb_body_043",
+      "joint": "glb_joint_043",
+      "parent": 31
+    },
+    {
+      "index": 44,
+      "name": "右薬指２",
+      "body": "glb_body_044",
+      "joint": "glb_joint_044",
+      "parent": 43
+    },
+    {
+      "index": 45,
+      "name": "右薬指３",
+      "body": "glb_body_045",
+      "joint": "glb_joint_045",
+      "parent": 44
+    },
+    {
+      "index": 46,
+      "name": "右小指１",
+      "body": "glb_body_046",
+      "joint": "glb_joint_046",
+      "parent": 31
+    },
+    {
+      "index": 47,
+      "name": "右小指２",
+      "body": "glb_body_047",
+      "joint": "glb_joint_047",
+      "parent": 46
+    },
+    {
+      "index": 48,
+      "name": "右小指３",
+      "body": "glb_body_048",
+      "joint": "glb_joint_048",
+      "parent": 47
+    },
+    {
+      "index": 49,
+      "name": "左肩P",
+      "body": "glb_body_049",
+      "joint": "glb_joint_049",
+      "parent": 14
+    },
+    {
+      "index": 50,
+      "name": "左肩",
+      "body": "glb_body_050",
+      "joint": "glb_joint_050",
+      "parent": 49
+    },
+    {
+      "index": 51,
+      "name": "左肩C",
+      "body": "glb_body_051",
+      "joint": "glb_joint_051",
+      "parent": 50
+    },
+    {
+      "index": 52,
+      "name": "左腕",
+      "body": "glb_body_052",
+      "joint": "glb_joint_052",
+      "parent": 51
+    },
+    {
+      "index": 53,
+      "name": "左腕捩",
+      "body": "glb_body_053",
+      "joint": "glb_joint_053",
+      "parent": 52
+    },
+    {
+      "index": 54,
+      "name": "左腕捩1",
+      "body": "glb_body_054",
+      "joint": "glb_joint_054",
+      "parent": 52
+    },
+    {
+      "index": 55,
+      "name": "左腕捩2",
+      "body": "glb_body_055",
+      "joint": "glb_joint_055",
+      "parent": 52
+    },
+    {
+      "index": 56,
+      "name": "左腕捩3",
+      "body": "glb_body_056",
+      "joint": "glb_joint_056",
+      "parent": 52
+    },
+    {
+      "index": 57,
+      "name": "左上袖",
+      "body": "glb_body_057",
+      "joint": "glb_joint_057",
+      "parent": 55
+    },
+    {
+      "index": 58,
+      "name": "左ひじ",
+      "body": "glb_body_058",
+      "joint": "glb_joint_058",
+      "parent": 53
+    },
+    {
+      "index": 59,
+      "name": "左手捩",
+      "body": "glb_body_059",
+      "joint": "glb_joint_059",
+      "parent": 58
+    },
+    {
+      "index": 60,
+      "name": "左手捩1",
+      "body": "glb_body_060",
+      "joint": "glb_joint_060",
+      "parent": 58
+    },
+    {
+      "index": 61,
+      "name": "左手捩2",
+      "body": "glb_body_061",
+      "joint": "glb_joint_061",
+      "parent": 58
+    },
+    {
+      "index": 62,
+      "name": "左手捩3",
+      "body": "glb_body_062",
+      "joint": "glb_joint_062",
+      "parent": 58
+    },
+    {
+      "index": 63,
+      "name": "左手首",
+      "body": "glb_body_063",
+      "joint": "glb_joint_063",
+      "parent": 59
+    },
+    {
+      "index": 64,
+      "name": "左ダミー",
+      "body": "glb_body_064",
+      "joint": "glb_joint_064",
+      "parent": 63
+    },
+    {
+      "index": 65,
+      "name": "左手先",
+      "body": "glb_body_065",
+      "joint": "glb_joint_065",
+      "parent": 63
+    },
+    {
+      "index": 66,
+      "name": "左中指１",
+      "body": "glb_body_066",
+      "joint": "glb_joint_066",
+      "parent": 63
+    },
+    {
+      "index": 67,
+      "name": "左中指２",
+      "body": "glb_body_067",
+      "joint": "glb_joint_067",
+      "parent": 66
+    },
+    {
+      "index": 68,
+      "name": "左中指３",
+      "body": "glb_body_068",
+      "joint": "glb_joint_068",
+      "parent": 67
+    },
+    {
+      "index": 69,
+      "name": "左親指０",
+      "body": "glb_body_069",
+      "joint": "glb_joint_069",
+      "parent": 63
+    },
+    {
+      "index": 70,
+      "name": "左親指１",
+      "body": "glb_body_070",
+      "joint": "glb_joint_070",
+      "parent": 69
+    },
+    {
+      "index": 71,
+      "name": "左親指２",
+      "body": "glb_body_071",
+      "joint": "glb_joint_071",
+      "parent": 70
+    },
+    {
+      "index": 72,
+      "name": "左人指１",
+      "body": "glb_body_072",
+      "joint": "glb_joint_072",
+      "parent": 63
+    },
+    {
+      "index": 73,
+      "name": "左人指２",
+      "body": "glb_body_073",
+      "joint": "glb_joint_073",
+      "parent": 72
+    },
+    {
+      "index": 74,
+      "name": "左人指３",
+      "body": "glb_body_074",
+      "joint": "glb_joint_074",
+      "parent": 73
+    },
+    {
+      "index": 75,
+      "name": "左薬指１",
+      "body": "glb_body_075",
+      "joint": "glb_joint_075",
+      "parent": 63
+    },
+    {
+      "index": 76,
+      "name": "左薬指２",
+      "body": "glb_body_076",
+      "joint": "glb_joint_076",
+      "parent": 75
+    },
+    {
+      "index": 77,
+      "name": "左薬指３",
+      "body": "glb_body_077",
+      "joint": "glb_joint_077",
+      "parent": 76
+    },
+    {
+      "index": 78,
+      "name": "左小指１",
+      "body": "glb_body_078",
+      "joint": "glb_joint_078",
+      "parent": 63
+    },
+    {
+      "index": 79,
+      "name": "左小指２",
+      "body": "glb_body_079",
+      "joint": "glb_joint_079",
+      "parent": 78
+    },
+    {
+      "index": 80,
+      "name": "左小指３",
+      "body": "glb_body_080",
+      "joint": "glb_joint_080",
+      "parent": 79
+    },
+    {
+      "index": 81,
+      "name": "腰キャンセル右",
+      "body": "glb_body_081",
+      "joint": "glb_joint_081",
+      "parent": 11
+    },
+    {
+      "index": 82,
+      "name": "右足",
+      "body": "glb_body_082",
+      "joint": "glb_joint_082",
+      "parent": 81
+    },
+    {
+      "index": 83,
+      "name": "右ひざ",
+      "body": "glb_body_083",
+      "joint": "glb_joint_083",
+      "parent": 82
+    },
+    {
+      "index": 84,
+      "name": "右足首",
+      "body": "glb_body_084",
+      "joint": "glb_joint_084",
+      "parent": 83
+    },
+    {
+      "index": 85,
+      "name": "右つま先",
+      "body": "glb_body_085",
+      "joint": "glb_joint_085",
+      "parent": 84
+    },
+    {
+      "index": 86,
+      "name": "腰キャンセル左",
+      "body": "glb_body_086",
+      "joint": "glb_joint_086",
+      "parent": 11
+    },
+    {
+      "index": 87,
+      "name": "左足",
+      "body": "glb_body_087",
+      "joint": "glb_joint_087",
+      "parent": 86
+    },
+    {
+      "index": 88,
+      "name": "左ひざ",
+      "body": "glb_body_088",
+      "joint": "glb_joint_088",
+      "parent": 87
+    },
+    {
+      "index": 89,
+      "name": "左足首",
+      "body": "glb_body_089",
+      "joint": "glb_joint_089",
+      "parent": 88
+    },
+    {
+      "index": 90,
+      "name": "左つま先",
+      "body": "glb_body_090",
+      "joint": "glb_joint_090",
+      "parent": 89
+    },
+    {
+      "index": 91,
+      "name": "右目",
+      "body": "glb_body_091",
+      "joint": "glb_joint_091",
+      "parent": 16
+    },
+    {
+      "index": 92,
+      "name": "右目先",
+      "body": "glb_body_092",
+      "joint": "glb_joint_092",
+      "parent": 91
+    },
+    {
+      "index": 93,
+      "name": "左目",
+      "body": "glb_body_093",
+      "joint": "glb_joint_093",
+      "parent": 16
+    },
+    {
+      "index": 94,
+      "name": "左目先",
+      "body": "glb_body_094",
+      "joint": "glb_joint_094",
+      "parent": 93
+    },
+    {
+      "index": 95,
+      "name": "両目",
+      "body": "glb_body_095",
+      "joint": "glb_joint_095",
+      "parent": 16
+    },
+    {
+      "index": 96,
+      "name": "両目先",
+      "body": "glb_body_096",
+      "joint": "glb_joint_096",
+      "parent": 95
+    },
+    {
+      "index": 97,
+      "name": "右上袖1-1",
+      "body": "glb_body_097",
+      "joint": "glb_joint_097",
+      "parent": 25
+    },
+    {
+      "index": 98,
+      "name": "右上袖1-2",
+      "body": "glb_body_098",
+      "joint": "glb_joint_098",
+      "parent": 97
+    },
+    {
+      "index": 99,
+      "name": "右上袖2-1",
+      "body": "glb_body_099",
+      "joint": "glb_joint_099",
+      "parent": 25
+    },
+    {
+      "index": 100,
+      "name": "右上袖3-1",
+      "body": "glb_body_100",
+      "joint": "glb_joint_100",
+      "parent": 25
+    },
+    {
+      "index": 101,
+      "name": "右上袖4-1",
+      "body": "glb_body_101",
+      "joint": "glb_joint_101",
+      "parent": 25
+    },
+    {
+      "index": 102,
+      "name": "右袖1-1",
+      "body": "glb_body_102",
+      "joint": "glb_joint_102",
+      "parent": 26
+    },
+    {
+      "index": 103,
+      "name": "右袖1-2",
+      "body": "glb_body_103",
+      "joint": "glb_joint_103",
+      "parent": 102
+    },
+    {
+      "index": 104,
+      "name": "右袖1-3",
+      "body": "glb_body_104",
+      "joint": "glb_joint_104",
+      "parent": 103
+    },
+    {
+      "index": 105,
+      "name": "右袖2-1",
+      "body": "glb_body_105",
+      "joint": "glb_joint_105",
+      "parent": 26
+    },
+    {
+      "index": 106,
+      "name": "右袖2-2",
+      "body": "glb_body_106",
+      "joint": "glb_joint_106",
+      "parent": 105
+    },
+    {
+      "index": 107,
+      "name": "右袖2-3",
+      "body": "glb_body_107",
+      "joint": "glb_joint_107",
+      "parent": 106
+    },
+    {
+      "index": 108,
+      "name": "右袖3-1",
+      "body": "glb_body_108",
+      "joint": "glb_joint_108",
+      "parent": 26
+    },
+    {
+      "index": 109,
+      "name": "右袖3-2",
+      "body": "glb_body_109",
+      "joint": "glb_joint_109",
+      "parent": 108
+    },
+    {
+      "index": 110,
+      "name": "右袖3-3",
+      "body": "glb_body_110",
+      "joint": "glb_joint_110",
+      "parent": 109
+    },
+    {
+      "index": 111,
+      "name": "右袖4-1",
+      "body": "glb_body_111",
+      "joint": "glb_joint_111",
+      "parent": 26
+    },
+    {
+      "index": 112,
+      "name": "右袖4-2",
+      "body": "glb_body_112",
+      "joint": "glb_joint_112",
+      "parent": 111
+    },
+    {
+      "index": 113,
+      "name": "右袖4-3",
+      "body": "glb_body_113",
+      "joint": "glb_joint_113",
+      "parent": 112
+    },
+    {
+      "index": 114,
+      "name": "右袖5-1",
+      "body": "glb_body_114",
+      "joint": "glb_joint_114",
+      "parent": 26
+    },
+    {
+      "index": 115,
+      "name": "右袖5-2",
+      "body": "glb_body_115",
+      "joint": "glb_joint_115",
+      "parent": 114
+    },
+    {
+      "index": 116,
+      "name": "右袖5-3",
+      "body": "glb_body_116",
+      "joint": "glb_joint_116",
+      "parent": 115
+    },
+    {
+      "index": 117,
+      "name": "右袖5-4",
+      "body": "glb_body_117",
+      "joint": "glb_joint_117",
+      "parent": 116
+    },
+    {
+      "index": 118,
+      "name": "左上袖1-1",
+      "body": "glb_body_118",
+      "joint": "glb_joint_118",
+      "parent": 57
+    },
+    {
+      "index": 119,
+      "name": "左上袖1-2",
+      "body": "glb_body_119",
+      "joint": "glb_joint_119",
+      "parent": 118
+    },
+    {
+      "index": 120,
+      "name": "左上袖2-1",
+      "body": "glb_body_120",
+      "joint": "glb_joint_120",
+      "parent": 57
+    },
+    {
+      "index": 121,
+      "name": "左上袖3-1",
+      "body": "glb_body_121",
+      "joint": "glb_joint_121",
+      "parent": 57
+    },
+    {
+      "index": 122,
+      "name": "左上袖4-1",
+      "body": "glb_body_122",
+      "joint": "glb_joint_122",
+      "parent": 57
+    },
+    {
+      "index": 123,
+      "name": "左袖1-1",
+      "body": "glb_body_123",
+      "joint": "glb_joint_123",
+      "parent": 58
+    },
+    {
+      "index": 124,
+      "name": "左袖1-2",
+      "body": "glb_body_124",
+      "joint": "glb_joint_124",
+      "parent": 123
+    },
+    {
+      "index": 125,
+      "name": "左袖1-3",
+      "body": "glb_body_125",
+      "joint": "glb_joint_125",
+      "parent": 124
+    },
+    {
+      "index": 126,
+      "name": "左袖2-1",
+      "body": "glb_body_126",
+      "joint": "glb_joint_126",
+      "parent": 58
+    },
+    {
+      "index": 127,
+      "name": "左袖2-2",
+      "body": "glb_body_127",
+      "joint": "glb_joint_127",
+      "parent": 126
+    },
+    {
+      "index": 128,
+      "name": "左袖2-3",
+      "body": "glb_body_128",
+      "joint": "glb_joint_128",
+      "parent": 127
+    },
+    {
+      "index": 129,
+      "name": "左袖3-1",
+      "body": "glb_body_129",
+      "joint": "glb_joint_129",
+      "parent": 58
+    },
+    {
+      "index": 130,
+      "name": "左袖3-2",
+      "body": "glb_body_130",
+      "joint": "glb_joint_130",
+      "parent": 129
+    },
+    {
+      "index": 131,
+      "name": "左袖3-3",
+      "body": "glb_body_131",
+      "joint": "glb_joint_131",
+      "parent": 130
+    },
+    {
+      "index": 132,
+      "name": "左袖4-1",
+      "body": "glb_body_132",
+      "joint": "glb_joint_132",
+      "parent": 58
+    },
+    {
+      "index": 133,
+      "name": "左袖4-2",
+      "body": "glb_body_133",
+      "joint": "glb_joint_133",
+      "parent": 132
+    },
+    {
+      "index": 134,
+      "name": "左袖4-3",
+      "body": "glb_body_134",
+      "joint": "glb_joint_134",
+      "parent": 133
+    },
+    {
+      "index": 135,
+      "name": "左袖5-1",
+      "body": "glb_body_135",
+      "joint": "glb_joint_135",
+      "parent": 58
+    },
+    {
+      "index": 136,
+      "name": "左袖5-2",
+      "body": "glb_body_136",
+      "joint": "glb_joint_136",
+      "parent": 135
+    },
+    {
+      "index": 137,
+      "name": "左袖5-3",
+      "body": "glb_body_137",
+      "joint": "glb_joint_137",
+      "parent": 136
+    },
+    {
+      "index": 138,
+      "name": "左袖5-4",
+      "body": "glb_body_138",
+      "joint": "glb_joint_138",
+      "parent": 137
+    },
+    {
+      "index": 139,
+      "name": "tongue_01",
+      "body": "glb_body_139",
+      "joint": "glb_joint_139",
+      "parent": 16
+    },
+    {
+      "index": 140,
+      "name": "tongue_02",
+      "body": "glb_body_140",
+      "joint": "glb_joint_140",
+      "parent": 139
+    },
+    {
+      "index": 141,
+      "name": "tongue_03",
+      "body": "glb_body_141",
+      "joint": "glb_joint_141",
+      "parent": 140
+    },
+    {
+      "index": 142,
+      "name": "tongue_04",
+      "body": "glb_body_142",
+      "joint": "glb_joint_142",
+      "parent": 141
+    },
+    {
+      "index": 143,
+      "name": "DownTeeth",
+      "body": "glb_body_143",
+      "joint": "glb_joint_143",
+      "parent": 16
+    },
+    {
+      "index": 144,
+      "name": "UpTeeth",
+      "body": "glb_body_144",
+      "joint": "glb_joint_144",
+      "parent": 16
+    },
+    {
+      "index": 145,
+      "name": "帽",
+      "body": "glb_body_145",
+      "joint": "glb_joint_145",
+      "parent": 16
+    },
+    {
+      "index": 146,
+      "name": "帽1",
+      "body": "glb_body_146",
+      "joint": "glb_joint_146",
+      "parent": 145
+    },
+    {
+      "index": 147,
+      "name": "帽2",
+      "body": "glb_body_147",
+      "joint": "glb_joint_147",
+      "parent": 146
+    },
+    {
+      "index": 148,
+      "name": "帽3",
+      "body": "glb_body_148",
+      "joint": "glb_joint_148",
+      "parent": 147
+    },
+    {
+      "index": 149,
+      "name": "帽4",
+      "body": "glb_body_149",
+      "joint": "glb_joint_149",
+      "parent": 148
+    },
+    {
+      "index": 150,
+      "name": "帽5",
+      "body": "glb_body_150",
+      "joint": "glb_joint_150",
+      "parent": 149
+    },
+    {
+      "index": 151,
+      "name": "帽6",
+      "body": "glb_body_151",
+      "joint": "glb_joint_151",
+      "parent": 150
+    },
+    {
+      "index": 152,
+      "name": "帽檐1-1",
+      "body": "glb_body_152",
+      "joint": "glb_joint_152",
+      "parent": 146
+    },
+    {
+      "index": 153,
+      "name": "帽檐1-2",
+      "body": "glb_body_153",
+      "joint": "glb_joint_153",
+      "parent": 152
+    },
+    {
+      "index": 154,
+      "name": "帽檐2-1",
+      "body": "glb_body_154",
+      "joint": "glb_joint_154",
+      "parent": 146
+    },
+    {
+      "index": 155,
+      "name": "帽檐2-2",
+      "body": "glb_body_155",
+      "joint": "glb_joint_155",
+      "parent": 154
+    },
+    {
+      "index": 156,
+      "name": "帽檐3-1",
+      "body": "glb_body_156",
+      "joint": "glb_joint_156",
+      "parent": 146
+    },
+    {
+      "index": 157,
+      "name": "帽檐3-2",
+      "body": "glb_body_157",
+      "joint": "glb_joint_157",
+      "parent": 156
+    },
+    {
+      "index": 158,
+      "name": "帽檐4-1",
+      "body": "glb_body_158",
+      "joint": "glb_joint_158",
+      "parent": 146
+    },
+    {
+      "index": 159,
+      "name": "帽檐4-2",
+      "body": "glb_body_159",
+      "joint": "glb_joint_159",
+      "parent": 158
+    },
+    {
+      "index": 160,
+      "name": "帽檐5-1",
+      "body": "glb_body_160",
+      "joint": "glb_joint_160",
+      "parent": 146
+    },
+    {
+      "index": 161,
+      "name": "帽檐5-2",
+      "body": "glb_body_161",
+      "joint": "glb_joint_161",
+      "parent": 160
+    },
+    {
+      "index": 162,
+      "name": "帽檐6-1",
+      "body": "glb_body_162",
+      "joint": "glb_joint_162",
+      "parent": 146
+    },
+    {
+      "index": 163,
+      "name": "帽檐6-2",
+      "body": "glb_body_163",
+      "joint": "glb_joint_163",
+      "parent": 162
+    },
+    {
+      "index": 164,
+      "name": "帽檐7-1",
+      "body": "glb_body_164",
+      "joint": "glb_joint_164",
+      "parent": 146
+    },
+    {
+      "index": 165,
+      "name": "帽檐7-2",
+      "body": "glb_body_165",
+      "joint": "glb_joint_165",
+      "parent": 164
+    },
+    {
+      "index": 166,
+      "name": "後髪上1",
+      "body": "glb_body_166",
+      "joint": "glb_joint_166",
+      "parent": 16
+    },
+    {
+      "index": 167,
+      "name": "後髪上2",
+      "body": "glb_body_167",
+      "joint": "glb_joint_167",
+      "parent": 166
+    },
+    {
+      "index": 168,
+      "name": "後髪上3",
+      "body": "glb_body_168",
+      "joint": "glb_joint_168",
+      "parent": 167
+    },
+    {
+      "index": 169,
+      "name": "後髪上4",
+      "body": "glb_body_169",
+      "joint": "glb_joint_169",
+      "parent": 168
+    },
+    {
+      "index": 170,
+      "name": "後髪上5",
+      "body": "glb_body_170",
+      "joint": "glb_joint_170",
+      "parent": 169
+    },
+    {
+      "index": 171,
+      "name": "後髪上6",
+      "body": "glb_body_171",
+      "joint": "glb_joint_171",
+      "parent": 170
+    },
+    {
+      "index": 172,
+      "name": "後髪上7",
+      "body": "glb_body_172",
+      "joint": "glb_joint_172",
+      "parent": 171
+    },
+    {
+      "index": 173,
+      "name": "後髪上8",
+      "body": "glb_body_173",
+      "joint": "glb_joint_173",
+      "parent": 172
+    },
+    {
+      "index": 174,
+      "name": "後髪上9",
+      "body": "glb_body_174",
+      "joint": "glb_joint_174",
+      "parent": 173
+    },
+    {
+      "index": 175,
+      "name": "後髪上10",
+      "body": "glb_body_175",
+      "joint": "glb_joint_175",
+      "parent": 174
+    },
+    {
+      "index": 176,
+      "name": "右後髪1",
+      "body": "glb_body_176",
+      "joint": "glb_joint_176",
+      "parent": 167
+    },
+    {
+      "index": 177,
+      "name": "右後髪2",
+      "body": "glb_body_177",
+      "joint": "glb_joint_177",
+      "parent": 176
+    },
+    {
+      "index": 178,
+      "name": "右後髪3",
+      "body": "glb_body_178",
+      "joint": "glb_joint_178",
+      "parent": 177
+    },
+    {
+      "index": 179,
+      "name": "右後髪4",
+      "body": "glb_body_179",
+      "joint": "glb_joint_179",
+      "parent": 178
+    },
+    {
+      "index": 180,
+      "name": "右後髪5",
+      "body": "glb_body_180",
+      "joint": "glb_joint_180",
+      "parent": 179
+    },
+    {
+      "index": 181,
+      "name": "右後髪6",
+      "body": "glb_body_181",
+      "joint": "glb_joint_181",
+      "parent": 180
+    },
+    {
+      "index": 182,
+      "name": "右後髪7",
+      "body": "glb_body_182",
+      "joint": "glb_joint_182",
+      "parent": 181
+    },
+    {
+      "index": 183,
+      "name": "右後髪8",
+      "body": "glb_body_183",
+      "joint": "glb_joint_183",
+      "parent": 182
+    },
+    {
+      "index": 184,
+      "name": "右後髪9",
+      "body": "glb_body_184",
+      "joint": "glb_joint_184",
+      "parent": 183
+    },
+    {
+      "index": 185,
+      "name": "右後髪10",
+      "body": "glb_body_185",
+      "joint": "glb_joint_185",
+      "parent": 184
+    },
+    {
+      "index": 186,
+      "name": "右後髪11",
+      "body": "glb_body_186",
+      "joint": "glb_joint_186",
+      "parent": 185
+    },
+    {
+      "index": 187,
+      "name": "左後髪1",
+      "body": "glb_body_187",
+      "joint": "glb_joint_187",
+      "parent": 167
+    },
+    {
+      "index": 188,
+      "name": "左後髪2",
+      "body": "glb_body_188",
+      "joint": "glb_joint_188",
+      "parent": 187
+    },
+    {
+      "index": 189,
+      "name": "左後髪3",
+      "body": "glb_body_189",
+      "joint": "glb_joint_189",
+      "parent": 188
+    },
+    {
+      "index": 190,
+      "name": "左後髪4",
+      "body": "glb_body_190",
+      "joint": "glb_joint_190",
+      "parent": 189
+    },
+    {
+      "index": 191,
+      "name": "左後髪5",
+      "body": "glb_body_191",
+      "joint": "glb_joint_191",
+      "parent": 190
+    },
+    {
+      "index": 192,
+      "name": "左後髪6",
+      "body": "glb_body_192",
+      "joint": "glb_joint_192",
+      "parent": 191
+    },
+    {
+      "index": 193,
+      "name": "左後髪7",
+      "body": "glb_body_193",
+      "joint": "glb_joint_193",
+      "parent": 192
+    },
+    {
+      "index": 194,
+      "name": "左後髪8",
+      "body": "glb_body_194",
+      "joint": "glb_joint_194",
+      "parent": 193
+    },
+    {
+      "index": 195,
+      "name": "左後髪9",
+      "body": "glb_body_195",
+      "joint": "glb_joint_195",
+      "parent": 194
+    },
+    {
+      "index": 196,
+      "name": "左後髪10",
+      "body": "glb_body_196",
+      "joint": "glb_joint_196",
+      "parent": 195
+    },
+    {
+      "index": 197,
+      "name": "左後髪11",
+      "body": "glb_body_197",
+      "joint": "glb_joint_197",
+      "parent": 196
+    },
+    {
+      "index": 198,
+      "name": "左側長髮1",
+      "body": "glb_body_198",
+      "joint": "glb_joint_198",
+      "parent": 16
+    },
+    {
+      "index": 199,
+      "name": "左側長髮2",
+      "body": "glb_body_199",
+      "joint": "glb_joint_199",
+      "parent": 198
+    },
+    {
+      "index": 200,
+      "name": "左側長髮3",
+      "body": "glb_body_200",
+      "joint": "glb_joint_200",
+      "parent": 199
+    },
+    {
+      "index": 201,
+      "name": "左側長髮4",
+      "body": "glb_body_201",
+      "joint": "glb_joint_201",
+      "parent": 200
+    },
+    {
+      "index": 202,
+      "name": "左側長髮5",
+      "body": "glb_body_202",
+      "joint": "glb_joint_202",
+      "parent": 201
+    },
+    {
+      "index": 203,
+      "name": "左側長髮6",
+      "body": "glb_body_203",
+      "joint": "glb_joint_203",
+      "parent": 202
+    },
+    {
+      "index": 204,
+      "name": "左側長髮7",
+      "body": "glb_body_204",
+      "joint": "glb_joint_204",
+      "parent": 203
+    },
+    {
+      "index": 205,
+      "name": "右側長髮1",
+      "body": "glb_body_205",
+      "joint": "glb_joint_205",
+      "parent": 16
+    },
+    {
+      "index": 206,
+      "name": "右側長髮2",
+      "body": "glb_body_206",
+      "joint": "glb_joint_206",
+      "parent": 205
+    },
+    {
+      "index": 207,
+      "name": "右側長髮3",
+      "body": "glb_body_207",
+      "joint": "glb_joint_207",
+      "parent": 206
+    },
+    {
+      "index": 208,
+      "name": "右側長髮4",
+      "body": "glb_body_208",
+      "joint": "glb_joint_208",
+      "parent": 207
+    },
+    {
+      "index": 209,
+      "name": "右側長髮5",
+      "body": "glb_body_209",
+      "joint": "glb_joint_209",
+      "parent": 208
+    },
+    {
+      "index": 210,
+      "name": "右側長髮6",
+      "body": "glb_body_210",
+      "joint": "glb_joint_210",
+      "parent": 209
+    },
+    {
+      "index": 211,
+      "name": "右側長髮7",
+      "body": "glb_body_211",
+      "joint": "glb_joint_211",
+      "parent": 210
+    },
+    {
+      "index": 212,
+      "name": "右側長髮8",
+      "body": "glb_body_212",
+      "joint": "glb_joint_212",
+      "parent": 211
+    },
+    {
+      "index": 213,
+      "name": "右側長髮9",
+      "body": "glb_body_213",
+      "joint": "glb_joint_213",
+      "parent": 212
+    },
+    {
+      "index": 214,
+      "name": "右碎髮1-1",
+      "body": "glb_body_214",
+      "joint": "glb_joint_214",
+      "parent": 16
+    },
+    {
+      "index": 215,
+      "name": "右碎髮1-2",
+      "body": "glb_body_215",
+      "joint": "glb_joint_215",
+      "parent": 214
+    },
+    {
+      "index": 216,
+      "name": "右碎髮1-3",
+      "body": "glb_body_216",
+      "joint": "glb_joint_216",
+      "parent": 215
+    },
+    {
+      "index": 217,
+      "name": "右側髪1",
+      "body": "glb_body_217",
+      "joint": "glb_joint_217",
+      "parent": 16
+    },
+    {
+      "index": 218,
+      "name": "右側髪2",
+      "body": "glb_body_218",
+      "joint": "glb_joint_218",
+      "parent": 217
+    },
+    {
+      "index": 219,
+      "name": "右側髪3",
+      "body": "glb_body_219",
+      "joint": "glb_joint_219",
+      "parent": 218
+    },
+    {
+      "index": 220,
+      "name": "右側髪4",
+      "body": "glb_body_220",
+      "joint": "glb_joint_220",
+      "parent": 219
+    },
+    {
+      "index": 221,
+      "name": "右側髪5",
+      "body": "glb_body_221",
+      "joint": "glb_joint_221",
+      "parent": 220
+    },
+    {
+      "index": 222,
+      "name": "右側髪1-1",
+      "body": "glb_body_222",
+      "joint": "glb_joint_222",
+      "parent": 217
+    },
+    {
+      "index": 223,
+      "name": "右側髪1-2",
+      "body": "glb_body_223",
+      "joint": "glb_joint_223",
+      "parent": 222
+    },
+    {
+      "index": 224,
+      "name": "右側髪1-3",
+      "body": "glb_body_224",
+      "joint": "glb_joint_224",
+      "parent": 223
+    },
+    {
+      "index": 225,
+      "name": "左側髪二1",
+      "body": "glb_body_225",
+      "joint": "glb_joint_225",
+      "parent": 16
+    },
+    {
+      "index": 226,
+      "name": "左側髪二2",
+      "body": "glb_body_226",
+      "joint": "glb_joint_226",
+      "parent": 225
+    },
+    {
+      "index": 227,
+      "name": "左側髪二3",
+      "body": "glb_body_227",
+      "joint": "glb_joint_227",
+      "parent": 226
+    },
+    {
+      "index": 228,
+      "name": "左側髪二4",
+      "body": "glb_body_228",
+      "joint": "glb_joint_228",
+      "parent": 227
+    },
+    {
+      "index": 229,
+      "name": "劉海一1",
+      "body": "glb_body_229",
+      "joint": "glb_joint_229",
+      "parent": 16
+    },
+    {
+      "index": 230,
+      "name": "劉海一2",
+      "body": "glb_body_230",
+      "joint": "glb_joint_230",
+      "parent": 229
+    },
+    {
+      "index": 231,
+      "name": "劉海一3",
+      "body": "glb_body_231",
+      "joint": "glb_joint_231",
+      "parent": 230
+    },
+    {
+      "index": 232,
+      "name": "劉海二1",
+      "body": "glb_body_232",
+      "joint": "glb_joint_232",
+      "parent": 16
+    },
+    {
+      "index": 233,
+      "name": "劉海二2",
+      "body": "glb_body_233",
+      "joint": "glb_joint_233",
+      "parent": 232
+    },
+    {
+      "index": 234,
+      "name": "劉海二3",
+      "body": "glb_body_234",
+      "joint": "glb_joint_234",
+      "parent": 233
+    },
+    {
+      "index": 235,
+      "name": "左側髪1",
+      "body": "glb_body_235",
+      "joint": "glb_joint_235",
+      "parent": 16
+    },
+    {
+      "index": 236,
+      "name": "左側髪2",
+      "body": "glb_body_236",
+      "joint": "glb_joint_236",
+      "parent": 235
+    },
+    {
+      "index": 237,
+      "name": "左側髪3",
+      "body": "glb_body_237",
+      "joint": "glb_joint_237",
+      "parent": 236
+    },
+    {
+      "index": 238,
+      "name": "左側髪三4",
+      "body": "glb_body_238",
+      "joint": "glb_joint_238",
+      "parent": 237
+    },
+    {
+      "index": 239,
+      "name": "右側髪三1",
+      "body": "glb_body_239",
+      "joint": "glb_joint_239",
+      "parent": 16
+    },
+    {
+      "index": 240,
+      "name": "右側髪三2",
+      "body": "glb_body_240",
+      "joint": "glb_joint_240",
+      "parent": 239
+    },
+    {
+      "index": 241,
+      "name": "右側髪三3",
+      "body": "glb_body_241",
+      "joint": "glb_joint_241",
+      "parent": 240
+    },
+    {
+      "index": 242,
+      "name": "右側髪三4",
+      "body": "glb_body_242",
+      "joint": "glb_joint_242",
+      "parent": 241
+    },
+    {
+      "index": 243,
+      "name": "左側髪三1",
+      "body": "glb_body_243",
+      "joint": "glb_joint_243",
+      "parent": 16
+    },
+    {
+      "index": 244,
+      "name": "左側髪三2",
+      "body": "glb_body_244",
+      "joint": "glb_joint_244",
+      "parent": 243
+    },
+    {
+      "index": 245,
+      "name": "左側髪三3",
+      "body": "glb_body_245",
+      "joint": "glb_joint_245",
+      "parent": 244
+    },
+    {
+      "index": 246,
+      "name": "左碎髮1-1",
+      "body": "glb_body_246",
+      "joint": "glb_joint_246",
+      "parent": 16
+    },
+    {
+      "index": 247,
+      "name": "左碎髮1-2",
+      "body": "glb_body_247",
+      "joint": "glb_joint_247",
+      "parent": 246
+    },
+    {
+      "index": 248,
+      "name": "領帶1",
+      "body": "glb_body_248",
+      "joint": "glb_joint_248",
+      "parent": 15
+    },
+    {
+      "index": 249,
+      "name": "領帶2",
+      "body": "glb_body_249",
+      "joint": "glb_joint_249",
+      "parent": 14
+    },
+    {
+      "index": 250,
+      "name": "領帶3",
+      "body": "glb_body_250",
+      "joint": "glb_joint_250",
+      "parent": 249
+    },
+    {
+      "index": 251,
+      "name": "領帶4",
+      "body": "glb_body_251",
+      "joint": "glb_joint_251",
+      "parent": 250
+    },
+    {
+      "index": 252,
+      "name": "領帶5",
+      "body": "glb_body_252",
+      "joint": "glb_joint_252",
+      "parent": 251
+    },
+    {
+      "index": 253,
+      "name": "右胸",
+      "body": "glb_body_253",
+      "joint": "glb_joint_253",
+      "parent": 14
+    },
+    {
+      "index": 254,
+      "name": "右胸１",
+      "body": "glb_body_254",
+      "joint": "glb_joint_254",
+      "parent": 253
+    },
+    {
+      "index": 255,
+      "name": "右胸２",
+      "body": "glb_body_255",
+      "joint": "glb_joint_255",
+      "parent": 254
+    },
+    {
+      "index": 256,
+      "name": "左胸",
+      "body": "glb_body_256",
+      "joint": "glb_joint_256",
+      "parent": 14
+    },
+    {
+      "index": 257,
+      "name": "左胸１",
+      "body": "glb_body_257",
+      "joint": "glb_joint_257",
+      "parent": 256
+    },
+    {
+      "index": 258,
+      "name": "左胸２",
+      "body": "glb_body_258",
+      "joint": "glb_joint_258",
+      "parent": 257
+    },
+    {
+      "index": 259,
+      "name": "後鑰匙1",
+      "body": "glb_body_259",
+      "joint": "glb_joint_259",
+      "parent": 14
+    },
+    {
+      "index": 260,
+      "name": "後鑰匙2",
+      "body": "glb_body_260",
+      "joint": "glb_joint_260",
+      "parent": 259
+    },
+    {
+      "index": 261,
+      "name": "前鑰匙1",
+      "body": "glb_body_261",
+      "joint": "glb_joint_261",
+      "parent": 14
+    },
+    {
+      "index": 262,
+      "name": "前鑰匙2",
+      "body": "glb_body_262",
+      "joint": "glb_joint_262",
+      "parent": 261
+    },
+    {
+      "index": 263,
+      "name": "下擺_0_0",
+      "body": "glb_body_263",
+      "joint": "glb_joint_263",
+      "parent": 11
+    },
+    {
+      "index": 264,
+      "name": "下擺_0_1",
+      "body": "glb_body_264",
+      "joint": "glb_joint_264",
+      "parent": 11
+    },
+    {
+      "index": 265,
+      "name": "下擺_0_2",
+      "body": "glb_body_265",
+      "joint": "glb_joint_265",
+      "parent": 11
+    },
+    {
+      "index": 266,
+      "name": "下擺_0_3",
+      "body": "glb_body_266",
+      "joint": "glb_joint_266",
+      "parent": 11
+    },
+    {
+      "index": 267,
+      "name": "下擺_0_4",
+      "body": "glb_body_267",
+      "joint": "glb_joint_267",
+      "parent": 11
+    },
+    {
+      "index": 268,
+      "name": "下擺_0_5",
+      "body": "glb_body_268",
+      "joint": "glb_joint_268",
+      "parent": 11
+    },
+    {
+      "index": 269,
+      "name": "下擺_0_6",
+      "body": "glb_body_269",
+      "joint": "glb_joint_269",
+      "parent": 11
+    },
+    {
+      "index": 270,
+      "name": "下擺_0_7",
+      "body": "glb_body_270",
+      "joint": "glb_joint_270",
+      "parent": 11
+    },
+    {
+      "index": 271,
+      "name": "下擺_0_8",
+      "body": "glb_body_271",
+      "joint": "glb_joint_271",
+      "parent": 11
+    },
+    {
+      "index": 272,
+      "name": "下擺_0_9",
+      "body": "glb_body_272",
+      "joint": "glb_joint_272",
+      "parent": 11
+    },
+    {
+      "index": 273,
+      "name": "下擺_0_10",
+      "body": "glb_body_273",
+      "joint": "glb_joint_273",
+      "parent": 11
+    },
+    {
+      "index": 274,
+      "name": "下擺_0_11",
+      "body": "glb_body_274",
+      "joint": "glb_joint_274",
+      "parent": 11
+    },
+    {
+      "index": 275,
+      "name": "下擺_0_12",
+      "body": "glb_body_275",
+      "joint": "glb_joint_275",
+      "parent": 11
+    },
+    {
+      "index": 276,
+      "name": "下擺_0_13",
+      "body": "glb_body_276",
+      "joint": "glb_joint_276",
+      "parent": 11
+    },
+    {
+      "index": 277,
+      "name": "下擺_0_14",
+      "body": "glb_body_277",
+      "joint": "glb_joint_277",
+      "parent": 11
+    },
+    {
+      "index": 278,
+      "name": "下擺_0_15",
+      "body": "glb_body_278",
+      "joint": "glb_joint_278",
+      "parent": 11
+    },
+    {
+      "index": 279,
+      "name": "下擺_1_0",
+      "body": "glb_body_279",
+      "joint": "glb_joint_279",
+      "parent": 263
+    },
+    {
+      "index": 280,
+      "name": "下擺_1_1",
+      "body": "glb_body_280",
+      "joint": "glb_joint_280",
+      "parent": 264
+    },
+    {
+      "index": 281,
+      "name": "下擺_1_2",
+      "body": "glb_body_281",
+      "joint": "glb_joint_281",
+      "parent": 265
+    },
+    {
+      "index": 282,
+      "name": "下擺_1_3",
+      "body": "glb_body_282",
+      "joint": "glb_joint_282",
+      "parent": 266
+    },
+    {
+      "index": 283,
+      "name": "下擺_1_4",
+      "body": "glb_body_283",
+      "joint": "glb_joint_283",
+      "parent": 267
+    },
+    {
+      "index": 284,
+      "name": "下擺_1_5",
+      "body": "glb_body_284",
+      "joint": "glb_joint_284",
+      "parent": 268
+    },
+    {
+      "index": 285,
+      "name": "下擺_1_6",
+      "body": "glb_body_285",
+      "joint": "glb_joint_285",
+      "parent": 269
+    },
+    {
+      "index": 286,
+      "name": "下擺_1_7",
+      "body": "glb_body_286",
+      "joint": "glb_joint_286",
+      "parent": 270
+    },
+    {
+      "index": 287,
+      "name": "下擺_1_8",
+      "body": "glb_body_287",
+      "joint": "glb_joint_287",
+      "parent": 271
+    },
+    {
+      "index": 288,
+      "name": "下擺_1_9",
+      "body": "glb_body_288",
+      "joint": "glb_joint_288",
+      "parent": 272
+    },
+    {
+      "index": 289,
+      "name": "下擺_1_10",
+      "body": "glb_body_289",
+      "joint": "glb_joint_289",
+      "parent": 273
+    },
+    {
+      "index": 290,
+      "name": "下擺_1_11",
+      "body": "glb_body_290",
+      "joint": "glb_joint_290",
+      "parent": 274
+    },
+    {
+      "index": 291,
+      "name": "下擺_1_12",
+      "body": "glb_body_291",
+      "joint": "glb_joint_291",
+      "parent": 275
+    },
+    {
+      "index": 292,
+      "name": "下擺_1_13",
+      "body": "glb_body_292",
+      "joint": "glb_joint_292",
+      "parent": 276
+    },
+    {
+      "index": 293,
+      "name": "下擺_1_14",
+      "body": "glb_body_293",
+      "joint": "glb_joint_293",
+      "parent": 277
+    },
+    {
+      "index": 294,
+      "name": "下擺_1_15",
+      "body": "glb_body_294",
+      "joint": "glb_joint_294",
+      "parent": 278
+    },
+    {
+      "index": 295,
+      "name": "下擺_2_0",
+      "body": "glb_body_295",
+      "joint": "glb_joint_295",
+      "parent": 279
+    },
+    {
+      "index": 296,
+      "name": "下擺_2_1",
+      "body": "glb_body_296",
+      "joint": "glb_joint_296",
+      "parent": 280
+    },
+    {
+      "index": 297,
+      "name": "下擺_2_2",
+      "body": "glb_body_297",
+      "joint": "glb_joint_297",
+      "parent": 281
+    },
+    {
+      "index": 298,
+      "name": "下擺_2_3",
+      "body": "glb_body_298",
+      "joint": "glb_joint_298",
+      "parent": 282
+    },
+    {
+      "index": 299,
+      "name": "下擺_2_4",
+      "body": "glb_body_299",
+      "joint": "glb_joint_299",
+      "parent": 283
+    },
+    {
+      "index": 300,
+      "name": "下擺_2_5",
+      "body": "glb_body_300",
+      "joint": "glb_joint_300",
+      "parent": 284
+    },
+    {
+      "index": 301,
+      "name": "下擺_2_6",
+      "body": "glb_body_301",
+      "joint": "glb_joint_301",
+      "parent": 285
+    },
+    {
+      "index": 302,
+      "name": "下擺_2_7",
+      "body": "glb_body_302",
+      "joint": "glb_joint_302",
+      "parent": 286
+    },
+    {
+      "index": 303,
+      "name": "下擺_2_8",
+      "body": "glb_body_303",
+      "joint": "glb_joint_303",
+      "parent": 287
+    },
+    {
+      "index": 304,
+      "name": "下擺_2_9",
+      "body": "glb_body_304",
+      "joint": "glb_joint_304",
+      "parent": 288
+    },
+    {
+      "index": 305,
+      "name": "下擺_2_10",
+      "body": "glb_body_305",
+      "joint": "glb_joint_305",
+      "parent": 289
+    },
+    {
+      "index": 306,
+      "name": "下擺_2_11",
+      "body": "glb_body_306",
+      "joint": "glb_joint_306",
+      "parent": 290
+    },
+    {
+      "index": 307,
+      "name": "下擺_2_12",
+      "body": "glb_body_307",
+      "joint": "glb_joint_307",
+      "parent": 291
+    },
+    {
+      "index": 308,
+      "name": "下擺_2_13",
+      "body": "glb_body_308",
+      "joint": "glb_joint_308",
+      "parent": 292
+    },
+    {
+      "index": 309,
+      "name": "下擺_2_14",
+      "body": "glb_body_309",
+      "joint": "glb_joint_309",
+      "parent": 293
+    },
+    {
+      "index": 310,
+      "name": "下擺_2_15",
+      "body": "glb_body_310",
+      "joint": "glb_joint_310",
+      "parent": 294
+    },
+    {
+      "index": 311,
+      "name": "下擺_3_0",
+      "body": "glb_body_311",
+      "joint": "glb_joint_311",
+      "parent": 295
+    },
+    {
+      "index": 312,
+      "name": "下擺_3_1",
+      "body": "glb_body_312",
+      "joint": "glb_joint_312",
+      "parent": 296
+    },
+    {
+      "index": 313,
+      "name": "下擺_3_2",
+      "body": "glb_body_313",
+      "joint": "glb_joint_313",
+      "parent": 297
+    },
+    {
+      "index": 314,
+      "name": "下擺_3_3",
+      "body": "glb_body_314",
+      "joint": "glb_joint_314",
+      "parent": 298
+    },
+    {
+      "index": 315,
+      "name": "下擺_3_4",
+      "body": "glb_body_315",
+      "joint": "glb_joint_315",
+      "parent": 299
+    },
+    {
+      "index": 316,
+      "name": "下擺_3_5",
+      "body": "glb_body_316",
+      "joint": "glb_joint_316",
+      "parent": 300
+    },
+    {
+      "index": 317,
+      "name": "下擺_3_6",
+      "body": "glb_body_317",
+      "joint": "glb_joint_317",
+      "parent": 301
+    },
+    {
+      "index": 318,
+      "name": "下擺_3_7",
+      "body": "glb_body_318",
+      "joint": "glb_joint_318",
+      "parent": 302
+    },
+    {
+      "index": 319,
+      "name": "下擺_3_8",
+      "body": "glb_body_319",
+      "joint": "glb_joint_319",
+      "parent": 303
+    },
+    {
+      "index": 320,
+      "name": "下擺_3_9",
+      "body": "glb_body_320",
+      "joint": "glb_joint_320",
+      "parent": 304
+    },
+    {
+      "index": 321,
+      "name": "下擺_3_10",
+      "body": "glb_body_321",
+      "joint": "glb_joint_321",
+      "parent": 305
+    },
+    {
+      "index": 322,
+      "name": "下擺_3_11",
+      "body": "glb_body_322",
+      "joint": "glb_joint_322",
+      "parent": 306
+    },
+    {
+      "index": 323,
+      "name": "下擺_3_12",
+      "body": "glb_body_323",
+      "joint": "glb_joint_323",
+      "parent": 307
+    },
+    {
+      "index": 324,
+      "name": "下擺_3_13",
+      "body": "glb_body_324",
+      "joint": "glb_joint_324",
+      "parent": 308
+    },
+    {
+      "index": 325,
+      "name": "下擺_3_14",
+      "body": "glb_body_325",
+      "joint": "glb_joint_325",
+      "parent": 309
+    },
+    {
+      "index": 326,
+      "name": "下擺_3_15",
+      "body": "glb_body_326",
+      "joint": "glb_joint_326",
+      "parent": 310
+    },
+    {
+      "index": 327,
+      "name": "下擺_4_0",
+      "body": "glb_body_327",
+      "joint": "glb_joint_327",
+      "parent": 311
+    },
+    {
+      "index": 328,
+      "name": "下擺_4_1",
+      "body": "glb_body_328",
+      "joint": "glb_joint_328",
+      "parent": 312
+    },
+    {
+      "index": 329,
+      "name": "下擺_4_2",
+      "body": "glb_body_329",
+      "joint": "glb_joint_329",
+      "parent": 313
+    },
+    {
+      "index": 330,
+      "name": "下擺_4_3",
+      "body": "glb_body_330",
+      "joint": "glb_joint_330",
+      "parent": 314
+    },
+    {
+      "index": 331,
+      "name": "下擺_4_4",
+      "body": "glb_body_331",
+      "joint": "glb_joint_331",
+      "parent": 315
+    },
+    {
+      "index": 332,
+      "name": "下擺_4_5",
+      "body": "glb_body_332",
+      "joint": "glb_joint_332",
+      "parent": 316
+    },
+    {
+      "index": 333,
+      "name": "下擺_4_6",
+      "body": "glb_body_333",
+      "joint": "glb_joint_333",
+      "parent": 317
+    },
+    {
+      "index": 334,
+      "name": "下擺_4_7",
+      "body": "glb_body_334",
+      "joint": "glb_joint_334",
+      "parent": 318
+    },
+    {
+      "index": 335,
+      "name": "下擺_4_8",
+      "body": "glb_body_335",
+      "joint": "glb_joint_335",
+      "parent": 319
+    },
+    {
+      "index": 336,
+      "name": "下擺_4_9",
+      "body": "glb_body_336",
+      "joint": "glb_joint_336",
+      "parent": 320
+    },
+    {
+      "index": 337,
+      "name": "下擺_4_10",
+      "body": "glb_body_337",
+      "joint": "glb_joint_337",
+      "parent": 321
+    },
+    {
+      "index": 338,
+      "name": "下擺_4_11",
+      "body": "glb_body_338",
+      "joint": "glb_joint_338",
+      "parent": 322
+    },
+    {
+      "index": 339,
+      "name": "下擺_4_12",
+      "body": "glb_body_339",
+      "joint": "glb_joint_339",
+      "parent": 323
+    },
+    {
+      "index": 340,
+      "name": "下擺_4_13",
+      "body": "glb_body_340",
+      "joint": "glb_joint_340",
+      "parent": 324
+    },
+    {
+      "index": 341,
+      "name": "下擺_4_14",
+      "body": "glb_body_341",
+      "joint": "glb_joint_341",
+      "parent": 325
+    },
+    {
+      "index": 342,
+      "name": "下擺_4_15",
+      "body": "glb_body_342",
+      "joint": "glb_joint_342",
+      "parent": 326
+    },
+    {
+      "index": 343,
+      "name": "下擺_5_0",
+      "body": "glb_body_343",
+      "joint": "glb_joint_343",
+      "parent": 327
+    },
+    {
+      "index": 344,
+      "name": "下擺_5_1",
+      "body": "glb_body_344",
+      "joint": "glb_joint_344",
+      "parent": 328
+    },
+    {
+      "index": 345,
+      "name": "下擺_5_2",
+      "body": "glb_body_345",
+      "joint": "glb_joint_345",
+      "parent": 329
+    },
+    {
+      "index": 346,
+      "name": "下擺_5_3",
+      "body": "glb_body_346",
+      "joint": "glb_joint_346",
+      "parent": 330
+    },
+    {
+      "index": 347,
+      "name": "下擺_5_4",
+      "body": "glb_body_347",
+      "joint": "glb_joint_347",
+      "parent": 331
+    },
+    {
+      "index": 348,
+      "name": "下擺_5_5",
+      "body": "glb_body_348",
+      "joint": "glb_joint_348",
+      "parent": 332
+    },
+    {
+      "index": 349,
+      "name": "下擺_5_6",
+      "body": "glb_body_349",
+      "joint": "glb_joint_349",
+      "parent": 333
+    },
+    {
+      "index": 350,
+      "name": "下擺_5_7",
+      "body": "glb_body_350",
+      "joint": "glb_joint_350",
+      "parent": 334
+    },
+    {
+      "index": 351,
+      "name": "下擺_5_8",
+      "body": "glb_body_351",
+      "joint": "glb_joint_351",
+      "parent": 335
+    },
+    {
+      "index": 352,
+      "name": "下擺_5_9",
+      "body": "glb_body_352",
+      "joint": "glb_joint_352",
+      "parent": 336
+    },
+    {
+      "index": 353,
+      "name": "下擺_5_10",
+      "body": "glb_body_353",
+      "joint": "glb_joint_353",
+      "parent": 337
+    },
+    {
+      "index": 354,
+      "name": "下擺_5_11",
+      "body": "glb_body_354",
+      "joint": "glb_joint_354",
+      "parent": 338
+    },
+    {
+      "index": 355,
+      "name": "下擺_5_12",
+      "body": "glb_body_355",
+      "joint": "glb_joint_355",
+      "parent": 339
+    },
+    {
+      "index": 356,
+      "name": "下擺_5_13",
+      "body": "glb_body_356",
+      "joint": "glb_joint_356",
+      "parent": 340
+    },
+    {
+      "index": 357,
+      "name": "下擺_5_14",
+      "body": "glb_body_357",
+      "joint": "glb_joint_357",
+      "parent": 341
+    },
+    {
+      "index": 358,
+      "name": "下擺_5_15",
+      "body": "glb_body_358",
+      "joint": "glb_joint_358",
+      "parent": 342
+    },
+    {
+      "index": 359,
+      "name": "下擺_6_0",
+      "body": "glb_body_359",
+      "joint": "glb_joint_359",
+      "parent": 343
+    },
+    {
+      "index": 360,
+      "name": "下擺_6_1",
+      "body": "glb_body_360",
+      "joint": "glb_joint_360",
+      "parent": 344
+    },
+    {
+      "index": 361,
+      "name": "下擺_6_2",
+      "body": "glb_body_361",
+      "joint": "glb_joint_361",
+      "parent": 345
+    },
+    {
+      "index": 362,
+      "name": "下擺_6_3",
+      "body": "glb_body_362",
+      "joint": "glb_joint_362",
+      "parent": 346
+    },
+    {
+      "index": 363,
+      "name": "下擺_6_4",
+      "body": "glb_body_363",
+      "joint": "glb_joint_363",
+      "parent": 347
+    },
+    {
+      "index": 364,
+      "name": "下擺_6_5",
+      "body": "glb_body_364",
+      "joint": "glb_joint_364",
+      "parent": 348
+    },
+    {
+      "index": 365,
+      "name": "下擺_6_6",
+      "body": "glb_body_365",
+      "joint": "glb_joint_365",
+      "parent": 349
+    },
+    {
+      "index": 366,
+      "name": "下擺_6_7",
+      "body": "glb_body_366",
+      "joint": "glb_joint_366",
+      "parent": 350
+    },
+    {
+      "index": 367,
+      "name": "下擺_6_8",
+      "body": "glb_body_367",
+      "joint": "glb_joint_367",
+      "parent": 351
+    },
+    {
+      "index": 368,
+      "name": "下擺_6_9",
+      "body": "glb_body_368",
+      "joint": "glb_joint_368",
+      "parent": 352
+    },
+    {
+      "index": 369,
+      "name": "下擺_6_10",
+      "body": "glb_body_369",
+      "joint": "glb_joint_369",
+      "parent": 353
+    },
+    {
+      "index": 370,
+      "name": "下擺_6_11",
+      "body": "glb_body_370",
+      "joint": "glb_joint_370",
+      "parent": 354
+    },
+    {
+      "index": 371,
+      "name": "下擺_6_12",
+      "body": "glb_body_371",
+      "joint": "glb_joint_371",
+      "parent": 355
+    },
+    {
+      "index": 372,
+      "name": "下擺_6_13",
+      "body": "glb_body_372",
+      "joint": "glb_joint_372",
+      "parent": 356
+    },
+    {
+      "index": 373,
+      "name": "下擺_6_14",
+      "body": "glb_body_373",
+      "joint": "glb_joint_373",
+      "parent": 357
+    },
+    {
+      "index": 374,
+      "name": "下擺_6_15",
+      "body": "glb_body_374",
+      "joint": "glb_joint_374",
+      "parent": 358
+    },
+    {
+      "index": 375,
+      "name": "下擺_7_0",
+      "body": "glb_body_375",
+      "joint": "glb_joint_375",
+      "parent": 359
+    },
+    {
+      "index": 376,
+      "name": "下擺_7_1",
+      "body": "glb_body_376",
+      "joint": "glb_joint_376",
+      "parent": 360
+    },
+    {
+      "index": 377,
+      "name": "下擺_7_2",
+      "body": "glb_body_377",
+      "joint": "glb_joint_377",
+      "parent": 361
+    },
+    {
+      "index": 378,
+      "name": "下擺_7_3",
+      "body": "glb_body_378",
+      "joint": "glb_joint_378",
+      "parent": 362
+    },
+    {
+      "index": 379,
+      "name": "下擺_7_4",
+      "body": "glb_body_379",
+      "joint": "glb_joint_379",
+      "parent": 363
+    },
+    {
+      "index": 380,
+      "name": "下擺_7_5",
+      "body": "glb_body_380",
+      "joint": "glb_joint_380",
+      "parent": 364
+    },
+    {
+      "index": 381,
+      "name": "下擺_7_6",
+      "body": "glb_body_381",
+      "joint": "glb_joint_381",
+      "parent": 365
+    },
+    {
+      "index": 382,
+      "name": "下擺_7_7",
+      "body": "glb_body_382",
+      "joint": "glb_joint_382",
+      "parent": 366
+    },
+    {
+      "index": 383,
+      "name": "下擺_7_8",
+      "body": "glb_body_383",
+      "joint": "glb_joint_383",
+      "parent": 367
+    },
+    {
+      "index": 384,
+      "name": "下擺_7_9",
+      "body": "glb_body_384",
+      "joint": "glb_joint_384",
+      "parent": 368
+    },
+    {
+      "index": 385,
+      "name": "下擺_7_10",
+      "body": "glb_body_385",
+      "joint": "glb_joint_385",
+      "parent": 369
+    },
+    {
+      "index": 386,
+      "name": "下擺_7_11",
+      "body": "glb_body_386",
+      "joint": "glb_joint_386",
+      "parent": 370
+    },
+    {
+      "index": 387,
+      "name": "下擺_7_12",
+      "body": "glb_body_387",
+      "joint": "glb_joint_387",
+      "parent": 371
+    },
+    {
+      "index": 388,
+      "name": "下擺_7_13",
+      "body": "glb_body_388",
+      "joint": "glb_joint_388",
+      "parent": 372
+    },
+    {
+      "index": 389,
+      "name": "下擺_7_14",
+      "body": "glb_body_389",
+      "joint": "glb_joint_389",
+      "parent": 373
+    },
+    {
+      "index": 390,
+      "name": "下擺_7_15",
+      "body": "glb_body_390",
+      "joint": "glb_joint_390",
+      "parent": 374
+    },
+    {
+      "index": 391,
+      "name": "下擺_8_0",
+      "body": "glb_body_391",
+      "joint": "glb_joint_391",
+      "parent": 375
+    },
+    {
+      "index": 392,
+      "name": "下擺_8_1",
+      "body": "glb_body_392",
+      "joint": "glb_joint_392",
+      "parent": 376
+    },
+    {
+      "index": 393,
+      "name": "下擺_8_2",
+      "body": "glb_body_393",
+      "joint": "glb_joint_393",
+      "parent": 377
+    },
+    {
+      "index": 394,
+      "name": "下擺_8_3",
+      "body": "glb_body_394",
+      "joint": "glb_joint_394",
+      "parent": 378
+    },
+    {
+      "index": 395,
+      "name": "下擺_8_4",
+      "body": "glb_body_395",
+      "joint": "glb_joint_395",
+      "parent": 379
+    },
+    {
+      "index": 396,
+      "name": "下擺_8_5",
+      "body": "glb_body_396",
+      "joint": "glb_joint_396",
+      "parent": 380
+    },
+    {
+      "index": 397,
+      "name": "下擺_8_6",
+      "body": "glb_body_397",
+      "joint": "glb_joint_397",
+      "parent": 381
+    },
+    {
+      "index": 398,
+      "name": "下擺_8_7",
+      "body": "glb_body_398",
+      "joint": "glb_joint_398",
+      "parent": 382
+    },
+    {
+      "index": 399,
+      "name": "下擺_8_8",
+      "body": "glb_body_399",
+      "joint": "glb_joint_399",
+      "parent": 383
+    },
+    {
+      "index": 400,
+      "name": "下擺_8_9",
+      "body": "glb_body_400",
+      "joint": "glb_joint_400",
+      "parent": 384
+    },
+    {
+      "index": 401,
+      "name": "下擺_8_10",
+      "body": "glb_body_401",
+      "joint": "glb_joint_401",
+      "parent": 385
+    },
+    {
+      "index": 402,
+      "name": "下擺_8_11",
+      "body": "glb_body_402",
+      "joint": "glb_joint_402",
+      "parent": 386
+    },
+    {
+      "index": 403,
+      "name": "下擺_8_12",
+      "body": "glb_body_403",
+      "joint": "glb_joint_403",
+      "parent": 387
+    },
+    {
+      "index": 404,
+      "name": "下擺_8_13",
+      "body": "glb_body_404",
+      "joint": "glb_joint_404",
+      "parent": 388
+    },
+    {
+      "index": 405,
+      "name": "下擺_8_14",
+      "body": "glb_body_405",
+      "joint": "glb_joint_405",
+      "parent": 389
+    },
+    {
+      "index": 406,
+      "name": "下擺_8_15",
+      "body": "glb_body_406",
+      "joint": "glb_joint_406",
+      "parent": 390
+    },
+    {
+      "index": 407,
+      "name": "下擺_9_0",
+      "body": "glb_body_407",
+      "joint": "glb_joint_407",
+      "parent": 391
+    },
+    {
+      "index": 408,
+      "name": "下擺_9_1",
+      "body": "glb_body_408",
+      "joint": "glb_joint_408",
+      "parent": 392
+    },
+    {
+      "index": 409,
+      "name": "下擺_9_2",
+      "body": "glb_body_409",
+      "joint": "glb_joint_409",
+      "parent": 393
+    },
+    {
+      "index": 410,
+      "name": "下擺_9_3",
+      "body": "glb_body_410",
+      "joint": "glb_joint_410",
+      "parent": 394
+    },
+    {
+      "index": 411,
+      "name": "下擺_9_4",
+      "body": "glb_body_411",
+      "joint": "glb_joint_411",
+      "parent": 395
+    },
+    {
+      "index": 412,
+      "name": "下擺_9_5",
+      "body": "glb_body_412",
+      "joint": "glb_joint_412",
+      "parent": 396
+    },
+    {
+      "index": 413,
+      "name": "下擺_9_6",
+      "body": "glb_body_413",
+      "joint": "glb_joint_413",
+      "parent": 397
+    },
+    {
+      "index": 414,
+      "name": "下擺_9_7",
+      "body": "glb_body_414",
+      "joint": "glb_joint_414",
+      "parent": 398
+    },
+    {
+      "index": 415,
+      "name": "下擺_9_8",
+      "body": "glb_body_415",
+      "joint": "glb_joint_415",
+      "parent": 399
+    },
+    {
+      "index": 416,
+      "name": "下擺_9_9",
+      "body": "glb_body_416",
+      "joint": "glb_joint_416",
+      "parent": 400
+    },
+    {
+      "index": 417,
+      "name": "下擺_9_10",
+      "body": "glb_body_417",
+      "joint": "glb_joint_417",
+      "parent": 401
+    },
+    {
+      "index": 418,
+      "name": "下擺_9_11",
+      "body": "glb_body_418",
+      "joint": "glb_joint_418",
+      "parent": 402
+    },
+    {
+      "index": 419,
+      "name": "下擺_9_12",
+      "body": "glb_body_419",
+      "joint": "glb_joint_419",
+      "parent": 403
+    },
+    {
+      "index": 420,
+      "name": "下擺_9_13",
+      "body": "glb_body_420",
+      "joint": "glb_joint_420",
+      "parent": 404
+    },
+    {
+      "index": 421,
+      "name": "下擺_9_14",
+      "body": "glb_body_421",
+      "joint": "glb_joint_421",
+      "parent": 405
+    },
+    {
+      "index": 422,
+      "name": "下擺_9_15",
+      "body": "glb_body_422",
+      "joint": "glb_joint_422",
+      "parent": 406
+    },
+    {
+      "index": 423,
+      "name": "下擺_10_0",
+      "body": "glb_body_423",
+      "joint": "glb_joint_423",
+      "parent": 407
+    },
+    {
+      "index": 424,
+      "name": "下擺_10_1",
+      "body": "glb_body_424",
+      "joint": "glb_joint_424",
+      "parent": 408
+    },
+    {
+      "index": 425,
+      "name": "下擺_10_2",
+      "body": "glb_body_425",
+      "joint": "glb_joint_425",
+      "parent": 409
+    },
+    {
+      "index": 426,
+      "name": "下擺_10_3",
+      "body": "glb_body_426",
+      "joint": "glb_joint_426",
+      "parent": 410
+    },
+    {
+      "index": 427,
+      "name": "下擺_10_4",
+      "body": "glb_body_427",
+      "joint": "glb_joint_427",
+      "parent": 411
+    },
+    {
+      "index": 428,
+      "name": "下擺_10_5",
+      "body": "glb_body_428",
+      "joint": "glb_joint_428",
+      "parent": 412
+    },
+    {
+      "index": 429,
+      "name": "下擺_10_6",
+      "body": "glb_body_429",
+      "joint": "glb_joint_429",
+      "parent": 413
+    },
+    {
+      "index": 430,
+      "name": "下擺_10_7",
+      "body": "glb_body_430",
+      "joint": "glb_joint_430",
+      "parent": 414
+    },
+    {
+      "index": 431,
+      "name": "下擺_10_8",
+      "body": "glb_body_431",
+      "joint": "glb_joint_431",
+      "parent": 415
+    },
+    {
+      "index": 432,
+      "name": "下擺_10_9",
+      "body": "glb_body_432",
+      "joint": "glb_joint_432",
+      "parent": 416
+    },
+    {
+      "index": 433,
+      "name": "下擺_10_10",
+      "body": "glb_body_433",
+      "joint": "glb_joint_433",
+      "parent": 417
+    },
+    {
+      "index": 434,
+      "name": "下擺_10_11",
+      "body": "glb_body_434",
+      "joint": "glb_joint_434",
+      "parent": 418
+    },
+    {
+      "index": 435,
+      "name": "下擺_10_12",
+      "body": "glb_body_435",
+      "joint": "glb_joint_435",
+      "parent": 419
+    },
+    {
+      "index": 436,
+      "name": "下擺_10_13",
+      "body": "glb_body_436",
+      "joint": "glb_joint_436",
+      "parent": 420
+    },
+    {
+      "index": 437,
+      "name": "下擺_10_14",
+      "body": "glb_body_437",
+      "joint": "glb_joint_437",
+      "parent": 421
+    },
+    {
+      "index": 438,
+      "name": "下擺_10_15",
+      "body": "glb_body_438",
+      "joint": "glb_joint_438",
+      "parent": 422
+    },
+    {
+      "index": 439,
+      "name": "下擺_11_0",
+      "body": "glb_body_439",
+      "joint": "glb_joint_439",
+      "parent": 423
+    },
+    {
+      "index": 440,
+      "name": "下擺_11_1",
+      "body": "glb_body_440",
+      "joint": "glb_joint_440",
+      "parent": 424
+    },
+    {
+      "index": 441,
+      "name": "下擺_11_2",
+      "body": "glb_body_441",
+      "joint": "glb_joint_441",
+      "parent": 425
+    },
+    {
+      "index": 442,
+      "name": "下擺_11_3",
+      "body": "glb_body_442",
+      "joint": "glb_joint_442",
+      "parent": 426
+    },
+    {
+      "index": 443,
+      "name": "下擺_11_4",
+      "body": "glb_body_443",
+      "joint": "glb_joint_443",
+      "parent": 427
+    },
+    {
+      "index": 444,
+      "name": "下擺_11_5",
+      "body": "glb_body_444",
+      "joint": "glb_joint_444",
+      "parent": 428
+    },
+    {
+      "index": 445,
+      "name": "下擺_11_6",
+      "body": "glb_body_445",
+      "joint": "glb_joint_445",
+      "parent": 429
+    },
+    {
+      "index": 446,
+      "name": "下擺_11_7",
+      "body": "glb_body_446",
+      "joint": "glb_joint_446",
+      "parent": 430
+    },
+    {
+      "index": 447,
+      "name": "下擺_11_8",
+      "body": "glb_body_447",
+      "joint": "glb_joint_447",
+      "parent": 431
+    },
+    {
+      "index": 448,
+      "name": "下擺_11_9",
+      "body": "glb_body_448",
+      "joint": "glb_joint_448",
+      "parent": 432
+    },
+    {
+      "index": 449,
+      "name": "下擺_11_10",
+      "body": "glb_body_449",
+      "joint": "glb_joint_449",
+      "parent": 433
+    },
+    {
+      "index": 450,
+      "name": "下擺_11_11",
+      "body": "glb_body_450",
+      "joint": "glb_joint_450",
+      "parent": 434
+    },
+    {
+      "index": 451,
+      "name": "下擺_11_12",
+      "body": "glb_body_451",
+      "joint": "glb_joint_451",
+      "parent": 435
+    },
+    {
+      "index": 452,
+      "name": "下擺_11_13",
+      "body": "glb_body_452",
+      "joint": "glb_joint_452",
+      "parent": 436
+    },
+    {
+      "index": 453,
+      "name": "下擺_11_14",
+      "body": "glb_body_453",
+      "joint": "glb_joint_453",
+      "parent": 437
+    },
+    {
+      "index": 454,
+      "name": "下擺_11_15",
+      "body": "glb_body_454",
+      "joint": "glb_joint_454",
+      "parent": 438
+    },
+    {
+      "index": 455,
+      "name": "下擺_12_0",
+      "body": "glb_body_455",
+      "joint": "glb_joint_455",
+      "parent": 439
+    },
+    {
+      "index": 456,
+      "name": "下擺_12_1",
+      "body": "glb_body_456",
+      "joint": "glb_joint_456",
+      "parent": 440
+    },
+    {
+      "index": 457,
+      "name": "下擺_12_2",
+      "body": "glb_body_457",
+      "joint": "glb_joint_457",
+      "parent": 441
+    },
+    {
+      "index": 458,
+      "name": "下擺_12_3",
+      "body": "glb_body_458",
+      "joint": "glb_joint_458",
+      "parent": 442
+    },
+    {
+      "index": 459,
+      "name": "下擺_12_4",
+      "body": "glb_body_459",
+      "joint": "glb_joint_459",
+      "parent": 443
+    },
+    {
+      "index": 460,
+      "name": "下擺_12_5",
+      "body": "glb_body_460",
+      "joint": "glb_joint_460",
+      "parent": 444
+    },
+    {
+      "index": 461,
+      "name": "下擺_12_6",
+      "body": "glb_body_461",
+      "joint": "glb_joint_461",
+      "parent": 445
+    },
+    {
+      "index": 462,
+      "name": "下擺_12_7",
+      "body": "glb_body_462",
+      "joint": "glb_joint_462",
+      "parent": 446
+    },
+    {
+      "index": 463,
+      "name": "下擺_12_8",
+      "body": "glb_body_463",
+      "joint": "glb_joint_463",
+      "parent": 447
+    },
+    {
+      "index": 464,
+      "name": "下擺_12_9",
+      "body": "glb_body_464",
+      "joint": "glb_joint_464",
+      "parent": 448
+    },
+    {
+      "index": 465,
+      "name": "下擺_12_10",
+      "body": "glb_body_465",
+      "joint": "glb_joint_465",
+      "parent": 449
+    },
+    {
+      "index": 466,
+      "name": "下擺_12_11",
+      "body": "glb_body_466",
+      "joint": "glb_joint_466",
+      "parent": 450
+    },
+    {
+      "index": 467,
+      "name": "下擺_12_12",
+      "body": "glb_body_467",
+      "joint": "glb_joint_467",
+      "parent": 451
+    },
+    {
+      "index": 468,
+      "name": "下擺_12_13",
+      "body": "glb_body_468",
+      "joint": "glb_joint_468",
+      "parent": 452
+    },
+    {
+      "index": 469,
+      "name": "下擺_12_14",
+      "body": "glb_body_469",
+      "joint": "glb_joint_469",
+      "parent": 453
+    },
+    {
+      "index": 470,
+      "name": "下擺_12_15",
+      "body": "glb_body_470",
+      "joint": "glb_joint_470",
+      "parent": 454
+    },
+    {
+      "index": 471,
+      "name": "下擺_13_0",
+      "body": "glb_body_471",
+      "joint": "glb_joint_471",
+      "parent": 455
+    },
+    {
+      "index": 472,
+      "name": "下擺_13_1",
+      "body": "glb_body_472",
+      "joint": "glb_joint_472",
+      "parent": 456
+    },
+    {
+      "index": 473,
+      "name": "下擺_13_2",
+      "body": "glb_body_473",
+      "joint": "glb_joint_473",
+      "parent": 457
+    },
+    {
+      "index": 474,
+      "name": "下擺_13_3",
+      "body": "glb_body_474",
+      "joint": "glb_joint_474",
+      "parent": 458
+    },
+    {
+      "index": 475,
+      "name": "下擺_13_4",
+      "body": "glb_body_475",
+      "joint": "glb_joint_475",
+      "parent": 459
+    },
+    {
+      "index": 476,
+      "name": "下擺_13_5",
+      "body": "glb_body_476",
+      "joint": "glb_joint_476",
+      "parent": 460
+    },
+    {
+      "index": 477,
+      "name": "下擺_13_6",
+      "body": "glb_body_477",
+      "joint": "glb_joint_477",
+      "parent": 461
+    },
+    {
+      "index": 478,
+      "name": "下擺_13_7",
+      "body": "glb_body_478",
+      "joint": "glb_joint_478",
+      "parent": 462
+    },
+    {
+      "index": 479,
+      "name": "下擺_13_8",
+      "body": "glb_body_479",
+      "joint": "glb_joint_479",
+      "parent": 463
+    },
+    {
+      "index": 480,
+      "name": "下擺_13_9",
+      "body": "glb_body_480",
+      "joint": "glb_joint_480",
+      "parent": 464
+    },
+    {
+      "index": 481,
+      "name": "下擺_13_10",
+      "body": "glb_body_481",
+      "joint": "glb_joint_481",
+      "parent": 465
+    },
+    {
+      "index": 482,
+      "name": "下擺_13_11",
+      "body": "glb_body_482",
+      "joint": "glb_joint_482",
+      "parent": 466
+    },
+    {
+      "index": 483,
+      "name": "下擺_13_12",
+      "body": "glb_body_483",
+      "joint": "glb_joint_483",
+      "parent": 467
+    },
+    {
+      "index": 484,
+      "name": "下擺_13_13",
+      "body": "glb_body_484",
+      "joint": "glb_joint_484",
+      "parent": 468
+    },
+    {
+      "index": 485,
+      "name": "下擺_13_14",
+      "body": "glb_body_485",
+      "joint": "glb_joint_485",
+      "parent": 469
+    },
+    {
+      "index": 486,
+      "name": "下擺_13_15",
+      "body": "glb_body_486",
+      "joint": "glb_joint_486",
+      "parent": 470
+    },
+    {
+      "index": 487,
+      "name": "左裙鑰匙1",
+      "body": "glb_body_487",
+      "joint": "glb_joint_487",
+      "parent": 300
+    },
+    {
+      "index": 488,
+      "name": "左裙鑰匙2",
+      "body": "glb_body_488",
+      "joint": "glb_joint_488",
+      "parent": 487
+    },
+    {
+      "index": 489,
+      "name": "鐘錶1",
+      "body": "glb_body_489",
+      "joint": "glb_joint_489",
+      "parent": 291
+    },
+    {
+      "index": 490,
+      "name": "鐘錶2",
+      "body": "glb_body_490",
+      "joint": "glb_joint_490",
+      "parent": 489
+    },
+    {
+      "index": 491,
+      "name": "右裙鑰匙1",
+      "body": "glb_body_491",
+      "joint": "glb_joint_491",
+      "parent": 306
+    },
+    {
+      "index": 492,
+      "name": "右裙鑰匙2",
+      "body": "glb_body_492",
+      "joint": "glb_joint_492",
+      "parent": 491
+    },
+    {
+      "index": 493,
+      "name": "左親指先",
+      "body": "glb_body_493",
+      "joint": "glb_joint_493",
+      "parent": 71
+    },
+    {
+      "index": 494,
+      "name": "左人差指先",
+      "body": "glb_body_494",
+      "joint": "glb_joint_494",
+      "parent": 74
+    },
+    {
+      "index": 495,
+      "name": "左中指先",
+      "body": "glb_body_495",
+      "joint": "glb_joint_495",
+      "parent": 68
+    },
+    {
+      "index": 496,
+      "name": "左薬指先",
+      "body": "glb_body_496",
+      "joint": "glb_joint_496",
+      "parent": 77
+    },
+    {
+      "index": 497,
+      "name": "左小指先",
+      "body": "glb_body_497",
+      "joint": "glb_joint_497",
+      "parent": 80
+    },
+    {
+      "index": 498,
+      "name": "右親指先",
+      "body": "glb_body_498",
+      "joint": "glb_joint_498",
+      "parent": 39
+    },
+    {
+      "index": 499,
+      "name": "右人差指先",
+      "body": "glb_body_499",
+      "joint": "glb_joint_499",
+      "parent": 42
+    },
+    {
+      "index": 500,
+      "name": "右中指先",
+      "body": "glb_body_500",
+      "joint": "glb_joint_500",
+      "parent": 36
+    },
+    {
+      "index": 501,
+      "name": "右薬指先",
+      "body": "glb_body_501",
+      "joint": "glb_joint_501",
+      "parent": 45
+    },
+    {
+      "index": 502,
+      "name": "右小指先",
+      "body": "glb_body_502",
+      "joint": "glb_joint_502",
+      "parent": 48
+    },
+    {
+      "index": 503,
+      "name": "右足D",
+      "body": "glb_body_503",
+      "joint": "glb_joint_503",
+      "parent": 81
+    },
+    {
+      "index": 504,
+      "name": "右ひざD",
+      "body": "glb_body_504",
+      "joint": "glb_joint_504",
+      "parent": 503
+    },
+    {
+      "index": 505,
+      "name": "右足首D",
+      "body": "glb_body_505",
+      "joint": "glb_joint_505",
+      "parent": 504
+    },
+    {
+      "index": 506,
+      "name": "右足先EX",
+      "body": "glb_body_506",
+      "joint": "glb_joint_506",
+      "parent": 505
+    },
+    {
+      "index": 507,
+      "name": "左足D",
+      "body": "glb_body_507",
+      "joint": "glb_joint_507",
+      "parent": 86
+    },
+    {
+      "index": 508,
+      "name": "左ひざD",
+      "body": "glb_body_508",
+      "joint": "glb_joint_508",
+      "parent": 507
+    },
+    {
+      "index": 509,
+      "name": "左足首D",
+      "body": "glb_body_509",
+      "joint": "glb_joint_509",
+      "parent": 508
+    },
+    {
+      "index": 510,
+      "name": "左足先EX",
+      "body": "glb_body_510",
+      "joint": "glb_joint_510",
+      "parent": 509
+    },
+    {
+      "index": 511,
+      "name": "星穹铁道—黑塔",
+      "body": "glb_body_511",
+      "joint": "glb_joint_511",
+      "parent": -1
+    },
+    {
+      "index": 512,
+      "name": "星穹铁道—黑塔_skeleton",
+      "body": "glb_body_512",
+      "joint": "glb_joint_512",
+      "parent": -1
+    }
+  ]
+}
