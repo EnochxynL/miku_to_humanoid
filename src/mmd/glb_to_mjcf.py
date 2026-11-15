@@ -100,6 +100,9 @@ def main():
                              'correctly (glTF UV origin is top-left, MuJoCo textures bottom-left)')
     parser.add_argument('--sphere-radius', type=float, default=0.008,
                         help='when --mesh is off, a sphere per bone keeps the skeleton visible')
+    parser.add_argument('--no-rollup', dest='rollup', action='store_false',
+                        help='keep every accessory bone; by default a hair/skirt/sleeve chain is '
+                             'bound to its group root so the surface cannot tear between links')
     args = parser.parse_args()
 
     gltf = load_gltf_module()
@@ -184,6 +187,23 @@ def main():
                 f'{texture_ref} />')
         assets += texture_lines + material_lines
 
+        # Group chains by name (下擺_0_12 -> 下擺, 右袖2-3 -> 右袖) and bind each chain to its group
+        # root. A continuous skirt draped over 224 bones tears apart when every link follows its own
+        # bone; making the chain rigid trades cloth sway for a closed surface.
+        import re
+        def group_key(name):
+            return re.sub(r'[\d_\-\.]+$', '', name or '')
+        node_group = {i: group_key(nodes[i].get('name')) for i in range(count)}
+        group_root = list(range(count))
+        if args.rollup:
+            for i in range(count):
+                current = i
+                parent_index = parent[i]
+                while parent_index >= 0 and node_group[parent_index] == node_group[i]:
+                    current = parent_index
+                    parent_index = parent[current]
+                group_root[i] = current
+        slot_of_node = {node_index: slot for slot, node_index in enumerate(skin['joints'])}
         masks = load_alpha_masks(doc, binary, asset_dir)
         removed = 0
 
@@ -225,6 +245,13 @@ def main():
             if len(triangles) == 0:
                 continue
             tri_slot = slot_of_vertex[triangles[:, 0]]
+            if args.rollup:
+                rolled = []
+                for slot in tri_slot:
+                    node_index = int(np.asarray(joint_nodes)[slot])
+                    root_node = group_root[node_index]
+                    rolled.append(slot_of_node.get(root_node, slot))
+                tri_slot = np.asarray(rolled, dtype=int)
             for slot in np.unique(tri_slot):
                 sel = triangles[tri_slot == slot]
                 if len(sel) < 4:
