@@ -74,3 +74,24 @@ uv run python src/mmd/distal_offsets.py --glb-xml runtime/glb/herta.xml `
 * **shoulder width**: the source's arm-root bones are 0.16 m apart, G1's shoulder links 0.31 m — a
   structural mismatch that a rigid bone→link mapping cannot absorb;
 * **hands**: GMR receives no palm bones, so finger/palm orientation is not retargeted at all.
+
+## `pos_w` is a ratio, not a tuned optimum
+
+`pos_w` is the quadratic cost weight of a position task in mink's weighted least-squares solve
+(`cost = w * ||error||^2`); its absolute value means nothing without the other weights.
+
+Measured forearm direction error while sweeping it (frames 0/159/318):
+
+| pos_w | left forearm | right forearm |
+|---|---|---|
+| 10 | 21/17/10 | 22/20/14 |
+| 30 | 18/16/13 | 19/20/18 |
+| 100 | 7/18/10 | 9/19/15 |
+| 300 | 11/16/4 | 15/18/4 |
+| 1000 | 11/18/5 | 14/17/8 |
+| 3000 | 8/18/8 | 10/17/11 |
+
+The cliff is **whether a position term exists at all**: with `pos_w = 0` the link gets no task and the
+arm is driven purely by an orientation target a hinge cannot satisfy (61/92 deg). Any value from 10 to
+3000 lands on the same 4-22 deg plateau, so 300 is simply a point on it - 100 would do as well.
+The real change was *adding* the position term and lowering `rot_w` from 10 to 1.
