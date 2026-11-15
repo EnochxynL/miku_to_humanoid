@@ -65,7 +65,35 @@ def load_glb_frames(xml_path, nodes_path, anim_path):
     return frames
 
 
-def build_config(base, robot_xml, glb_xml, nodes_path):
+# Second axis per link. It must be the *next* segment, not a longer super-segment: a super-segment
+# (upper arm -> wrist) is nearly collinear with the first axis (upper arm -> elbow), the cross product
+# degenerates and the alignment silently collapses to identity - which left limbs rolled arbitrarily.
+# link -> (source a, source b, robot a, robot b) for the perpendicular reference
+ROLL_REF = {
+    'left_shoulder_yaw_link': ('左ひじ', '左手首', 'left_elbow_link', 'left_wrist_yaw_link'),
+    'right_shoulder_yaw_link': ('右ひじ', '右手首', 'right_elbow_link', 'right_wrist_yaw_link'),
+    'left_elbow_link': ('左手首', '左中指１', 'left_wrist_yaw_link', 'left_wrist_roll_link'),
+    'right_elbow_link': ('右手首', '右中指１', 'right_wrist_yaw_link', 'right_wrist_roll_link'),
+    'left_hip_yaw_link': ('左ひざ', '左足首', 'left_knee_link', 'left_ankle_roll_link'),
+    'right_hip_yaw_link': ('右ひざ', '右足首', 'right_knee_link', 'right_ankle_roll_link'),
+    'left_knee_link': ('左足首', '左つま先', 'left_ankle_roll_link', 'left_toe_link'),
+    'right_knee_link': ('右足首', '右つま先', 'right_ankle_roll_link', 'right_toe_link'),
+    'left_ankle_roll_link': ('左ひざ', '左足首', 'left_knee_link', 'left_ankle_roll_link'),
+    'right_ankle_roll_link': ('右ひざ', '右足首', 'right_knee_link', 'right_ankle_roll_link'),
+    'left_wrist_yaw_link': ('左ひじ', '左手首', 'left_elbow_link', 'left_wrist_yaw_link'),
+    'right_wrist_yaw_link': ('右ひじ', '右手首', 'right_elbow_link', 'right_wrist_yaw_link'),
+}
+
+
+def frame_from_pair(first, second):
+    """Right-handed basis from two directions (neither needs to be axis aligned)."""
+    u = first / (np.linalg.norm(first) or 1.0)
+    v = second - (second @ u) * u
+    v /= (np.linalg.norm(v) or 1.0)
+    return np.column_stack([u, v, np.cross(u, v)])
+
+
+def build_config(base, robot_xml, glb_xml, nodes_path, two_axis=False):
     robot = mujoco.MjModel.from_xml_path(robot_xml)
     robot_data = mujoco.MjData(robot)
     mujoco.mj_forward(robot, robot_data)
@@ -104,7 +132,13 @@ def build_config(base, robot_xml, glb_xml, nodes_path):
             rest = R.from_matrix(np.array(robot_data.xmat[robot_body(link)]).reshape(3, 3))
             align = R.identity()
             pair = MEASURE.get(link)
+            if pair is None and link in LINKS:
+                # wrists have no MEASURE entry, but they still need an alignment: build it from the
+                # link's own segment, using LINKS for the source/robot pair
+                bone_, child_, robot_child_ = LINKS[link]
+                pair = (bone_, child_, link, robot_child_)
             if link in ('pelvis', 'torso_link'):
+                pair = None
                 # The spine must take the rig's *yaw* (the glTF rig is turned ~90 deg from the
                 # robot's rest) but not its tilt (this rig binds with the spine leaning). Yaw has to
                 # come from a horizontal axis - deriving it from the near-vertical spine direction is
@@ -138,6 +172,9 @@ def main():
     parser.add_argument('--gmr-root', default=r'D:\MY_TOOL\GitHub_Tools\GMR')
     parser.add_argument('--config-out', required=True)
     parser.add_argument('--bake-out', default=None)
+    parser.add_argument('--two-axis', action='store_true',
+                        help='also align the bending plane (experimental: currently collapses to '
+                             'identity, so the single-axis alignment is the default)')
     parser.add_argument('--posture-cost', type=float, default=1e-2)
     parser.add_argument('--smooth', type=float, default=0.5)
     parser.add_argument('--view', action='store_true')
@@ -154,7 +191,8 @@ def main():
     base_path = gmr_root / 'general_motion_retargeting' / 'ik_configs' / 'bvh_lafan1_to_g1.json'
     base = json.loads(base_path.read_text(encoding='utf-8'))
 
-    config, report = build_config(base, robot_xml, args.glb_xml, args.nodes)
+    config, report = build_config(base, robot_xml, args.glb_xml, args.nodes,
+                                  two_axis=args.two_axis)
     print(f"{'link':<26}{'align':>8}")
     for link, angle in report:
         print(f'{link:<26}{angle:7.1f}')

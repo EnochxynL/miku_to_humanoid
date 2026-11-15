@@ -100,6 +100,9 @@ def main():
                              'correctly (glTF UV origin is top-left, MuJoCo textures bottom-left)')
     parser.add_argument('--sphere-radius', type=float, default=0.008,
                         help='when --mesh is off, a sphere per bone keeps the skeleton visible')
+    parser.add_argument('--drop-overlays', action='store_true',
+                        help='omit materials whose alpha < 0.5 (the face reads brighter, MMD eye '
+                             'shadow is lost)')
     parser.add_argument('--no-rollup', dest='rollup', action='store_false',
                         help='keep every accessory bone; by default a hair/skirt/sleeve chain is '
                              'bound to its group root so the surface cannot tear between links')
@@ -184,10 +187,12 @@ def main():
                     texture_ref = f' texture="tex_{source:02d}"'
             rgba = f'{factor[0]:.4g} {factor[1]:.4g} {factor[2]:.4g} {factor[3]:.4g}'
             if float(factor[3]) < 0.5:
-                # MMD uses these as faint overlays (目影 is a 30% black eye shadow); MuJoCo blends them
-                # far more heavily than MMD does, which greyed out the whole face
-                low_alpha.add(i)
-                continue
+                # MMD uses these as faint overlays (目影 is a 30% black eye shadow). MuJoCo blends them
+                # far more heavily than MMD does, so the face greys out - but removing them is a
+                # judgement call the user wants to keep, hence the flag.
+                if args.drop_overlays:
+                    low_alpha.add(i)
+                    continue
             material_lines.append(
                 f'    <material name="mat_{i:02d}" rgba="{rgba}" specular="0" shininess="0"'
                 f'{texture_ref} />')
