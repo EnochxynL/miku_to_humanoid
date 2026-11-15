@@ -172,9 +172,6 @@ def main():
     parser.add_argument('--gmr-root', default=r'D:\MY_TOOL\GitHub_Tools\GMR')
     parser.add_argument('--config-out', required=True)
     parser.add_argument('--bake-out', default=None)
-    parser.add_argument('--no-limb-align', action='store_true',
-                        help="do not rotate the limbs onto the source's bind pose; transfer only the "
-                             'motion delta so the robot keeps its own rest posture (arms down)')
     parser.add_argument('--two-axis', action='store_true',
                         help='also align the bending plane (experimental: currently collapses to '
                              'identity, so the single-axis alignment is the default)')
@@ -241,14 +238,7 @@ def main():
 
     if not args.bake_out:
         return
-    # GMR warm-starts each solve from the previous solution, and over a long clip that drifts: the
-    # same config that retargets the last frame correctly on its own produced a bent-over pose when
-    # solved sequentially. Reset to the rest pose every frame so the clip matches the per-frame solve.
-    rest = np.array(retargeter.model.qpos0)
-    cache = []
-    for frame in frames:
-        retargeter.configuration.update(rest)
-        cache.append(np.array(retargeter.retarget(frame)))
+    cache = [np.array(retargeter.retarget(frame)) for frame in frames]
     if args.smooth > 0:
         alpha = float(args.smooth)
         filtered = [cache[0].copy()]
