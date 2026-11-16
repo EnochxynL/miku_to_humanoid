@@ -179,11 +179,11 @@ def main():
              ]
     if mesh_info:
         lines.append('  <asset>')
-        for index, name in enumerate(mesh_info['textures']):
+        for index, (name, _png) in mesh_info['textures'].items():
             lines.append(f'    <texture name="tex{index:02d}" type="2d" file="{name}" />')
         for group in mesh_info['groups']:
-            lines.append(f'    <mesh name="{group["name"]}" file="{group["file"]}" />')
-        tex_slot = {name: index for index, name in enumerate(mesh_info['textures'])}
+            lines.append(f'    <mesh name="{group["name"]}" file="{group["name"]}.obj" />')
+        tex_slot = {name: index for index, (name, _png) in mesh_info['textures'].items()}
         for material in mesh_info['materials']:
             if material['alpha'] < 0.5 and not args.keep_overlays:
                 continue

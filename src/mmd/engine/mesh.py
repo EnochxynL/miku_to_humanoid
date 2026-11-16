@@ -1,18 +1,19 @@
-"""PMX mesh -> MuJoCo meshes, materials and textures.
+"""PMX mesh -> per-bone geometry groups, plus the two sinks that consume them.
 
-The PMX side needs no glTF: the model carries everything MuJoCo wants - vertices with normals, UVs and
-bone weights, an index buffer concatenated in material order (`materials[i]['index_count']` is the
-slice length), a texture name per material, and a diffuse colour with alpha.
+The grouping is the interesting part and it lives here once: triangles are bucketed by their **dominant
+bone** (a triangle's three vertices are assigned to the bone each one is most bound to, and the group
+takes the majority), because skinning is per-bone and a surface split any other way tears apart when
+the rig moves. What leaves this module is either
 
-Two conversions are load-bearing:
+* ``write_obj`` - OBJ files plus PNG textures on disk (readable, for humans), or
+* ``engine.msh`` - binary mesh bytes for the in-memory model, ~60x faster to produce.
 
-* **handedness.** MMD is left-handed; the skeleton uses ``(x, y, z) -> (-z, x, y) * scale``, whose
-  determinant is -1. A reflection flips triangle winding, so faces must be emitted as ``(a, c, b)``
-  and normals mapped with the same matrix - otherwise every surface is inside-out.
-* **UV origin.** MMD/glTF put V at the top, MuJoCo at the bottom, so ``vt = (u, 1 - v)``.
+Two conventions are load-bearing, and neither is a choice:
 
-A group is one (material, bone) pair: geometry is rigid-segmented by the **triangle's majority bone**,
-which keeps each surface closed under animation (splitting per-vertex topples the surface apart).
+* **handedness.** MMD is left-handed; ``(x, y, z) -> (-z, x, y)`` has determinant -1, so triangles are
+  emitted with reversed winding and normals go through the same matrix.
+* **UV origin.** MMD puts V at the top. The OBJ sink flips it (MuJoCo's OBJ loader flips it back);
+  the MSH sink does not (MuJoCo's MSH loader applies no flip, see ``mujoco/msh2obj.py``).
 """
 from __future__ import annotations
 
@@ -26,7 +27,7 @@ try:
 except ImportError:      # pragma: no cover - PIL is required for textures only
     Image = None
 
-# MMD (left-handed) -> MuJoCo (right-handed); det = -1, hence the winding flip below
+# MMD (left-handed) -> MuJoCo (right-handed); det = -1, hence the winding flip
 _BASIS = np.array([[0.0, 0.0, -1.0],
                    [1.0, 0.0, 0.0],
                    [0.0, 1.0, 0.0]])
@@ -54,79 +55,70 @@ def _majority(a, b, c):
     return a
 
 
-def _as_png(data, target: Path):
-    """Normalise any MMD texture (bmp/tga/png/jpg) to PNG; MuJoCo only reads a few formats."""
-    if Image is None:
-        target.write_bytes(data)
-        return
+def normalise_texture(data):
+    """Any MMD texture (bmp/tga/png/jpg) -> PNG bytes; already-PNG data is returned untouched.
+
+    The untouched case matters: three 4k PNGs in this model cost ~2.8 s of pointless decode+encode.
+    """
+    if Image is None or data[:8] == b'\x89PNG\r\n\x1a\n':
+        return data
     with Image.open(io.BytesIO(data)) as image:
-        image.convert('RGBA').save(target)
+        buffer = io.BytesIO()
+        image.convert('RGBA').save(buffer, format='PNG')
+    return buffer.getvalue()
 
 
-def export(model, out_dir, base_dir=None, bone_positions=None, scale=0.07,
-           flip_v=True, min_alpha=0.5):
-    """Write OBJ groups plus PNG textures, and return the metadata the MJCF emitter needs."""
-    out_dir = Path(out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
+def groups(model, base_dir=None, bone_positions=None, scale=0.07, flip_v=True, min_alpha=0.5):
+    """Geometry grouped by (material, dominant bone), with textures normalised to PNG bytes.
+
+    Positions are expressed **relative to the group's bone**, because that is the frame a MuJoCo mesh
+    lives in; without it every patch is displaced by its own bone offset.
+    """
     base_dir = Path(base_dir) if base_dir else Path.cwd()
-
     vertices = model['vertices']
     indices = model['indices']
     materials = model['materials']
-    texture_names = model['textures']
     bone_names = [b['name'] for b in model['bones']]
 
     # ---- textures ------------------------------------------------------------------------------
-    texture_files = {}
-    texture_meta = []
-    for index, name in enumerate(texture_names):
-        raw_name = Path(str(name).replace('\\', '/')).name
-        texture_meta.append(None)
+    textures = {}
+    for index, name in enumerate(model['textures']):
         if not name:
             continue
-        # PMX stores texture paths relative to the model file
         source = base_dir / str(name).replace('\\', '/')
-        target = out_dir / ('tex_%02d.png' % index)
         try:
-            _as_png(source.read_bytes(), target)
+            textures[index] = ('tex_%02d.png' % index, normalise_texture(source.read_bytes()))
         except OSError:
             continue
-        texture_files[index] = target.name
-        texture_meta[index] = target.name
 
     # ---- geometry ------------------------------------------------------------------------------
     positions = np.array([to_mujoco(v['pos'], scale) for v in vertices])
     normals = np.array([to_mujoco(v['normal'], scale) for v in vertices])
     uvs = np.array([[float(v['uv'][0]), float(v['uv'][1])] for v in vertices], dtype=float)
+    uv_msh = uvs.copy()                     # MSH stores the unflipped V
     if flip_v:
         uvs[:, 1] = 1.0 - uvs[:, 1]
     dominant = [_dominant_bone(v) for v in vertices]
 
-    # Some MMD models carry a duplicated surface under a "+" material (肌2 / 肌2+ here are the same
-    # vertices with different textures). Both are opaque, so they z-fight and the region flickers
-    # between the two - keep the plain one and drop the duplicate.
-    vertex_sets = {}
-    cursor = 0
+    # Some MMD models carry a duplicated surface under a "+" material (肌2 / 肌2+ are the same
+    # vertices with different textures). Both are opaque, so they z-fight; keep the plain one.
+    vertex_sets, cursor = {}, 0
     for material_index, material in enumerate(materials):
         count = int(material.get('index_count', 0))
         if count:
             vertex_sets[material_index] = frozenset(indices[cursor:cursor + count])
         cursor += count
-    duplicates = set()
-    seen_sets = {}
+    duplicates, seen = set(), {}
     for material_index, material in enumerate(materials):
-        name = str(material.get('name') or '')
         key = vertex_sets.get(material_index)
         if key is None:
             continue
-        if name.endswith('+') and key in seen_sets:
+        if str(material.get('name') or '').endswith('+') and key in seen:
             duplicates.add(material_index)
         else:
-            seen_sets.setdefault(key, material_index)
+            seen.setdefault(key, material_index)
 
-    groups = []
-    material_meta = []
-    skipped = 0
+    out, material_meta, skipped = [], [], 0
     cursor = 0
     for material_index, material in enumerate(materials):
         count = int(material.get('index_count', 0))
@@ -138,72 +130,72 @@ def export(model, out_dir, base_dir=None, bone_positions=None, scale=0.07,
         material_meta.append({
             'index': material_index,
             'name': material.get('name') or 'mat_%d' % material_index,
-            'texture': texture_files.get(int(material.get('texture', -1))),
+            'texture': textures.get(int(material.get('texture', -1)), (None,))[0],
             'diffuse': [float(x) for x in material.get('diffuse', [1, 1, 1, 1])[:3]],
             'alpha': alpha,
         })
-        if material_index in duplicates:
-            # same surface as its plain partner, drawn on top in MMD; MuJoCo has no polygon offset
+        if material_index in duplicates or alpha < min_alpha:
+            # duplicate surface, or an MMD overlay (颜+ is alpha 0, 目影 0.3): MuJoCo renders those
+            # opaque and they blacken the whole head
             skipped += 1
-            continue
-        if alpha < min_alpha:
-            # MMD uses near-transparent materials as overlays (颜+ is a blush layer); MuJoCo blends
-            # them far more heavily and they grey out the whole surface
             continue
 
         buckets = {}
         for step in range(0, len(slice_indices) - 2, 3):
-            a, b, c = int(slice_indices[step]), int(slice_indices[step + 1]), int(slice_indices[step + 2])
-            bone = _majority(dominant[a], dominant[b], dominant[c])
-            buckets.setdefault(bone, []).append((a, b, c))
+            a, b, c = (int(slice_indices[step + i]) for i in range(3))
+            buckets.setdefault(_majority(dominant[a], dominant[b], dominant[c]), []).append((a, c, b))
 
         for bone, triangles in buckets.items():
-            name = 'm%03d_b%s' % (material_index, bone if bone >= 0 else 'root')
-            path = out_dir / (name + '.obj')
-            # MuJoCo mesh vertices live in the *body's* frame, so a group bound to a bone has to
-            # be expressed relative to that bone's bind position - otherwise every patch is
-            # displaced by its own bone offset and the model falls apart
+            used = sorted({i for tri in triangles for i in tri})
+            if len(used) < 4:
+                skipped += 1                # MuJoCo needs four vertices per mesh
+                continue
+            remap = {vertex: slot for slot, vertex in enumerate(used)}
+            faces = np.array([[remap[a], remap[b], remap[c]] for a, b, c in triangles], dtype=np.int32)
             origin = np.zeros(3)
             if bone_positions is not None and 0 <= bone < len(bone_positions):
                 origin = np.asarray(bone_positions[bone], dtype=float)
-            used = sorted({i for tri in triangles for i in tri})
-            if len(used) < 4:
-                # MuJoCo rejects a mesh with fewer than four vertices; such a group is a couple of
-                # stray triangles and is visually negligible
-                skipped += 1
-                continue
-            remap = {vertex: slot for slot, vertex in enumerate(used)}
-            with path.open('w', encoding='utf-8', newline='\n') as handle:
-                handle.write('# %s  material=%s  bone=%s\n' % (
-                    name, material.get('name'), bone_names[bone] if 0 <= bone < len(bone_names) else '?'))
-                for vertex in used:
-                    x, y, z = positions[vertex] - origin
-                    handle.write('v %.6f %.6f %.6f\n' % (x, y, z))
-                for vertex in used:
-                    u, v = uvs[vertex]
-                    handle.write('vt %.6f %.6f\n' % (u, v))
-                for vertex in used:
-                    x, y, z = normals[vertex]
-                    handle.write('vn %.6f %.6f %.6f\n' % (x, y, z))
-                for a, b, c in triangles:
-                    # winding reversed: the coordinate change is a reflection
-                    fa, fb, fc = remap[a] + 1, remap[b] + 1, remap[c] + 1
-                    handle.write('f %d/%d/%d %d/%d/%d %d/%d/%d\n'
-                                 % (fa, fa, fa, fc, fc, fc, fb, fb, fb))
-            groups.append({
-                'name': name,
+            out.append({
+                'name': 'm%03d_b%s' % (material_index, bone if bone >= 0 else 'root'),
                 'material': material_index,
                 'bone': bone,
                 'bone_name': bone_names[bone] if 0 <= bone < len(bone_names) else None,
-                'file': path.name,
+                'positions': positions[used] - origin,
+                'normals': normals[used],
+                'uv_obj': uvs[used],
+                'uv_msh': uv_msh[used],
+                'faces': faces,
                 'triangles': len(triangles),
             })
 
-    return {
-        'groups': groups,
-        'skipped_groups': skipped,
-        'materials': material_meta,
-        'textures': [t for t in texture_meta if t],
-        'scale': scale,
-        'winding': 'reversed (reflection)',
-    }
+    return {'groups': out, 'materials': material_meta, 'textures': textures, 'skipped': skipped}
+
+
+def write_obj(built, out_dir):
+    """OBJ files plus PNG textures on disk - the readable sink, mostly for debugging."""
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for _index, (name, png) in built['textures'].items():
+        (out_dir / name).write_bytes(png)
+    for group in built['groups']:
+        with (out_dir / (group['name'] + '.obj')).open('w', encoding='utf-8', newline='\n') as handle:
+            handle.write('# %s  material=%s  bone=%s\n'
+                         % (group['name'], group['material'], group['bone_name']))
+            for x, y, z in group['positions']:
+                handle.write('v %.6f %.6f %.6f\n' % (x, y, z))
+            for u, v in group['uv_obj']:
+                handle.write('vt %.6f %.6f\n' % (u, v))
+            for x, y, z in group['normals']:
+                handle.write('vn %.6f %.6f %.6f\n' % (x, y, z))
+            for a, b, c in group['faces']:
+                handle.write('f %d/%d/%d %d/%d/%d %d/%d/%d\n'
+                             % (a + 1, a + 1, a + 1, b + 1, b + 1, b + 1, c + 1, c + 1, c + 1))
+
+
+def export(model, out_dir, base_dir=None, bone_positions=None, scale=0.07,
+           flip_v=True, min_alpha=0.5):
+    """Convenience: group, then write OBJ + PNG. Returns the group metadata."""
+    built = groups(model, base_dir=base_dir, bone_positions=bone_positions, scale=scale,
+                   flip_v=flip_v, min_alpha=min_alpha)
+    write_obj(built, out_dir)
+    return built
