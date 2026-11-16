@@ -69,12 +69,14 @@ def build_scene(mmd_xml, robot_xml, offset, ghost_alpha=None):
     model = mmd.compile()
 
     if ghost_alpha is not None:
-        # tint the attached copy so the two figures can be compared in place
+        # translucent skin on both figures so the bones inside stay visible; the ground plane is left
+        # alone, and where each figure stands is still decided by --offset
         for geom in range(model.ngeom):
-            body = int(model.geom_bodyid[geom])
-            name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, body) or ''
-            if name.startswith(ROBOT_PREFIX):
-                model.geom_rgba[geom] = [0.30, 0.65, 1.0, ghost_alpha]
+            if model.geom_type[geom] == mujoco.mjtGeom.mjGEOM_PLANE:
+                continue
+            rgba = np.array(model.geom_rgba[geom], dtype=float)
+            rgba[3] = ghost_alpha
+            model.geom_rgba[geom] = rgba
     return model
 
 
@@ -243,7 +245,9 @@ def main():
     parser.add_argument('--robot-xml', default=DEFAULT_ROBOT_XML)
     parser.add_argument('--robot-qpos', default=None, help='the retargeted robot clip (gmr_retarget)')
     parser.add_argument('--ghost', action='store_true',
-                        help='put the robot at the character and make it translucent instead of beside')
+                        help='render both figures translucent so the bones inside show through; where '
+                             'they stand still comes from --offset')
+    parser.add_argument('--ghost-alpha', type=float, default=0.30)
     parser.add_argument('--offset', type=float, default=1.6, help='where the robot stands (metres)')
     parser.add_argument('--skeleton', action='store_true', help='draw the source bones as capsules')
     parser.add_argument('--exclude', default='下擺,髪,帽,袖,裙,飾',
@@ -265,16 +269,16 @@ def main():
 
     print('composing scene')
     model = build_scene(args.mmd_xml, args.robot_xml if args.robot_qpos else None,
-                        args.offset, 0.30 if args.ghost else None)
+                        args.offset, args.ghost_alpha if args.ghost else None)
     print('  nbody=%d nmesh=%d nq=%d' % (model.nbody, model.nmesh, model.nq))
 
     overlays = []
     if args.mmd_qpos:
         overlays.append(QposOverlay('mmd', args.mmd_xml, args.mmd_qpos))
     if args.robot_qpos:
-        shift = (0.0, 0.0, 0.0) if args.ghost else (args.offset, 0.0, 0.0)
         overlays.append(QposOverlay('g1', args.robot_xml, args.robot_qpos,
-                                    prefix=ROBOT_PREFIX, translate=shift))
+                                    prefix=ROBOT_PREFIX,
+                                    translate=(args.offset, 0.0, 0.0)))
     if args.skeleton:
         overlays.append(SkeletonOverlay(args.exclude, args.radius))
     for overlay in overlays:
