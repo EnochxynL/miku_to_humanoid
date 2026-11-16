@@ -51,7 +51,7 @@ def _name_map(bones):
     return mapping
 
 
-def bake(pmx_path, vmd_path, xml_path, step=1, solve_ik=True):
+def bake(pmx_path, vmd_path, xml_path, step=1, solve_ik=True, scale=0.07):
     """(qpos frames, unmatched vmd bone names, times) for the MJCF derived from ``pmx_path``."""
     model = parse_pmx(str(pmx_path))
     vmd = parse_vmd(str(vmd_path))
@@ -102,6 +102,32 @@ def bake(pmx_path, vmd_path, xml_path, step=1, solve_ik=True):
     skeleton = Skeleton(model)
 
     robot = mujoco.MjModel.from_xml_path(str(xml_path))
+
+    # MMD moves the character through センター, which is a *translation*. A qpos built only from ball
+    # joints drops it and the character dances in place, so the free joint takes it.
+    free_address, root_index = None, None
+    for joint in range(robot.njnt):
+        if robot.jnt_type[joint] == mujoco.mjtJoint.mjJNT_FREE:
+            free_address = int(robot.jnt_qposadr[joint])
+            break
+    # The bone that carries the whole-body offset is not necessarily a root: MMD models have static
+    # 操作中心/全ての親 and translate センター (or a groove above the waist) instead. Pick the shallowest
+    # bone whose translation track actually moves - the free joint rides on it.
+    depth = [0] * len(bones)
+    for i, b in enumerate(bones):
+        p, d = b['parent'], 0
+        while 0 <= p < len(bones):
+            p, d = bones[p]['parent'], d + 1
+        depth[i] = d
+    moving = [i for i, track in tracks.items()
+              if any(abs(v) > 1e-9 for key in track.keys for v in key['pos'])]
+    translate_index = min(moving, key=lambda i: depth[i]) if moving else None
+    bind_translate = None
+    if translate_index is not None:
+        probe = Skeleton(model)
+        probe.pose({})
+        bind_translate = np.array(probe.world(translate_index)[1], dtype=float)
+
     addresses, missing = {}, []
     for index, bone in enumerate(bones):
         joint = mujoco.mj_name2id(robot, mujoco.mjtObj.mjOBJ_JOINT, bone['name'])
@@ -115,6 +141,11 @@ def bake(pmx_path, vmd_path, xml_path, step=1, solve_ik=True):
         sampled = {i: track.sample(frame) for i, track in tracks.items()}
         skeleton.pose(sampled, ik_enabled=enabled_at(frame))
         qpos = np.array(robot.qpos0, dtype=float)
+        if free_address is not None and translate_index is not None:
+            world = np.array(skeleton.world(translate_index)[1], dtype=float)
+            delta = world - bind_translate
+            qpos[free_address:free_address + 3] = np.array(
+                [-delta[2], delta[0], delta[1]]) * scale
         for index, address in addresses.items():
             qpos[address:address + 4] = mmd_quat_to_mujoco(skeleton.local_q[index])
         out.append(qpos)

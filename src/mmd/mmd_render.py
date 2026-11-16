@@ -1,25 +1,14 @@
-"""Build a MuJoCo model from a PMX skeleton, so the PMX rig can act as a rigid-body "robot".
+"""Everything MuJoCo needs in order to *draw* an MMD character: the model and, optionally, its motion.
 
-Why this exists: GMR needs *rigid-body poses* as input, not joint angles dressed up as bone
-orientations. A PMX skeleton is already a rigid-body tree - one body per bone, parent-relative
-offsets, and (unlike MJCF) no rest rotations at all, so a bone's local rotation is exactly the
-joint value. Making that tree a MuJoCo model lets us bake the motion onto it and then feed true
-link poses to GMR with ``C = identity``.
+Neither half is on the retarget path - the pipeline uses ``mmd_pose`` and never touches MuJoCo. What
+this produces is a renderable bundle:
 
-Layout follows the player's own PMX shadow skeleton (``pmx_body_NNN`` / ``pmx_joint_NNN``), so the
-two can be compared directly:
+    <out>            the skeleton (or with --mesh the textured model) + assets/
+    <anim-out>       qpos per frame when --vmd is given, else one frame of the bind pose
 
-    <body name="pmx_body_042" pos="...">
-      <inertial pos="0 0 0" mass="0.00001" diaginertia="1e-9 1e-9 1e-9" />
-      <joint name="pmx_joint_042" type="ball" />
-      ...
-
-Coordinate change is the documented one: MMD is left-handed (X right, Y up, Z toward the viewer),
-MuJoCo is right-handed, so ``(x, y, z) -> (-z, x, y) * scale`` - a reflection, which is why the
-joint quaternions must be converted with the matching conjugation ``(x,y,z,w) -> (w, z, -x, -y)``.
-
-    uv run python src/reference_maker/pmx_to_mjcf.py \
-        --pmx <model.pmx> --out runtime/pmx/model.xml --tree runtime/pmx/tree.json
+The two steps are ordered, not independent: the motion needs the joint layout of the model it was baked
+against, and both share the bone names. Baking keeps the root translation (``センター``), so the
+character travels instead of dancing in place.
 """
 from __future__ import annotations
 
@@ -53,7 +42,8 @@ def main():
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--pmx', required=True)
     parser.add_argument('--out', required=True)
-    parser.add_argument('--tree', required=True)
+    parser.add_argument('--tree', default=None,
+                        help='optional bone table dump (provenance)')
     parser.add_argument('--scale', type=float, default=0.07,
                         help='MMD units to metres (the player and the glTF exporter both use 0.07)')
     parser.add_argument('--model-name', default='pmx_skeleton')
@@ -70,6 +60,11 @@ def main():
                         help='keep materials whose alpha < 0.5 (MMD overlays: the blush layer 颜+ is '
                              'alpha 0 and the eye shadow 目影 is alpha 0.3; MuJoCo renders them opaque '
                              'and they blacken the face)')
+    parser.add_argument('--vmd', default=None,
+                        help='also bake this motion; omitted = the model only')
+    parser.add_argument('--anim-out', default=None,
+                        help='qpos output; defaults to <model stem>_anim.npz')
+    parser.add_argument('--step', type=int, default=1, help='sample every N VMD frames')
     parser.add_argument('--capsule-radius', type=float, default=0.008,
                         help='draw a capsule per bone towards its tail so the skeleton is visible')
     args = parser.parse_args()
@@ -231,10 +226,29 @@ def main():
             for i, bone in enumerate(bones)
         ],
     }
-    Path(args.tree).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.tree).write_text(json.dumps(tree, indent=2, ensure_ascii=False), encoding='utf-8')
-    print(json.dumps({'bones': count, 'roots': tree['roots'][:6],
-                      'written': [str(out), str(args.tree)]}, ensure_ascii=False))
+    if args.tree:
+        Path(args.tree).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.tree).write_text(json.dumps(tree, indent=2, ensure_ascii=False), encoding='utf-8')
+    written = [str(out)] + ([str(args.tree)] if args.tree else [])
+    anim_out = Path(args.anim_out) if args.anim_out else Path(out).with_name(
+        Path(out).stem + '_anim.npz')
+    if args.vmd:
+        from engine.bake import bake
+        qpos, unmatched, times, missing = bake(args.pmx, args.vmd, str(out),
+                                               step=args.step, scale=scale)
+        anim_out.parent.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(anim_out, qpos=qpos, times=times)
+        summary = {'frames': len(qpos), 'unmatched_vmd_bones': len(unmatched),
+                   'bones_without_joint': len(missing), 'anim': str(anim_out)}
+    else:
+        import mujoco
+        robot = mujoco.MjModel.from_xml_path(str(out))
+        anim_out.parent.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(anim_out, qpos=np.array([robot.qpos0]), times=np.zeros(1))
+        summary = {'frames': 1, 'anim': str(anim_out)}
+    written.append(str(anim_out))
+    print(json.dumps({'bones': count, 'roots': tree['roots'][:6], 'motion': summary,
+                      'written': written}, ensure_ascii=False))
 
 
 if __name__ == '__main__':

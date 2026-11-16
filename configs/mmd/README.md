@@ -10,7 +10,7 @@
                               │
 PMX + (VMD|VPD) ── mmd_pose ──┤──→ 逐帧骨骼世界位姿 {骨名: [位置, 四元数]}    ← 生产线用这个
                               │
-                              └── vmd_to_qpos ──→ qpos ──→ viewer 用（只为可视化）
+                              └── mmd_render ──→ MJCF + qpos ──→ viewer 用（只为可视化）
 
 绑定姿态 ── build_config ──→ pmx_to_g1.json（骨名/权重/比例，C=单位）
 成对姿态 ── calibrate ─────→ 写入 C
