@@ -31,15 +31,15 @@ from scipy.spatial.transform import Rotation as R
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import mmd_pose                                        # noqa: E402
 import robot_profile                                   # noqa: E402
+from engine.bake import bind_pose, world_poses         # noqa: E402
 from mmd_profile import BILATERAL_BONES, ROOT_BONE, SCALE_BONE, TORSO_BONE   # noqa: E402
 
 DEFAULT_GMR_ROOT = r'D:\MY_TOOL\GitHub_Tools\GMR'
 
 
 def _rotation(quaternion):
-    """mmd_pose quaternions are (w, x, y, z)."""
+    """world_poses quaternions are (w, x, y, z)."""
     w, x, y, z = (float(v) for v in quaternion)
     return R.from_quat([x, y, z, w])
 
@@ -108,13 +108,13 @@ def main():
     # --- source pose (no MuJoCo) ---------------------------------------------------------------
     wanted = sorted(set(profile.links.values()) | {ROOT_BONE, TORSO_BONE, SCALE_BONE})
     if args.vpd:
-        frames, _ = mmd_pose.load(args.pmx, args.vpd, wanted)
+        frames, _ = world_poses(args.pmx, args.vpd, wanted)
         source = frames[0]
         note = 'vpd: %s' % Path(args.vpd).name
     else:
-        source = mmd_pose.bind_pose(args.pmx, wanted)[0]
+        source = bind_pose(args.pmx, wanted)[0]
         note = 'bind pose'
-    bind_frame = mmd_pose.bind_pose(args.pmx, wanted)[0]
+    bind_frame = bind_pose(args.pmx, wanted)[0]
 
     def source_position(name):
         return np.asarray(source[name][0])

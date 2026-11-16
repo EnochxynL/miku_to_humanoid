@@ -30,7 +30,7 @@ GMR 的机器人键（如 `booster_t1_29dof`），`links` 与 `segments` 由 `ro
 ```
                          engine/  （vendored mmd2gltf 的形变管线）
                               │
-PMX + (VMD|VPD) ── mmd_pose ──┤──→ 逐帧骨骼世界位姿 {骨名: [位置, 四元数]}    ← 生产线用这个
+PMX + (VMD|VPD) ── engine.bake ──┤──→ 逐帧骨骼世界位姿 {骨名: [位置, 四元数]}    ← 生产线用这个
                               │
                               └── mmd_model ──→ MjModel（纯内存）──→ view（只为看）
 
@@ -63,7 +63,7 @@ PMX + (VMD|VPD) ── mmd_pose ──┤──→ 逐帧骨骼世界位姿 {骨
 | 文件 | 输入 → 输出 |
 |---|---|
 | `src/mmd/engine/` | vendored MMD 引擎：`pmx` `vmd` `mathutil` `animation`（形变管线）`bake` `mesh` |
-| `src/mmd/mmd_pose.py` | `pmx + (vmd\|vpd)` → 逐帧世界位姿（已换算到机器人空间）|
+| `src/mmd/engine/bake.py` | `pmx + (vmd\|vpd)` → 逐帧世界位姿（已换算到机器人空间）|
 | src/mmd/gmr_paired_pose.py | 解出"机器人摆成 MMD 姿态"的关节角（肢体方向匹配）|
 | src/mmd/gmr_calibrate.py | **消费**该关节角 → 骨架 + C → **已带 C 的配置** |
 | `src/mmd/gmr_calibrate.py` | + 成对姿态（`--pose` / `--vpd`）→ C（原地写入配置）|

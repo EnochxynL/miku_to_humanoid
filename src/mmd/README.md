@@ -4,7 +4,7 @@
 
 | 层 | 文件 | 作用 |
 |---|---|---|
-| **MMD 原生** | `mmd_pose.py` | `pmx + (vmd\|vpd)` → 逐帧骨骼世界位姿。源侧唯一入口，不碰 MuJoCo |
+| **MMD 原生** | `engine/bake.py` | `pmx + (vmd\|vpd)` → 逐帧骨骼世界位姿。源侧唯一入口，不碰 MuJoCo |
 | | `mmd_profile.py` | **MMD 侧知识**：哪几条肢体方向定义姿态、LaFAN1→MMD 一览、捩骨参考 |
 | | `engine/mmd_model.py` | **PMX → MjModel（纯内存）**：MJCF 文本 + MSH 网格 + PNG 贴图字节 |
 | | `view.py` | **一个窗口**：MMD 角色 + 机器人 + 可选骨架胶囊（三层 overlay，不跑 GMR）|
@@ -17,7 +17,7 @@
 ## 数据流
 
 ```
-pmx + (vmd|vpd) ── mmd_pose ──→ 世界位姿 ──┐
+pmx + (vmd|vpd) ── engine/bake.py ──→ 世界位姿 ──┐
                                           ├─ gmr_retarget ──→ G1 qpos ──→ export_gmr_pickle ──→ .pkl
 g1.xml + pmx ── gmr_paired_pose ──→ 关节角 ── gmr_calibrate ──→ C ──┘
 

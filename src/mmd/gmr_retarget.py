@@ -1,7 +1,7 @@
 """Retarget an MMD motion onto the robot with GMR's IK.
 
 Inputs are data, not geometry: the calibrated config (which carries C) and the source's world poses
-from ``mmd_pose``. No MJCF of the source rig is involved - the vendored deform pipeline already gives
+from ``world_poses``. No MJCF of the source rig is involved - the vendored deform pipeline already gives
 world poses, including the ``センター`` translation that a qpos round trip used to drop.
 
     PYTHONPATH=src;src\\mmd <gmr>/.venv/Scripts/python.exe src/mmd/gmr_retarget.py \
@@ -23,13 +23,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import mujoco                                          # noqa: E402
 
-import mmd_pose                                        # noqa: E402
+from engine.bake import wanted_bones, world_poses      # noqa: E402
 
 
 def load_frames(pmx_path, pose_path, config_path, step=1):
     """GMR human_data frames: {bone name: [position(3), quaternion(w, x, y, z)]}."""
-    wanted = mmd_pose.wanted_from_config(config_path)
-    frames, unmatched = mmd_pose.load(pmx_path, pose_path, wanted, step=step)
+    wanted = wanted_bones(config_path)
+    frames, unmatched = world_poses(pmx_path, pose_path, wanted, step=step)
     return frames, unmatched
 
 
