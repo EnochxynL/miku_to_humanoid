@@ -194,8 +194,8 @@ def main():
     parser.add_argument('--no-ik', dest='solve_ik', action='store_false')
     args = parser.parse_args()
 
-    from engine import mmd_model
-    model = mmd_model.build(args.pmx, mesh=args.mesh)
+    from engine import mjcf
+    model = mjcf.build(args.pmx, mesh=args.mesh)
     qpos, unmatched, times, missing = bake(args.pmx, args.vmd, model.model,
                                            step=args.step, solve_ik=args.solve_ik)
     out = Path(args.out)

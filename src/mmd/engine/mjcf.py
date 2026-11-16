@@ -8,7 +8,7 @@ What stays the same is the model itself: every PMX bone becomes a body with a ba
 bone, so the animation pipeline can address joints by name and the viewer draws the character exactly as
 the exporter did.
 
-Costs, measured on the heita model (511 bones, 823 mesh groups, 12 textures):
+Costs, measured on the 黑塔 model (511 bones, 823 mesh groups, 12 textures):
 
     parse PMX          0.5 s   (cached per file)
     textures           ~0.4 s  (already-PNG files are reused untouched; converting the 4k PNGs again

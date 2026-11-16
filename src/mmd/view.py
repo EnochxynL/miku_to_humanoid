@@ -284,10 +284,10 @@ def main():
     if args.pose and not args.pmx:
         raise SystemExit('--pose needs --pmx')
 
-    from engine import mmd_model
+    from engine import mjcf
     from engine.bake import bake
 
-    bundle = mmd_model.build(args.pmx) if args.pmx else None
+    bundle = mjcf.build(args.pmx) if args.pmx else None
     if bundle is not None:
         print('  character: %d bones, %d mesh groups, %d textures'
               % (bundle.info['bones'], bundle.info['mesh_groups'], bundle.info['textures']))
