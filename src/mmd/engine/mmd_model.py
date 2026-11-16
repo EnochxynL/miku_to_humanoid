@@ -201,6 +201,7 @@ def _layer(pmx_path, scale, mesh, min_alpha):
         'triangles': sum(g['triangles'] for g in built['groups']) if built else 0,
         'textures': len(built['textures']) if built else 0,
         'skipped_groups': built['skipped'] if built else 0,
+        'padded_groups': built.get('padded_groups', 0) if built else 0,
         'built': built,
         'names': names,
     }
