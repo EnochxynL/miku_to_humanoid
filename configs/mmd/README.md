@@ -108,7 +108,7 @@ uv run python src/mmd/glb_extract.py --glb <model.glb> --out-dir runtime/glb --m
 # 3. base config (bone names, weights, scale table)
 <gmr>/.venv/Scripts/python.exe src/mmd/glb_to_gmr.py `
     --glb-xml runtime/glb/herta.xml --nodes runtime/glb/herta_nodes.json `
-    --anim runtime/glb/herta_anim.npz --config-out runtime/gmr_inputs/glb_to_g1.json --frames 0
+    --anim runtime/glb/herta_anim.npz --build-config runtime/gmr_inputs/glb_to_g1.json --frames 0
 
 # 4. the calibration that matters
 uv run python src/mmd/paired_pose_offsets.py --glb-xml runtime/glb/herta.xml `
@@ -116,7 +116,7 @@ uv run python src/mmd/paired_pose_offsets.py --glb-xml runtime/glb/herta.xml `
 
 # 5. bake the robot motion WITH the calibrated config (rebuilding it here would overwrite the
 #    paired-pose offsets and silently produce a worse motion - use --config-in)
-<gmr>/.venv/Scripts/python.exe src/mmd/glb_to_gmr.py --config-in configs/mmd/glb_to_g1.json 
+<gmr>/.venv/Scripts/python.exe src/mmd/glb_to_gmr.py --config configs/mmd/glb_to_g1.json 
     --glb-xml runtime/glb/herta.xml --nodes runtime/glb/herta_nodes.json 
     --anim runtime/glb/herta_anim.npz --frames 0 --bake-out runtime/glb/g1_final.npz
 

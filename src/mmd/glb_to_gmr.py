@@ -10,8 +10,8 @@ MMD ones, so the link tables in ``pmx_to_gmr`` apply unchanged.
 
     <gmr>/.venv/Scripts/python.exe src/mmd/glb_to_gmr.py \
         --glb-xml runtime/glb/herta.xml --nodes runtime/glb/herta_nodes.json \
-        --anim runtime/glb/herta_anim.npz --config-out runtime/gmr_inputs/glb_to_g1.json \
-        --bake-out runtime/glb/g1_qpos.npz --view
+        --anim runtime/glb/herta_anim.npz --build-config runtime/gmr_inputs/glb_to_g1.json \
+        --config configs/mmd/glb_to_g1.json --bake-out runtime/glb/g1_qpos.npz --view
 """
 from __future__ import annotations
 
@@ -169,11 +169,12 @@ def main():
     parser.add_argument('--anim', required=True)
     parser.add_argument('--robot', default='unitree_g1')
     parser.add_argument('--gmr-root', default=r'D:\MY_TOOL\GitHub_Tools\GMR')
-    parser.add_argument('--config-out', default=None,
-                        help='where to write the built config; required unless --config-in is used')
-    parser.add_argument('--config-in', default=None,
-                        help='bake with an existing calibrated config instead of rebuilding one '
-                             '(rebuilding overwrites the paired-pose offsets)')
+    parser.add_argument('--config', '--config-in', dest='config_in', default=None,
+                        help='use this config (the calibrated one) instead of building a new one; '
+                             'rebuilding would overwrite the paired-pose offsets')
+    parser.add_argument('--build-config', '--config-out', dest='config_out', default=None,
+                        help='build a fresh config and write it here; only for setting up, the bake '
+                             'wants --config')
     parser.add_argument('--bake-out', default=None)
     parser.add_argument('--two-axis', action='store_true',
                         help='also align the bending plane (experimental: currently collapses to '
@@ -192,9 +193,8 @@ def main():
     import general_motion_retargeting as gmrmod
     from general_motion_retargeting import GeneralMotionRetargeting as GMR
 
-    robot_xml = str(gmr_root / 'assets' / 'unitree_g1' / 'g1_mocap_29dof.xml')
-    base_path = gmr_root / 'general_motion_retargeting' / 'ik_configs' / 'bvh_lafan1_to_g1.json'
-    base = json.loads(base_path.read_text(encoding='utf-8'))
+    robot_xml = str(gmrmod.ROBOT_XML_DICT[args.robot]) if args.robot in getattr(
+        gmrmod, 'ROBOT_XML_DICT', {}) else str(gmr_root / 'assets' / 'unitree_g1' / 'g1_mocap_29dof.xml')
 
     if args.config_in:
         # Reusing the config matters: building one here would overwrite the paired-pose offsets with
@@ -205,7 +205,10 @@ def main():
         print('using existing config:', config_path)
     else:
         if not args.config_out:
-            raise SystemExit('either --config-out (build) or --config-in (reuse) is required')
+            raise SystemExit('either --build-config (build) or --config (reuse) is required')
+        # the stock config is only a template, so it is loaded here rather than unconditionally
+        base_path = gmr_root / 'general_motion_retargeting' / 'ik_configs' / 'bvh_lafan1_to_g1.json'
+        base = json.loads(base_path.read_text(encoding='utf-8'))
         config, report = build_config(base, robot_xml, args.glb_xml, args.nodes,
                                       two_axis=args.two_axis)
         config_path = Path(args.config_out).resolve()
