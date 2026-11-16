@@ -20,7 +20,7 @@ line); without it the arms are perfect and the body stays twisted.
 Source world poses come from ``mmd_pose`` (the vendored deform pipeline), so there is no qpos round
 trip and the ``センター`` translation is included.
 
-    PYTHONPATH=src;src\\mmd uv run python src/mmd/calibrate.py --pmx <model.pmx> \
+    PYTHONPATH=src;src\\mmd uv run python src/mmd/gmr_calibrate.py --pmx <model.pmx> \
         --g1-xml <gmr>/assets/unitree_g1/g1_mocap_29dof.xml \
         --base <gmr>/general_motion_retargeting/ik_configs/bvh_lafan1_to_g1.json \
         --out configs/mmd/pmx_to_g1.json --pose configs/mmd/paired_pose_pmx.json \

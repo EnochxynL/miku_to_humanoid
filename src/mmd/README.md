@@ -1,19 +1,35 @@
-# src/mmd —— MMD 到机器人的流水线
+# src/mmd — MMD 到机器人
 
-链路与用法见 [`docs/pmx_rigidbody_pipeline.md`](../../docs/pmx_rigidbody_pipeline.md)。
+三层，**依赖方向只能从上往下**：`mmd_*` 只依赖引擎，`gmr_*` 才依赖 GMR 和机器人模型。
 
-| 文件 | 作用 |
-|---|---|
-| `pmx_to_mjcf.py` | PMX 骨架 → MuJoCo 刚体模型（每骨一个 body + ball joint）|
-| `bake_pmx_vmd.py` | VMD → PMX qpos，含付与親与 CCD IK；`--view` 开窗口 |
-| `pmx_to_gmr.py` | PMX 位姿 → GMR → 目标机器人 qpos；`--play` 播放 |
-| `vendor_pmx.py` / `vendor_vmd.py` | PMX / VMD 解析器（从作者自己的仓库引入）|
-| `configs/` | 早期尝试的 GMR 配置（线路已被 PMX 刚体路线取代，仅存档）|
+| 层 | 文件 | 作用 |
+|---|---|---|
+| **MMD 原生** | `mmd_pose.py` | `pmx + (vmd\|vpd)` → 逐帧骨骼世界位姿。源侧唯一入口，不碰 MuJoCo |
+| | `mmd_bones.py` | MMD 知识：链接↔骨名、骨→下一关节、测量段 |
+| | `mmd_render.py` | 可视化素材：MJCF（`--mesh` 带贴图）+ qpos |
+| | `view_model.py` / `view_skeleton.py` | 播放 / 机器人+源骨架对照 |
+| **GMR 桥接** | `gmr_calibrate.py` | 成对姿态 → **已带 C 的 IK 配置**（骨架与 C 同一次产生）|
+| | `gmr_retarget.py` | 源位姿 + C → G1 qpos |
+| | `export_gmr_pickle.py` | G1 qpos → GMR pickle |
+| **引擎** | `engine/` | vendored 自 mmd2gltf：`pmx` `vmd` `mathutil` `animation` `bake` `mesh` |
 
-诊断工具（`check_*.py`、`port_pmx_mapping.py`、`run_player_dump.py`）用于复算播放器的
-对齐角、核对时间轴、检验 GMR 的每链路常量是否成立——都是这条流水线的验收依据。
+## 数据流
 
-`mmd_glb_to_bvh.py`、`bvh_retopologize.py`、`bvh_viewer.py` 属于**已否决**的
-"MMD → BVH → GMR" 路线，保留作为记录，见 `docs/gmr_offset_derivation.md`。
+```
+pmx + (vmd|vpd) ── mmd_pose ──→ 世界位姿 ──┐
+                                          ├─ gmr_retarget ──→ G1 qpos ──→ export_gmr_pickle ──→ .pkl
+g1.xml + 成对姿态 ── gmr_calibrate ──→ C ──┘
 
-所有命令都需要 `PYTHONPATH=src`。
+pmx + vmd ── mmd_render ──→ MJCF + qpos ──→ view_model（只为看）
+```
+
+数学只有一条：`T_link(t) = S_bone(t) · C`，其中 `C = S_bone(P)⁻¹ · T_link(P)` 由一个配对姿态读出。
+
+## 约定
+
+- `PYTHONPATH=src;src\mmd`
+- **body/joint 名就是 MMD 骨名**（`左腕`），没有映射表
+- 生产线不用 MuJoCo 算源侧：`Skeleton.world()` 直接给世界位姿，避免 qpos 往返丢掉 `センター` 平移
+- 未校准的配置**从不落盘**：`gmr_calibrate.py` 一次跑完骨架与 C
+
+细节与踩过的坑见 [`configs/mmd/README.md`](../../configs/mmd/README.md)。

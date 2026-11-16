@@ -4,7 +4,7 @@ Inputs are data, not geometry: the calibrated config (which carries C) and the s
 from ``mmd_pose``. No MJCF of the source rig is involved - the vendored deform pipeline already gives
 world poses, including the ``センター`` translation that a qpos round trip used to drop.
 
-    PYTHONPATH=src;src\\mmd <gmr>/.venv/Scripts/python.exe src/mmd/retarget.py \
+    PYTHONPATH=src;src\\mmd <gmr>/.venv/Scripts/python.exe src/mmd/gmr_retarget.py \
         --pmx <model.pmx> --vmd <motion.vmd> --config configs/mmd/pmx_to_g1.json \
         --bake-out runtime/pmx/g1.npz
 """

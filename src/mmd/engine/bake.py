@@ -10,7 +10,7 @@ and a hand port misses them:
   switch them on/off per frame (``ik_frames``).
 
 This module only turns the reference's per-bone local rotations into qpos for the MJCF that
-``pmx_to_mjcf`` produced: bodies carry the bone names, so joints are found by name, and the
+``mmd_render`` produced: bodies carry the bone names, so joints are found by name, and the
 MMD -> MuJoCo basis (a reflection) is undone by ``mmd_quat_to_mujoco``.
 
     PYTHONPATH=src;src\\mmd uv run python -m engine.bake --pmx <model.pmx> --vmd <motion.vmd> \
@@ -158,7 +158,7 @@ def main():
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--pmx', required=True)
     parser.add_argument('--vmd', required=True)
-    parser.add_argument('--xml', required=True, help='MJCF produced by pmx_to_mjcf for this PMX')
+    parser.add_argument('--xml', required=True, help='MJCF produced by mmd_render for this PMX')
     parser.add_argument('--out', required=True)
     parser.add_argument('--step', type=int, default=1, help='sample every N VMD frames')
     parser.add_argument('--no-ik', dest='solve_ik', action='store_false')

@@ -43,19 +43,18 @@ PMX + (VMD|VPD) ── mmd_pose ──┤──→ 逐帧骨骼世界位姿 {骨
 |---|---|
 | `src/mmd/engine/` | vendored MMD 引擎：`pmx` `vmd` `mathutil` `animation`（形变管线）`bake` `mesh` |
 | `src/mmd/mmd_pose.py` | `pmx + (vmd\|vpd)` → 逐帧世界位姿（已换算到机器人空间）|
-| `src/mmd/build_config.py` | 绑定姿态 + `g1.xml` + GMR 出厂配置 → `pmx_to_g1.json` 骨架 |
-| `src/mmd/calibrate.py` | + 成对姿态（`--pose` / `--vpd`）→ C（原地写入配置）|
-| `src/mmd/retarget.py` | 源位姿 + C → G1 qpos |
+| `src/mmd/gmr_calibrate.py` | 绑定姿态 + `g1.xml` + GMR 出厂配置 → `pmx_to_g1.json` 骨架 |
+| `src/mmd/gmr_calibrate.py` | + 成对姿态（`--pose` / `--vpd`）→ C（原地写入配置）|
+| `src/mmd/gmr_retarget.py` | 源位姿 + C → G1 qpos |
 | `src/mmd/export_gmr_pickle.py` | G1 qpos → GMR pickle |
 | `src/mmd/mmd_bones.py` | **MMD 知识**：链接→骨名、骨→下一关节（跳过捩/袖骨）|
-| `src/mmd/measurements.py` | 量尺：报告误差用哪段（不参与烘焙）|
 
 **可视化专用**
 
 | 文件 | 用途 |
 |---|---|
-| `src/mmd/pmx_to_mjcf.py` | PMX 骨架 → MJCF；`--mesh` 出贴图模型 |
-| `src/mmd/vmd_to_qpos.py` | 位姿 → qpos（由 `engine.bake` 驱动，只有一个目的：让 viewer 能播）|
+| `src/mmd/mmd_render.py` | PMX 骨架 → MJCF；`--mesh` 出贴图模型 |
+| `src/mmd/mmd_render.py` | 位姿 → qpos（由 `engine.bake` 驱动，只有一个目的：让 viewer 能播）|
 | `src/mmd/view_model.py` / `view_skeleton.py` | 播放 / 机器人+源骨架对照 |
 
 ## 复现
@@ -67,15 +66,15 @@ $gmr = 'D:\MY_TOOL\GitHub_Tools\GMR'
 $g1  = "$gmr\assets\unitree_g1\g1_mocap_29dof.xml"
 
 # 1. 配置骨架 → 2. 校准（没有机器人姿态文件时先解一次：去掉 --pose 加 --write-pose）
-uv run python src/mmd/build_config.py --pmx $pmx --g1-xml $g1 `
+uv run python src/mmd/gmr_calibrate.py --pmx $pmx --g1-xml $g1 `
     --base "$gmr\general_motion_retargeting\ik_configs\bvh_lafan1_to_g1.json" `
     --out configs/mmd/pmx_to_g1.json
-uv run python src/mmd/calibrate.py --pmx $pmx --g1-xml $g1 `
+uv run python src/mmd/gmr_calibrate.py --pmx $pmx --g1-xml $g1 `
     --config configs/mmd/pmx_to_g1.json --pose configs/mmd/paired_pose_pmx.json `
     --record configs/mmd/calibration_pmx.json --report
 
 # 3. 重定向（源侧无 MuJoCo，无 qpos）
-<gmr>/.venv/Scripts/python.exe src/mmd/retarget.py --pmx $pmx --vmd $vmd `
+<gmr>/.venv/Scripts/python.exe src/mmd/gmr_retarget.py --pmx $pmx --vmd $vmd `
     --config configs/mmd/pmx_to_g1.json --bake-out runtime/pmx/g1.npz
 
 # 4. 交付
@@ -85,8 +84,8 @@ uv run python src/mmd/export_gmr_pickle.py --qpos runtime/pmx/g1.npz --out runti
 可视化（可选）：
 
 ```powershell
-uv run python src/mmd/pmx_to_mjcf.py --pmx $pmx --out runtime/pmx/model.xml --tree runtime/pmx/tree.json --mesh
-uv run python src/mmd/vmd_to_qpos.py --pmx $pmx --vmd $vmd --xml runtime/pmx/model.xml --out runtime/pmx/anim.npz
+uv run python src/mmd/mmd_render.py --pmx $pmx --out runtime/pmx/model.xml --tree runtime/pmx/tree.json --mesh
+uv run python src/mmd/mmd_render.py --pmx $pmx --vmd $vmd --xml runtime/pmx/model.xml --out runtime/pmx/anim.npz
 uv run python src/mmd/view_model.py --xml runtime/pmx/model.xml --qpos runtime/pmx/anim.npz --loop
 ```
 
