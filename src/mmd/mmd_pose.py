@@ -29,77 +29,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from engine.animation import Skeleton, Track        # noqa: E402
 from engine.pmx import parse_pmx                    # noqa: E402
 from engine.vmd import parse_vmd                    # noqa: E402
-from engine.vpd import parse_vpd                    # noqa: E402
+from engine.vmd_tracks import (frame_range, ik_schedule, match_tracks,   # noqa: E402
+                               vpd_frame)
 
 DEFAULT_SCALE = 0.07
 
 
 def to_robot_position(position, scale=DEFAULT_SCALE):
-    x, y, z = (float(v) for v in position)
-    return np.array([-z, x, y]) * scale
+    from engine.basis import to_vector
+    return to_vector(position, scale)
 
 
 def to_robot_quaternion(quaternion):
-    """MMD (x, y, z, w) -> (w, x, y, z) under the reflection above."""
-    x, y, z, w = (float(v) for v in quaternion)
-    return np.array([w, z, -x, -y])
-
-
-def _name_map(bones):
-    """VMD stores bone names truncated to 15 shift-jis bytes; truncate identically to match."""
-    mapping = {}
-    for index, bone in enumerate(bones):
-        try:
-            key = bone['name'].encode('shift-jis', errors='replace')[:15]
-        except Exception:
-            key = bone['name'].encode('utf-8', errors='replace')[:15]
-        mapping.setdefault(key, index)
-    return mapping
-
-
-def _tracks(model, vmd):
-    bones = model['bones']
-    name_map = _name_map(bones)
-    tracks, unmatched = {}, []
-    for name, keys in vmd['bones'].items():
-        index = name_map.get(name.encode('shift-jis', errors='replace')[:15])
-        if index is None:
-            unmatched.append(name)
-        else:
-            tracks[index] = Track(keys)
-    return tracks, unmatched
-
-
-def _ik_schedule(model, vmd, solve_ik=True):
-    bones = model['bones']
-    all_ik = [i for i, b in enumerate(bones) if b['flags'] & 0x0020 and 'ik' in b]
-    base = set(all_ik) if solve_ik else set()
-
-    states = []
-    if vmd.get('ik_frames'):
-        lookup = {}
-        for index in all_ik:
-            key = bones[index]['name'].encode('shift-jis', errors='replace')[:20]
-            lookup.setdefault(key, index)
-        for frame in vmd['ik_frames']:
-            values = {}
-            for name, on in frame['ik'].items():
-                index = lookup.get(name.encode('shift-jis', errors='replace')[:20])
-                if index is not None:
-                    values[index] = on
-            states.append((frame['frame'], values))
-
-    def enabled_at(frame):
-        if not states:
-            return base
-        state = {}
-        for start, values in states:
-            if start > frame:
-                break
-            state.update(values)
-        return {i for i in base if state.get(i, True)}
-
-    return enabled_at
+    from engine.basis import to_quaternion
+    return to_quaternion(quaternion)
 
 
 def bind_pose(pmx_path, wanted):
@@ -127,28 +70,16 @@ def load(pmx_path, pose_path, wanted, step=1, solve_ik=True, scale=DEFAULT_SCALE
         return bind_pose(pmx_path, wanted), []
 
     if str(pose_path).lower().endswith('.vpd'):
-        print('WARNING: This is a .vpd file')
         # a pose is one frame: no tracks, no IK schedule
-        sampled, unmatched = {}, []
-        for name, (translation, rotation) in parse_vpd(str(pose_path)).items():
-            index = index_of.get(name)
-            if index is None:
-                unmatched.append(name)
-            else:
-                sampled[index] = (np.array(translation, dtype=float),
-                                  np.array(rotation, dtype=float))
+        sampled, unmatched = vpd_frame(bones, pose_path)
         skeleton = Skeleton(model)
         skeleton.pose(sampled)
         return [_frame(skeleton, bones, index_of, wanted)], unmatched
 
     vmd = parse_vmd(str(pose_path))
-    tracks, unmatched = _tracks(model, vmd)
-    enabled_at = _ik_schedule(model, vmd, solve_ik)
-
-    last = vmd['max_frame']
-    frames = list(range(0, last + 1, step))
-    if frames[-1] != last:
-        frames.append(last)
+    tracks, unmatched = match_tracks(bones, vmd)
+    enabled_at = ik_schedule(bones, vmd, solve_ik)
+    frames = frame_range(vmd, step)
 
     skeleton = Skeleton(model)
     out = []

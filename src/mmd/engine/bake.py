@@ -29,27 +29,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import mujoco                                          # noqa: E402
 
-from engine.animation import FPS, Skeleton, Track      # noqa: E402
+from engine.animation import FPS, Skeleton            # noqa: E402
+from engine.basis import to_quaternion, to_vector     # noqa: E402
 from engine.pmx import parse_pmx                       # noqa: E402
 from engine.vmd import parse_vmd                       # noqa: E402
-from engine.vpd import parse_vpd                       # noqa: E402
-
-
-def mmd_quat_to_mujoco(rotation) -> np.ndarray:
-    """MMD quaternion (x, y, z, w) -> MuJoCo (w, x, y, z) under the (-z, x, y) reflection."""
-    x, y, z, w = (float(v) for v in rotation)
-    return np.array([w, z, -x, -y])
-
-
-def _name_map(bones):
-    mapping = {}
-    for index, bone in enumerate(bones):
-        try:
-            key = bone['name'].encode('shift-jis', errors='replace')[:15]
-        except Exception:
-            key = bone['name'].encode('utf-8', errors='replace')[:15]
-        mapping.setdefault(key, index)
-    return mapping
+from engine.vmd_tracks import (frame_range, ik_schedule, match_tracks,   # noqa: E402
+                               vpd_frame)
 
 
 def bake(pmx_path, pose_path, robot_model, step=1, solve_ik=True, scale=0.07):
@@ -60,65 +45,20 @@ def bake(pmx_path, pose_path, robot_model, step=1, solve_ik=True, scale=0.07):
     only needs the joint names).
     """
     model = parse_pmx(str(pmx_path))
+    bones = model['bones']
     is_pose = str(pose_path).lower().endswith('.vpd')
     vmd = {'bones': {}, 'max_frame': 0, 'ik_frames': []} if is_pose else parse_vmd(str(pose_path))
-    bones = model['bones']
-    count = len(bones)
-
-    name_map = _name_map(bones)
-    tracks, unmatched = {}, []
-    for name, keys in vmd['bones'].items():
-        index = name_map.get(name.encode('shift-jis', errors='replace')[:15])
-        if index is None:
-            unmatched.append(name)
-        else:
-            tracks[index] = Track(keys)
-
-    all_ik = [i for i, b in enumerate(bones) if b['flags'] & 0x0020 and 'ik' in b]
-    base_enabled = set(all_ik) if solve_ik else set()
-
-    ik_states = []
-    if vmd.get('ik_frames'):
-        ik_name_map = {}
-        for index in all_ik:
-            key = bones[index]['name'].encode('shift-jis', errors='replace')[:20]
-            ik_name_map.setdefault(key, index)
-        for frame in vmd['ik_frames']:
-            states = {}
-            for name, on in frame['ik'].items():
-                index = ik_name_map.get(name.encode('shift-jis', errors='replace')[:20])
-                if index is not None:
-                    states[index] = on
-            ik_states.append((frame['frame'], states))
-
-    def enabled_at(frame):
-        if not ik_states:
-            return base_enabled
-        state = {}
-        for start, values in ik_states:
-            if start > frame:
-                break
-            state.update(values)
-        return {i for i in base_enabled if state.get(i, True)}
 
     # A VPD contributes one frame; a VMD contributes the sampled range.
-    pose_frame = None
     if is_pose:
-        pose = parse_vpd(str(pose_path))
-        pose_frame = {}
-        for name, (translation, rotation) in pose.items():
-            index = name_map.get(name.encode('shift-jis', errors='replace')[:15])
-            if index is None:
-                unmatched.append(name)
-            else:
-                pose_frame[index] = (np.array(translation, dtype=float),
-                                     np.array(rotation, dtype=float))
+        pose_frame, unmatched = vpd_frame(bones, pose_path)
+        tracks, enabled_at = {}, lambda _frame: set()
         frames = [0]
     else:
-        last = vmd['max_frame']
-        frames = list(range(0, last + 1, step))
-        if frames[-1] != last:
-            frames.append(last)
+        pose_frame = None
+        tracks, unmatched = match_tracks(bones, vmd)
+        enabled_at = ik_schedule(bones, vmd, solve_ik)
+        frames = frame_range(vmd, step)
 
     skeleton = Skeleton(model)
 
@@ -173,10 +113,9 @@ def bake(pmx_path, pose_path, robot_model, step=1, solve_ik=True, scale=0.07):
         if free_address is not None and translate_index is not None:
             world = np.array(skeleton.world(translate_index)[1], dtype=float)
             delta = world - bind_translate
-            qpos[free_address:free_address + 3] = np.array(
-                [-delta[2], delta[0], delta[1]]) * scale
+            qpos[free_address:free_address + 3] = to_vector(delta, scale)
         for index, address in addresses.items():
-            qpos[address:address + 4] = mmd_quat_to_mujoco(skeleton.local_q[index])
+            qpos[address:address + 4] = to_quaternion(skeleton.local_q[index])
         out.append(qpos)
 
     return np.array(out), unmatched, np.array([f / FPS for f in frames]), missing
