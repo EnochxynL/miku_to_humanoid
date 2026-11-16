@@ -28,6 +28,8 @@ import numpy as np
 # The robot model lives in GMR's checkout; keep it as a default so this file needs no GMR import.
 DEFAULT_ROBOT_XML = r'D:\MY_TOOL\GitHub_Tools\GMR\assets\unitree_g1\g1_mocap_29dof.xml'
 ROBOT_PREFIX = 'g1_'
+MMD_BONE_COLOUR = (0.98, 0.62, 0.16, 1.0)
+ROBOT_BONE_COLOUR = (0.20, 0.85, 0.95, 1.0)
 WIDTH = {mujoco.mjtJoint.mjJNT_FREE: 7, mujoco.mjtJoint.mjJNT_BALL: 4,
          mujoco.mjtJoint.mjJNT_SLIDE: 1, mujoco.mjtJoint.mjJNT_HINGE: 1}
 
@@ -146,13 +148,18 @@ class QposOverlay(Overlay):
 
 
 class SkeletonOverlay(Overlay):
-    """Draw the bone structure as capsules, so the pose that produced the targets is legible."""
+    """Draw every bone of one rig: a capsule towards the child, a sphere when there is no length.
 
-    def __init__(self, exclude, radius=0.010, rgba=(0.98, 0.62, 0.16, 1.0), prefix=''):
+    The class describes a single style; which rig it draws is the ``select`` predicate, so two
+    instances give the MMD skeleton and the robot skeleton their own thickness and colour. No name
+    filtering by default - MMD twists sit exactly on their parent and would vanish otherwise.
+    """
+
+    def __init__(self, select=None, exclude='', radius=0.006, rgba=(0.98, 0.62, 0.16, 1.0)):
+        self.select = select or (lambda name: True)
         self.skip = [s for s in exclude.split(',') if s]
         self.radius = radius
         self.rgba = np.array(rgba)
-        self.prefix = prefix
         self.edges = []
 
     def prepare(self, model):
@@ -160,36 +167,36 @@ class SkeletonOverlay(Overlay):
                    for body in range(model.nbody)}
         for body in range(1, model.nbody):
             name = name_of[body]
-            if not name or (self.prefix and not name.startswith(self.prefix)):
+            if not name or not self.select(name):
                 continue
             if any(fragment in name for fragment in self.skip):
                 continue
             parent = int(model.body_parentid[body])
-            parent_name = name_of.get(parent, '')
-            if not parent_name or parent_name == 'world':
+            if not name_of.get(parent) or name_of[parent] == 'world':
                 continue
             self.edges.append((parent, body))
-        print('  skel %5s edges, %2d bones' % ('', len(self.edges)))
+        print('  skel %d bones (%s)' % (len(self.edges), 'robot' if self.radius >= 0.01 else 'mmd'))
 
     def apply(self, qpos, data, scene, index):
         # append: user_scn starts empty every frame, but a scene built by the renderer already holds
         # the model's geoms and must not be wiped
-        drawn = scene.ngeom
         for parent, body in self.edges:
-            if drawn >= scene.maxgeom:
+            if scene.ngeom >= scene.maxgeom:
                 break
             start = np.array(data.xpos[parent])
             end = np.array(data.xpos[body])
+            geom = scene.geoms[scene.ngeom]
             if np.linalg.norm(end - start) < 1e-4:
-                continue
-            geom = scene.geoms[drawn]
-            mujoco.mjv_initGeom(geom, type=mujoco.mjtGeom.mjGEOM_CAPSULE,
-                                size=np.array([self.radius, 0.0, 0.0]),
-                                pos=np.zeros(3), mat=np.eye(3).flatten(), rgba=self.rgba)
-            mujoco.mjv_connector(geom, type=mujoco.mjtGeom.mjGEOM_CAPSULE,
-                                 width=self.radius, from_=start, to=end)
-            drawn += 1
-        scene.ngeom = drawn
+                mujoco.mjv_initGeom(geom, type=mujoco.mjtGeom.mjGEOM_SPHERE,
+                                    size=np.array([self.radius * 1.6, 0.0, 0.0]),
+                                    pos=start, mat=np.eye(3).flatten(), rgba=self.rgba)
+            else:
+                mujoco.mjv_initGeom(geom, type=mujoco.mjtGeom.mjGEOM_CAPSULE,
+                                    size=np.array([self.radius, 0.0, 0.0]),
+                                    pos=np.zeros(3), mat=np.eye(3).flatten(), rgba=self.rgba)
+                mujoco.mjv_connector(geom, type=mujoco.mjtGeom.mjGEOM_CAPSULE,
+                                     width=self.radius, from_=start, to=end)
+            scene.ngeom += 1
 
 
 # --------------------------------------------------------------------------------------- display
@@ -249,10 +256,12 @@ def main():
                              'they stand still comes from --offset')
     parser.add_argument('--ghost-alpha', type=float, default=0.30)
     parser.add_argument('--offset', type=float, default=1.6, help='where the robot stands (metres)')
-    parser.add_argument('--skeleton', action='store_true', help='draw the source bones as capsules')
-    parser.add_argument('--exclude', default='下擺,髪,帽,袖,裙,飾',
-                        help='bone name fragments to skip (clothing floods the view)')
-    parser.add_argument('--radius', type=float, default=0.010)
+    parser.add_argument('--skeleton', action='store_true',
+                        help='draw every bone of both rigs (capsule to the child, sphere if it has none)')
+    parser.add_argument('--skeleton-exclude', default='',
+                        help='bone name fragments to skip; empty by default so the skeleton is complete')
+    parser.add_argument('--skeleton-radius-mmd', type=float, default=0.002, help='MMD bone radius')
+    parser.add_argument('--skeleton-radius-robot', type=float, default=0.010, help='robot bone radius')
     parser.add_argument('--speed', type=float, default=0.6)
     parser.add_argument('--stride', type=int, default=1)
     parser.add_argument('--loop', action='store_true')
@@ -280,7 +289,12 @@ def main():
                                     prefix=ROBOT_PREFIX,
                                     translate=(args.offset, 0.0, 0.0)))
     if args.skeleton:
-        overlays.append(SkeletonOverlay(args.exclude, args.radius))
+        mmd_only = lambda name: not name.startswith(ROBOT_PREFIX)
+        robot_only = lambda name: name.startswith(ROBOT_PREFIX)
+        overlays.append(SkeletonOverlay(select=mmd_only, exclude=args.skeleton_exclude,
+                                        radius=args.skeleton_radius_mmd, rgba=MMD_BONE_COLOUR))
+        overlays.append(SkeletonOverlay(select=robot_only, exclude='',
+                                        radius=args.skeleton_radius_robot, rgba=ROBOT_BONE_COLOUR))
     for overlay in overlays:
         overlay.prepare(model)
 
