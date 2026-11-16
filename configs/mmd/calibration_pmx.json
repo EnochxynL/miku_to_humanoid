@@ -1,0 +1,175 @@
+{
+  "method": "paired pose (configured, not fitted) -> C = R_source(pose)^-1 * R_link(pose)",
+  "why": "MMD bones carry no rest rotation, so at the bind pose every bone frame is the identity and C collapses to a reading",
+  "source_bind_note": "the GLB hangs under Rx90, so R_source(pose) carries it and it must be divided out",
+  "paired_pose": {
+    "robot_xml": "g1_mocap_29dof.xml",
+    "pose_file": null,
+    "source_vpd": null,
+    "limb_direction_error_deg": 0.0
+  },
+  "root_calibration": {
+    "applies_to": [
+      "pelvis",
+      "torso_link"
+    ],
+    "value_deg": -0.0,
+    "rule": "links the pose does not move need the world-frame yaw, measured on bilateral axes (hip line, shoulder line); limbs get it implicitly"
+  },
+  "links": {
+    "pelvis": {
+      "bone": "腰",
+      "pos_w": 0,
+      "rot_w": 10.0,
+      "C_quat_wxyz": [
+        1.0,
+        0.0,
+        0.0,
+        -1e-06
+      ]
+    },
+    "left_hip_yaw_link": {
+      "bone": "左足",
+      "pos_w": 0,
+      "rot_w": 10,
+      "C_quat_wxyz": [
+        0.976223,
+        -0.032408,
+        -0.181662,
+        -0.113743
+      ]
+    },
+    "left_knee_link": {
+      "bone": "左ひざ",
+      "pos_w": 0,
+      "rot_w": 10,
+      "C_quat_wxyz": [
+        0.991823,
+        -0.005354,
+        0.047942,
+        -0.118149
+      ]
+    },
+    "left_ankle_roll_link": {
+      "bone": "左足首",
+      "pos_w": 50,
+      "rot_w": 10,
+      "C_quat_wxyz": [
+        0.991823,
+        -0.005354,
+        0.047942,
+        -0.118149
+      ]
+    },
+    "right_hip_yaw_link": {
+      "bone": "右足",
+      "pos_w": 0,
+      "rot_w": 10,
+      "C_quat_wxyz": [
+        0.976224,
+        0.032405,
+        -0.181663,
+        0.11373
+      ]
+    },
+    "right_knee_link": {
+      "bone": "右ひざ",
+      "pos_w": 0,
+      "rot_w": 10,
+      "C_quat_wxyz": [
+        0.991825,
+        0.005354,
+        0.047942,
+        0.118135
+      ]
+    },
+    "right_ankle_roll_link": {
+      "bone": "右足首",
+      "pos_w": 50,
+      "rot_w": 10,
+      "C_quat_wxyz": [
+        0.991825,
+        0.005354,
+        0.047942,
+        0.118135
+      ]
+    },
+    "torso_link": {
+      "bone": "上半身2",
+      "pos_w": 0,
+      "rot_w": 100,
+      "C_quat_wxyz": [
+        1.0,
+        0.0,
+        0.0,
+        -1e-06
+      ]
+    },
+    "left_shoulder_yaw_link": {
+      "bone": "左腕",
+      "pos_w": 0.0,
+      "rot_w": 100.0,
+      "C_quat_wxyz": [
+        0.879365,
+        0.457987,
+        0.130091,
+        -0.006488
+      ]
+    },
+    "left_elbow_link": {
+      "bone": "左ひじ",
+      "pos_w": 0.0,
+      "rot_w": 10.0,
+      "C_quat_wxyz": [
+        0.630446,
+        0.372417,
+        0.626692,
+        0.266646
+      ]
+    },
+    "left_wrist_yaw_link": {
+      "bone": "左手首",
+      "pos_w": 0.0,
+      "rot_w": 10.0,
+      "C_quat_wxyz": [
+        0.630446,
+        0.372417,
+        0.626692,
+        0.266646
+      ]
+    },
+    "right_shoulder_yaw_link": {
+      "bone": "右腕",
+      "pos_w": 0.0,
+      "rot_w": 100.0,
+      "C_quat_wxyz": [
+        0.879365,
+        -0.457987,
+        0.130088,
+        0.006483
+      ]
+    },
+    "right_elbow_link": {
+      "bone": "右ひじ",
+      "pos_w": 0.0,
+      "rot_w": 10.0,
+      "C_quat_wxyz": [
+        0.630448,
+        -0.372414,
+        0.62669,
+        -0.266649
+      ]
+    },
+    "right_wrist_yaw_link": {
+      "bone": "右手首",
+      "pos_w": 0.0,
+      "rot_w": 10.0,
+      "C_quat_wxyz": [
+        0.630448,
+        -0.372414,
+        0.62669,
+        -0.266649
+      ]
+    }
+  }
+}

@@ -21,7 +21,7 @@ import mujoco
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from glb_to_gmr import load_glb_frames   # noqa: E402
+from retarget import load_glb_frames   # noqa: E402
 
 
 def body_tree(model):
@@ -66,7 +66,7 @@ def connect_subset(names, model):
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--glb-xml', required=True)
+    parser.add_argument('--source-xml', '--glb-xml', dest='glb_xml', required=True)
     parser.add_argument('--nodes', default=None, help='unused: the bone tree comes from the MJCF')
     parser.add_argument('--anim', required=True)
     parser.add_argument('--config', required=True)

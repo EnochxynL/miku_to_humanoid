@@ -1,151 +1,112 @@
-# MMD → G1 retargeting: the configuration that works
+# PMX → G1 动作重定向
 
-This directory is the **versioned copy** of everything the working retargeting configuration depends
-on. `runtime/` is gitignored (generated assets), so without this copy the configuration that produced
-the good result exists only on one machine.
+把 MMD 模型（PMX）的动作（VMD）搬到 Unitree G1 上，产出 GMR 能读的 pickle，最终变成 MPC-WBC 的
+500 Hz 参考。**中间不经过 glTF**：PMX 是模型、VMD/VPD 是动作，二者天然解耦。
 
-Only the **glTF path** is kept in `src/mmd`; the PMX and BVH routes were removed.
+## 数据流
 
-## Files
+```
+PMX ─┬─ pmx_to_mjcf.py ──→ 骨架 MJCF（body/joint 名 = MMD 骨名）+ 可选贴图模型
+     │
+     ├─ VMD + engine.bake ─→ 逐帧 qpos（参考烘焙：vendored mmd2gltf 的形变管线）
+     │
+     └─ VPD + G1 关节角 ──→ calibrate.py ──→ C（每链接一个常量）
 
-| file | what it is |
+骨架 MJCF + qpos + G1 模型 + C ──→ retarget.py ──→ G1 qpos ──→ export_gmr_pickle.py ──→ .pkl
+```
+
+## 数学（整套系统的全部内容）
+
+```
+目标:  T_link(t) = S_bone(t) · C
+
+其中 C = S_bone(P)⁻¹ · T_link(P)          ← P 是成对姿态（VPD + G1 关节角）
+
+展开: T_link(t) = [S_bone(t) S_bone(P)⁻¹] · T_link(P)
+                  └ 源相对校准姿态的增量 ┘   └ 机器人的校准姿态 ┘
+```
+
+**只需在一个姿态上校准一次**，因为运动以"相对校准姿态的增量"形式流动。`·` 是旋转复合，`C` 是
+唯一的约定交接点。两个链接（骨盆、躯干）不被姿态改变，其世界系偏航必须用**双侧轴**（髋线、肩线）
+单独测量——漏了它，手臂完美而身体是拧的。
+
+## 文件
+
+| 文件 | 作用 |
 |---|---|
-| `glb_to_g1.json` | GMR IK config: per-link rotation offsets + weights + scale table |
-| `calibration.json` | how every constant was derived, the measured errors, and the retractions |
-| `herta_nodes.json` | GLB node index → MMD bone name → body/joint/parent mapping |
-| `herta_mesh_nodes.json` | same mapping for the textured mesh model |
-| `herta_anim.npz` | the baked source animation, 319 frames of joint values |
-| `README.md` | this file |
+| `src/mmd/engine/pmx.py` | PMX 解析（骨、顶点、材质、贴图）|
+| `src/mmd/engine/vmd.py` | VMD 解析（贝塞尔曲线、IK 帧）|
+| `src/mmd/engine/mathutil.py` | 四元数/向量工具 |
+| `src/mmd/engine/animation.py` | **烘焙管线**（逐字 vendored 自 mmd2gltf）|
+| `src/mmd/engine/mesh.py` | 网格 → OBJ 组 + PNG + 材质（反射、UV、叠层全处理）|
+| `src/mmd/engine/bake.py` | 参考烘焙的 `local_q` → MuJoCo qpos |
+| `src/mmd/pmx_to_mjcf.py` | PMX 骨架 → MJCF（`--mesh` 出贴图模型）|
+| `src/mmd/mmd_bones.py` | **MMD 知识**：链接→骨名、骨→下一关节（跳过捩/袖骨）|
+| `src/mmd/measurements.py` | 量尺：报告误差用哪段（不参与烘焙）|
+| `src/mmd/calibrate.py` | 成对姿态 → C（`--pose` 读机器人侧，`--vpd` 读源侧）|
+| `src/mmd/retarget.py` | 源 qpos + C → G1 qpos |
+| `src/mmd/export_gmr_pickle.py` | G1 qpos → GMR pickle |
+| `src/mmd/view_model.py` / `view_skeleton.py` | 播放 / 机器人+源骨架对照 |
 
-## The scripts (all glTF)
-
-| script | role |
-|---|---|
-| `glb_io.py` | minimal .glb reader (JSON chunk, accessors, animation sampling) |
-| `mmd_bones.py` | **the MMD knowledge**: robot link → MMD bone, and MMD bone → next joint (twist/sleeve bones skipped). The only file to edit when the source model changes |
-| `measurements.py` | which segment to compare when reporting accuracy - the ruler, not the model |
-| `glb_to_mjcf.py` | GLB → MJCF skeleton and textured mesh |
-| `glb_anim_to_qpos.py` | GLB animation → per-frame qpos of that MJCF |
-| `glb_to_gmr.py` | source frames → GMR config + baked robot qpos |
-| `paired_pose_offsets.py` | **the calibration**: derives every constant from the MMD bind pose |
-| `export_gmr_pickle.py` | our qpos → the GMR pickle `reference_maker/convert_gmr.py` reads |
-| `view_model.py` | plain MuJoCo playback of a qpos sequence |
-| `view_skeleton.py` | robot + source skeleton side by side (`--source gmr` shows exactly what GMR gets) |
-
-## What C is, and why it took so long
-
-GMR asks for one constant per link:
-
-```
-target_orientation(robot link, t) = R_source_bone(t) · C
-```
-
-`C` is the **frame convention** between one bone in the source rig and one link in the robot rig. It is
-not part of the motion; both frames are rigidly attached to the same physical segment.
-
-Two things made it hard, and both were my own errors:
-
-* **It is under-determined from geometry.** A pose only observes two of its three degrees of freedom
-  (the limb direction); the roll about the limb is invisible. Every "two-axis" attempt failed because
-  the second axis degenerates when the limb is straight - and at the MMD bind pose the limbs are.
-* **The GLB hides a 90° rotation.** The whole tree hangs under an `Rx90` root (Y-up → Z-up), so
-  `R_source_bind = Rx90`. Forgetting to divide it out either pitches the robot flat or leaves the arms
-  48° off. The same `Rx90` cost two separate debugging rounds.
-
-**The resolution is the paired pose.** MMD bones carry no rest rotation, so at the bind pose every
-bone frame is the identity and
-
-```
-C = R_source_bind^-1 · R_link(robot posed to match)
-```
-
-becomes a *reading* instead of a fit. `paired_pose_offsets.py` solves the robot's arm and leg joints
-to match the bind pose limb directions (0.0–0.3° residual) and reads C off the model.
-
-The two links that solve does **not** move - `pelvis` (the floating root) and `torso_link` - also need
-the world-frame yaw, measured on **bilateral axes** (hip line, shoulder line) because those are the
-only convention-free measures of body facing. They were 70–75° off before that correction and 8–11°
-after. This is why "the arms were perfect but the body was twisted" for so long: every child target is
-an absolute world orientation, so the spine silently absorbed a wrong root.
-
-## Weights are GMR's, not tuned
-
-Everything runs at the shipped convention: `pelvis rot_w=10`, `torso 100`, arms orientation-only
-(`pos_w=0`), ankle `pos_w=50`. Two workarounds were tried and removed, because both were hiding the
-missing root yaw rather than fixing it:
-
-* `pos_w=300` on the arms (position-driven limbs): it bypasses the frame correspondence entirely;
-* `pelvis rot_w=300`: the target was wrong, so pushing harder only made the twist more rigid.
-
-`pos_w` is a quadratic cost weight; only ratios matter. Measured effect of the arm weight once the
-offsets are right: from 10 to 3000 the forearm error stays on the same 4–22° plateau - the cliff is
-*whether a position term exists at all*, not its value.
-
-## Measured accuracy
-
-| quantity | value |
-|---|---|
-| upper arm direction | **0.0°** |
-| forearm direction | 2–6° (13–20° mid-clip) |
-| shoulder line (torso facing) | 3–7° |
-| hip line (body facing) | 8–11° |
-| knee bend amount | 3.9° median (the knee sweeps 0–69° correctly) |
-| thigh / shin direction | 6.7° / 5.6° median |
-
-The leg figure is a **trade-off, not a bug**: `ankle pos_w=50` holds the feet on the ground. Dropping
-it to 0 sharpens the shin to 1.3° but slides the feet 8–15 cm. Keep 50.
-
-## Reproduce from scratch
+## 复现
 
 ```powershell
-$env:PYTHONPATH='src'
+$env:PYTHONPATH='src;src\mmd'
+$pmx = '<model.pmx>'; $vmd = '<motion.vmd>'
 
-# 1+2. the .glb carries both assets, and the two extractors are siblings, not a sequence -
-#      one pass over the container produces the model *and* the motion
-uv run python src/mmd/glb_extract.py --glb <model.glb> --out-dir runtime/glb --mesh
-#      -> herta.xml (skeleton) + herta_mesh.xml with assets/ (textured) + herta_anim.npz (motion)
-#      the individual scripts still work alone: glb_to_mjcf.py / glb_anim_to_qpos.py
+# 1. 骨架（--mesh 同时出贴图模型，给 viewer 看）
+uv run python src/mmd/pmx_to_mjcf.py --pmx $pmx --out runtime/pmx/skeleton.xml --tree runtime/pmx/tree.json
+uv run python src/mmd/pmx_to_mjcf.py --pmx $pmx --out runtime/pmx/model.xml --tree runtime/pmx/tree2.json --mesh
 
-# 3. base config (bone names, weights, scale table)
-<gmr>/.venv/Scripts/python.exe src/mmd/glb_to_gmr.py `
-    --glb-xml runtime/glb/herta.xml `
-    --anim runtime/glb/herta_anim.npz --build-config runtime/gmr_inputs/glb_to_g1.json --frames 0
+# 2. 动作
+uv run python -m engine.bake --pmx $pmx --vmd $vmd --xml runtime/pmx/skeleton.xml --out runtime/pmx/anim.npz
 
-# 4. the calibration that matters
-uv run python src/mmd/paired_pose_offsets.py --glb-xml runtime/glb/herta.xml `
-    --config runtime/gmr_inputs/glb_to_g1.json --report
+# 3. 校准：没有机器人姿态文件就先解一次并存成数据
+<gmr>/.venv/Scripts/python.exe src/mmd/retarget.py --build-config configs/mmd/pmx_to_g1.json `
+    --source-xml runtime/pmx/skeleton.xml --anim runtime/pmx/anim.npz --frames 0
+uv run python src/mmd/calibrate.py --source-xml runtime/pmx/skeleton.xml `
+    --config configs/mmd/pmx_to_g1.json --write-pose configs/mmd/paired_pose_pmx.json `
+    --record configs/mmd/calibration_pmx.json --report
 
-# 5. bake the robot motion WITH the calibrated config (rebuilding it here would overwrite the
-#    paired-pose offsets and silently produce a worse motion - use --config-in)
-<gmr>/.venv/Scripts/python.exe src/mmd/glb_to_gmr.py --config configs/mmd/glb_to_g1.json 
-    --glb-xml runtime/glb/herta.xml 
-    --anim runtime/glb/herta_anim.npz --frames 0 --bake-out runtime/glb/g1_final.npz
+# 4. 重定向
+<gmr>/.venv/Scripts/python.exe src/mmd/retarget.py --config configs/mmd/pmx_to_g1.json `
+    --source-xml runtime/pmx/skeleton.xml --anim runtime/pmx/anim.npz --bake-out runtime/pmx/g1.npz
 
-# 6. play robot + source skeleton side by side
-<gmr>/.venv/Scripts/python.exe src/mmd/view_skeleton.py --glb-xml runtime/glb/herta.xml `
-    --anim runtime/glb/herta_anim.npz `
-    --config runtime/gmr_inputs/glb_to_g1.json --loop --offset 0.85 --source gmr
-
-# 7. hand it to the control stack: GMR pickle -> the imitation clip format
-uv run python src/mmd/export_gmr_pickle.py --npz runtime/glb/g1_final.npz `
-    --out runtime/gmr_clips/herta_qqy.pkl --fps 30
-uv run python src/reference_maker/convert_gmr.py --pickle runtime/gmr_clips/herta_qqy.pkl `
-    --out runtime/refs/herta_qqy/signals.npz --robot g1
+# 5. 交付
+uv run python src/mmd/export_gmr_pickle.py --qpos runtime/pmx/g1.npz --out runtime/gmr_clips/pmx.pkl
 ```
 
-## Naming
+## 换模型 / 换机器人
 
-The MJCF does not carry generic names: every body and joint is called what the model calls it
-(左腕, 左ひじ, …), taken from the glTF node name (the exporter writes 
-odes[i].name and the names
-are unique for this model). That is why no mapping table sits in the data path any more - a bone's
-name *is* the interface. The optional *_nodes.json is kept only as provenance.
+| 换什么 | 只改 |
+|---|---|
+| **换 MMD 模型** | `src/mmd/mmd_bones.py`（骨名不同才需要），然后重跑 1–4 |
+| **换动作** | `--vmd`（模型与步态无关，不需要重新生成模型）|
+| **换机器人** | `--robot-xml` + `--pose`（那台机器人摆进成对姿态的关节角）|
 
-## Known gaps
+## 必须知道的坑（都踩过）
 
-* **hands**: GMR receives no palm bones, so finger and palm orientation are not retargeted at all;
-* **legs** 5–7°: the ankle position weight above, not an unknown twist;
-* **flight frames**: `convert_gmr.py` labels 23% of this dance as flight (both feet up), which the
-  WBC cannot support - start from a double-support frame or trim the airborne section;
-* the **PMX and BVH routes are gone on purpose**. They live in git history if ever needed; the BVH
-  route failed for the same C reason as everything else, not because BVH is a bad format.
+| 坑 | 现象 | 处理 |
+|---|---|---|
+| MMD 左手系 → MuJoCo 是**反射**（det = −1）| 每个面内外翻 | 三角形按 `(a,c,b)` 写出 |
+| UV 原点在**上**，MuJoCo 在**下** | 整片采样错位、发灰 | `vt = (u, 1−v)` |
+| mesh 顶点是模型绝对坐标，MuJoCo 要**相对所属 body** | 模型碎成一圈圈 | 减去该骨的绑定位置 |
+| `颜+`（alpha 0）、`目影`（alpha 0.3）是叠加层 | 脸上黑块 | 默认丢弃 alpha < 0.5 |
+| `肌2`/`肌2+` 顶点完全相同且都不透明 | 胸口发灰、随视角闪 | 丢弃重复的 `+` 层（z-fighting）|
+| VMD 骨名**截断到 15 字节** | 大量轨道静默丢失 | 按同样截断建映射（vendored 实现已处理）|
+| 离屏渲染高度 > 480 | 报错提到 `my_height`（那是提示文案占位符）| MJCF 加 `<global offwidth="1312" offheight="1024"/>` |
+
+## 验证数字
+
+| 检查 | 结果 |
+|---|---|
+| 校准肢体方向残差 | **0.0°**（8 段）|
+| 与 glTF 路线的 C 关系 | `C_pmx = Rx90 · C_glb`，12 条肢体链接 **差 0.0°** |
+| 端到端 vs 已验收 glTF 结果 | 关节角 **中位 1.05°、最大 16.96°** |
+
+## 已知缺口
+
+- VMD 里 358 条轨道在该 PMX 上找不到对应骨（模型作者差异），属正常；
+- 腿部朝向跟踪 5–7°（踝关节位置权重抢了朝向）；
+- MMD 的 `toon`/`sphere` 贴图不参与渲染（MuJoCo 无对应模型）；
+- 物理摇晃（`physics.py` 的刚体抖动）未启用。
