@@ -119,12 +119,18 @@ uv run python src/mmd/glb_anim_to_qpos.py --glb <model.glb> `
 uv run python src/mmd/paired_pose_offsets.py --glb-xml runtime/glb/herta.xml `
     --nodes runtime/glb/herta_nodes.json --config runtime/gmr_inputs/glb_to_g1.json --report
 
-# 5. play robot + source skeleton side by side
+# 5. bake the robot motion WITH the calibrated config (rebuilding it here would overwrite the
+#    paired-pose offsets and silently produce a worse motion - use --config-in)
+<gmr>/.venv/Scripts/python.exe src/mmd/glb_to_gmr.py --config-in configs/mmd/glb_to_g1.json 
+    --glb-xml runtime/glb/herta.xml --nodes runtime/glb/herta_nodes.json 
+    --anim runtime/glb/herta_anim.npz --frames 0 --bake-out runtime/glb/g1_final.npz
+
+# 6. play robot + source skeleton side by side
 <gmr>/.venv/Scripts/python.exe src/mmd/view_skeleton.py --glb-xml runtime/glb/herta.xml `
     --nodes runtime/glb/herta_nodes.json --anim runtime/glb/herta_anim.npz `
     --config runtime/gmr_inputs/glb_to_g1.json --loop --offset 0.85 --source gmr
 
-# 6. hand it to the control stack: GMR pickle -> the imitation clip format
+# 7. hand it to the control stack: GMR pickle -> the imitation clip format
 uv run python src/mmd/export_gmr_pickle.py --npz runtime/glb/g1_final.npz `
     --out runtime/gmr_clips/herta_qqy.pkl --fps 30
 uv run python src/reference_maker/convert_gmr.py --pickle runtime/gmr_clips/herta_qqy.pkl `

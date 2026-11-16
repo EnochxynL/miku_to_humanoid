@@ -169,13 +169,19 @@ def main():
     parser.add_argument('--anim', required=True)
     parser.add_argument('--robot', default='unitree_g1')
     parser.add_argument('--gmr-root', default=r'D:\MY_TOOL\GitHub_Tools\GMR')
-    parser.add_argument('--config-out', required=True)
+    parser.add_argument('--config-out', default=None,
+                        help='where to write the built config; required unless --config-in is used')
+    parser.add_argument('--config-in', default=None,
+                        help='bake with an existing calibrated config instead of rebuilding one '
+                             '(rebuilding overwrites the paired-pose offsets)')
     parser.add_argument('--bake-out', default=None)
     parser.add_argument('--two-axis', action='store_true',
                         help='also align the bending plane (experimental: currently collapses to '
                              'identity, so the single-axis alignment is the default)')
-    parser.add_argument('--posture-cost', type=float, default=1e-2)
-    parser.add_argument('--smooth', type=float, default=0.5)
+    parser.add_argument('--posture-cost', type=float, default=0.0,
+                        help='0 is the calibrated default: the posture anchor was a band-aid for a wrong C and now biases the pose back toward rest')
+    parser.add_argument('--smooth', type=float, default=0.0,
+                        help='0 keeps the calibrated result; smoothing was hiding IK jitter caused by the wrong C')
     parser.add_argument('--view', action='store_true')
     parser.add_argument('--speed', type=float, default=0.6)
     parser.add_argument('--frames', default='0,40,80,120,160,200')
@@ -190,15 +196,25 @@ def main():
     base_path = gmr_root / 'general_motion_retargeting' / 'ik_configs' / 'bvh_lafan1_to_g1.json'
     base = json.loads(base_path.read_text(encoding='utf-8'))
 
-    config, report = build_config(base, robot_xml, args.glb_xml, args.nodes,
-                                  two_axis=args.two_axis)
+    if args.config_in:
+        # Reusing the config matters: building one here would overwrite the paired-pose offsets with
+        # the uncalibrated ones, and the bake would silently be a different (worse) motion.
+        config = json.loads(Path(args.config_in).read_text(encoding='utf-8'))
+        report = []
+        config_path = Path(args.config_in).resolve()
+        print('using existing config:', config_path)
+    else:
+        if not args.config_out:
+            raise SystemExit('either --config-out (build) or --config-in (reuse) is required')
+        config, report = build_config(base, robot_xml, args.glb_xml, args.nodes,
+                                      two_axis=args.two_axis)
+        config_path = Path(args.config_out).resolve()
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        config_path.write_text(json.dumps(config, indent=2, ensure_ascii=True), encoding='utf-8')
+        print('config:', config_path)
     print(f"{'link':<26}{'align':>8}")
     for link, angle in report:
         print(f'{link:<26}{angle:7.1f}')
-    config_path = Path(args.config_out).resolve()
-    config_path.parent.mkdir(parents=True, exist_ok=True)
-    config_path.write_text(json.dumps(config, indent=2, ensure_ascii=True), encoding='utf-8')
-    print('config:', config_path)
 
     gmrmod.IK_CONFIG_DICT.setdefault('glb', {})[args.robot] = str(config_path)
     frames = load_glb_frames(args.glb_xml, args.nodes, args.anim)
