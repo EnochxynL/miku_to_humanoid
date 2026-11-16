@@ -25,7 +25,8 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from rig_tables import LINKS, MEASURE, rotation_between   # noqa: E402  (same link tables)
+from measurements import MEASURE, rotation_between   # noqa: E402  (diagnostics only)
+from mmd_bones import LINKS, bones_for              # noqa: E402  (the MMD knowledge)
 
 # link -> (parent robot link) for the constant chain
 ROBOT_PARENT = {
@@ -97,14 +98,24 @@ def build_config(base, robot_xml, glb_xml, nodes_path, two_axis=False):
     src = mujoco.MjModel.from_xml_path(glb_xml)
     src_data = mujoco.MjData(src)
     mujoco.mj_forward(src, src_data)
-    mapping = json.loads(Path(nodes_path).read_text(encoding='utf-8'))
-    index_of = {e['name']: e['index'] for e in mapping['nodes'] if e.get('name')}
-
     def src_body(name):
-        return mujoco.mj_name2id(src, mujoco.mjtObj.mjOBJ_BODY, f'glb_body_{index_of[name]:03d}')
+        # the bodies carry the bone names themselves, so no mapping table is involved
+        return mujoco.mj_name2id(src, mujoco.mjtObj.mjOBJ_BODY, name)
 
     def robot_body(name):
         return mujoco.mj_name2id(robot, mujoco.mjtObj.mjOBJ_BODY, name)
+
+    # the robot-side child of each link is the MJCF's own tree, not a hand-written column
+    robot_children = {}
+    for link in LINKS:
+        body = robot_body(link)
+        if body < 0:
+            continue
+        for candidate in range(1, robot.nbody):
+            if int(robot.body_parentid[candidate]) == body:
+                robot_children[link] = mujoco.mj_id2name(
+                    robot, mujoco.mjtObj.mjOBJ_BODY, candidate)
+                break
 
     base['human_root_name'] = '腰'
     base['human_height_assumption'] = float(src_data.xpos[src_body('頭')][2])
@@ -117,22 +128,23 @@ def build_config(base, robot_xml, glb_xml, nodes_path, two_axis=False):
     source_head_height = float(src_data.xpos[src_body('頭')][2])
     factor = head_height / source_head_height if source_head_height > 1e-6 else 0.9
     base['human_scale_table'] = {bone: float(factor) for bone in
-                                 {v[0] for v in LINKS.values()} | {'腰', '上半身2'}}
+                                 set(LINKS.values()) | {'腰', '上半身2'}}
 
     report = []
     for table in ('ik_match_table1', 'ik_match_table2'):
         for link in list(base[table].keys()):
             if link not in LINKS:
                 continue
-            bone, child, robot_child = LINKS[link]
+            bone, child = bones_for(link)
+            robot_child = robot_children.get(link)
             rest = R.from_matrix(np.array(robot_data.xmat[robot_body(link)]).reshape(3, 3))
             align = R.identity()
             pair = MEASURE.get(link)
             if pair is None and link in LINKS:
                 # wrists have no MEASURE entry, but they still need an alignment: build it from the
                 # link's own segment, using LINKS for the source/robot pair
-                bone_, child_, robot_child_ = LINKS[link]
-                pair = (bone_, child_, link, robot_child_)
+                bone_, child_ = bones_for(link)
+                pair = (bone_, child_, link, robot_children.get(link))
             if link in ('pelvis', 'torso_link'):
                 pair = None
                 # The spine must take the rig's *yaw* (the glTF rig is turned ~90 deg from the

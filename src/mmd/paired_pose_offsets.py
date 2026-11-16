@@ -37,7 +37,7 @@ from scipy.optimize import minimize
 from scipy.spatial.transform import Rotation as R
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from rig_tables import LINKS   # noqa: E402
+from mmd_bones import LINKS   # noqa: E402
 
 # limb (source bone, source child, robot link, robot child body) and the robot joints that move it
 LIMBS = [
@@ -240,7 +240,7 @@ def main():
     root_fix = R.from_euler('z', np.degrees(delta), degrees=True)
 
     # --- C = R_source(pose)^-1 * R_link(pose) -------------------------------------------------
-    bone_for_link = {link: spec[0] for link, spec in LINKS.items()}
+    bone_for_link = dict(LINKS)
     config_path = Path(args.config)
     config = json.loads(config_path.read_text(encoding='utf-8'))
     report = []
