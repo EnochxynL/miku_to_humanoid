@@ -9,7 +9,7 @@
 | | `engine/mmd_model.py` | **PMX → MjModel（纯内存）**：MJCF 文本 + MSH 网格 + PNG 贴图字节 |
 | | `view.py` | **一个窗口**：MMD 角色 + 机器人 + 可选骨架胶囊（三层 overlay，不跑 GMR）|
 | **GMR 桥接** | `gmr_paired_pose.py` | 解出"让机器人摆成 MMD 姿态"的关节角 → `paired_pose_*.json` |
-| | `gmr_calibrate.py` | **消费**关节角文件 → **已带 C 的 IK 配置**（骨架与 C 同一次产生）|
+| | `calibration.py` | **消费**关节角文件 → **中性 C**（每链接旋转 + 尺度），不认任何引擎格式 |
 | | `gmr_retarget.py` | 源位姿 + C → G1 qpos |
 | | `export_gmr_pickle.py` | G1 qpos → GMR pickle |
 | **引擎** | `engine/` | vendored 自 mmd2gltf：`pmx` `vpd` `vmd` `mathutil` `animation` `bake` `mesh` `msh` `mmd_model` |
@@ -19,7 +19,7 @@
 ```
 pmx + (vmd|vpd) ── engine/bake.py ──→ 世界位姿 ──┐
                                           ├─ gmr_retarget ──→ G1 qpos ──→ export_gmr_pickle ──→ .pkl
-g1.xml + pmx ── gmr_paired_pose ──→ 关节角 ── gmr_calibrate ──→ C ──┘
+pmx + pose ── calibration ──→ 关节角 → C（中性） ──┘
 
 pmx + (vpd|vmd) ── mmd_model ──→ MjModel ─┐
                                          ├─ view（一个窗口并排显示，全在内存里）
@@ -33,7 +33,7 @@ g1 qpos + robot xml ────────────────────
 - `PYTHONPATH=src;src\mmd`
 - **body/joint 名就是 MMD 骨名**（`左腕`），没有映射表
 - 生产线不用 MuJoCo 算源侧：`Skeleton.world()` 直接给世界位姿，避免 qpos 往返丢掉 `センター` 平移
-- 未校准的配置**从不落盘**：`gmr_calibrate.py` 一次跑完骨架与 C
+- GMR 配置**不再是产物**：`gmr_retarget.py` 用中性 C 现场构建（`--dump-config` 才留一份）
 
 细节与踩过的坑见 [`configs/README.md`](../../configs/README.md)。
 

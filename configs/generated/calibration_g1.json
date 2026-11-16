@@ -1,180 +1,163 @@
 {
-  "method": "paired pose (configured, not fitted) -> C = R_source(P)^-1 * R_link(P)",
-  "why": "MMD bones carry no rest rotation, so at the bind pose every bone frame is the identity and C collapses to a reading",
-  "source_bind_note": "source world poses come from the vendored deform pipeline; no qpos round trip, the root translation is included",
-  "paired_pose": {
-    "robot_xml": "g1_mocap_29dof.xml",
-    "pose_file": "configs\\mmd\\paired_pose_pmx.json",
-    "source_vpd": null,
-    "limb_direction_error_deg": 0.0
+  "robot": {
+    "name": "unitree_g1",
+    "xml": "g1_mocap_29dof.xml",
+    "base_config": "bvh_lafan1_to_g1.json"
   },
-  "root_calibration": {
-    "applies_to": [
-      "pelvis",
-      "torso_link"
-    ],
-    "value_deg": -0.0,
-    "rule": "links the pose does not move need the world-frame yaw, measured on bilateral axes (hip line, shoulder line); limbs get it implicitly"
+  "method": "paired pose -> C = R_source(P)^-1 * R_link(P)",
+  "why": "MMD bones carry no rest rotation, so at the paired pose every bone frame is the identity and C collapses to a reading rather than a fit",
+  "scale": 0.9784230661565736,
+  "heights": {
+    "source": 1.2642792701721193,
+    "robot": 1.237
   },
+  "root_yaw_deg": -0.0,
+  "root_links": [
+    "pelvis",
+    "torso_link"
+  ],
+  "pose_file": "configs/generated/paired_pose_g1.json",
+  "source_pose": null,
   "links": {
     "pelvis": {
       "bone": "腰",
-      "pos_w": 0,
-      "rot_w": 10.0,
       "C_quat_wxyz": [
-        1.0,
+        0.9999999999990222,
         0.0,
         0.0,
-        -1e-06
-      ]
-    },
-    "left_hip_yaw_link": {
-      "bone": "左足",
-      "pos_w": 0,
-      "rot_w": 10,
-      "C_quat_wxyz": [
-        0.976223,
-        -0.032408,
-        -0.181662,
-        -0.113743
-      ]
-    },
-    "left_knee_link": {
-      "bone": "左ひざ",
-      "pos_w": 0,
-      "rot_w": 10,
-      "C_quat_wxyz": [
-        0.991823,
-        -0.005354,
-        0.047942,
-        -0.118149
-      ]
-    },
-    "left_ankle_roll_link": {
-      "bone": "左足首",
-      "pos_w": 50,
-      "rot_w": 10,
-      "C_quat_wxyz": [
-        0.991823,
-        -0.005354,
-        0.047942,
-        -0.118149
-      ]
-    },
-    "right_hip_yaw_link": {
-      "bone": "右足",
-      "pos_w": 0,
-      "rot_w": 10,
-      "C_quat_wxyz": [
-        0.976224,
-        0.032405,
-        -0.181663,
-        0.11373
-      ]
-    },
-    "right_knee_link": {
-      "bone": "右ひざ",
-      "pos_w": 0,
-      "rot_w": 10,
-      "C_quat_wxyz": [
-        0.991825,
-        0.005354,
-        0.047943,
-        0.118135
-      ]
-    },
-    "right_ankle_roll_link": {
-      "bone": "右足首",
-      "pos_w": 50,
-      "rot_w": 10,
-      "C_quat_wxyz": [
-        0.991825,
-        0.005354,
-        0.047943,
-        0.118135
-      ]
+        -1.3983982425094073e-06
+      ],
+      "angle_deg": 0.0002
     },
     "torso_link": {
       "bone": "上半身2",
-      "pos_w": 0,
-      "rot_w": 100,
       "C_quat_wxyz": [
-        1.0,
+        0.9999999999990222,
         0.0,
         0.0,
-        -1e-06
-      ]
+        -1.3983982425094073e-06
+      ],
+      "angle_deg": 0.0002
+    },
+    "left_hip_yaw_link": {
+      "bone": "左足",
+      "C_quat_wxyz": [
+        0.9762228607624217,
+        -0.032408422806050524,
+        -0.18166197584155394,
+        -0.11374333734070097
+      ],
+      "angle_deg": 25.0387
+    },
+    "left_knee_link": {
+      "bone": "左ひざ",
+      "C_quat_wxyz": [
+        0.9918234301610731,
+        -0.005354492401528071,
+        0.04794195162221485,
+        -0.11814898251486643
+      ],
+      "angle_deg": 14.6639
+    },
+    "left_ankle_roll_link": {
+      "bone": "左足首",
+      "C_quat_wxyz": [
+        0.9918234301610731,
+        -0.005354492401528071,
+        0.04794195162221485,
+        -0.11814898251486643
+      ],
+      "angle_deg": 14.6639
+    },
+    "right_hip_yaw_link": {
+      "bone": "右足",
+      "C_quat_wxyz": [
+        0.9762244606414376,
+        0.0324046267711746,
+        -0.18166267357524532,
+        0.11372957240159148
+      ],
+      "angle_deg": 25.0379
+    },
+    "right_knee_link": {
+      "bone": "右ひざ",
+      "C_quat_wxyz": [
+        0.9918251058531847,
+        0.005353863892194779,
+        0.047942506447732874,
+        0.11813471808173844
+      ],
+      "angle_deg": 14.6624
+    },
+    "right_ankle_roll_link": {
+      "bone": "右足首",
+      "C_quat_wxyz": [
+        0.9918251058531847,
+        0.005353863892194779,
+        0.047942506447732874,
+        0.11813471808173844
+      ],
+      "angle_deg": 14.6624
     },
     "left_shoulder_yaw_link": {
       "bone": "左腕",
-      "pos_w": 0.0,
-      "rot_w": 100.0,
       "C_quat_wxyz": [
-        0.879364,
-        0.457988,
-        0.13009,
-        -0.006487
-      ]
+        0.8793644003926099,
+        0.45798762353734906,
+        0.13009035756101248,
+        -0.00648744005021559
+      ],
+      "angle_deg": 56.8684
     },
     "left_elbow_link": {
       "bone": "左ひじ",
-      "pos_w": 0.0,
-      "rot_w": 10.0,
       "C_quat_wxyz": [
-        0.630446,
-        0.372417,
-        0.626692,
-        0.266646
-      ]
+        0.6304464992990142,
+        0.37241718713610084,
+        0.6266916796398566,
+        0.26664618676708673
+      ],
+      "angle_deg": 101.8339
     },
     "left_wrist_yaw_link": {
       "bone": "左手首",
-      "pos_w": 0.0,
-      "rot_w": 10.0,
       "C_quat_wxyz": [
-        0.630446,
-        0.372417,
-        0.626692,
-        0.266646
-      ]
+        0.6304464992990142,
+        0.37241718713610084,
+        0.6266916796398566,
+        0.26664618676708673
+      ],
+      "angle_deg": 101.8339
     },
     "right_shoulder_yaw_link": {
       "bone": "右腕",
-      "pos_w": 0.0,
-      "rot_w": 100.0,
       "C_quat_wxyz": [
-        0.879365,
-        -0.457987,
-        0.130088,
-        0.006483
-      ]
+        0.8793652213239279,
+        -0.4579867723907003,
+        0.13008804764828324,
+        0.006482568944969854
+      ],
+      "angle_deg": 56.8682
     },
     "right_elbow_link": {
       "bone": "右ひじ",
-      "pos_w": 0.0,
-      "rot_w": 10.0,
       "C_quat_wxyz": [
-        0.630449,
-        -0.372414,
-        0.62669,
-        -0.26665
-      ]
+        0.6304485311365966,
+        -0.37241361062800044,
+        0.6266903080491437,
+        -0.2666496015447867
+      ],
+      "angle_deg": 101.8336
     },
     "right_wrist_yaw_link": {
       "bone": "右手首",
-      "pos_w": 0.0,
-      "rot_w": 10.0,
       "C_quat_wxyz": [
-        0.630449,
-        -0.372414,
-        0.62669,
-        -0.26665
-      ]
+        0.6304485311365966,
+        -0.37241361062800044,
+        0.6266903080491437,
+        -0.2666496015447867
+      ],
+      "angle_deg": 101.8336
     }
-  },
-  "scale_factor": 0.978423,
-  "heights": {
-    "source": 1.2643,
-    "robot": 1.237
   }
 }

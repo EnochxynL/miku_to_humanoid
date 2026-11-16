@@ -15,10 +15,9 @@
 ```powershell
 uv run python scripts/paired_pose.py --pmx $pmx --robot configs/robots/g1.json `
     --out configs/generated/paired_pose_g1.json          # 配对姿态（关节角）
-uv run python src/mmd/gmr_calibrate.py --pmx $pmx --robot configs/robots/g1.json `
+uv run python -m calibration --pmx $pmx --robot configs/robots/g1.json `
     --pose configs/generated/paired_pose_g1.json `
-    --out configs/generated/mmd_to_g1.json `
-    --record configs/generated/calibration_g1.json       # C 配置 + 记录
+    --out configs/generated/calibration_g1.json       # C 配置 + 记录
 ```
 
 换机器人时**不需要新写 `robots/*.json`**：GMR 出厂配置里的人类骨骼统一是 LaFAN1 命名，`--robot` 直接接受
@@ -34,7 +33,7 @@ PMX + (VMD|VPD) ── engine.bake ──┤──→ 逐帧骨骼世界位姿 {
                               │
                               └── mmd_model ──→ MjModel（纯内存）──→ view（只为看）
 
-成对姿态 + robots/<robot>.json ── gmr_calibrate ──→ generated/mmd_to_<robot>.json（骨名/权重/比例 + **C**）
+成对姿态 + robots/<robot>.json ── calibration ──→ generated/calibration_<robot>.json（中性 C + 尺度）
 源位姿 + C ──────────────────── gmr_retarget  ──→ 机器人 qpos ── export_gmr_pickle ──→ .pkl
 ```
 
@@ -65,8 +64,8 @@ PMX + (VMD|VPD) ── engine.bake ──┤──→ 逐帧骨骼世界位姿 {
 | `src/mmd/engine/` | vendored MMD 引擎：`pmx` `vmd` `mathutil` `animation`（形变管线）`bake` `mesh` |
 | `src/mmd/engine/bake.py` | `pmx + (vmd\|vpd)` → 逐帧世界位姿（已换算到机器人空间）|
 | src/mmd/gmr_paired_pose.py | 解出"机器人摆成 MMD 姿态"的关节角（肢体方向匹配）|
-| src/mmd/gmr_calibrate.py | **消费**该关节角 → 骨架 + C → **已带 C 的配置** |
-| `src/mmd/gmr_calibrate.py` | + 成对姿态（`--pose` / `--vpd`）→ C（原地写入配置）|
+| src/mmd/calibration.py | **消费**该关节角 → **中性 C**（不认引擎格式）|
+| `src/mmd/gmr_retarget.py` | + 中性 C → 构建 GMR 配置并重定向（唯一认识 GMR 格式的地方）|
 | `src/mmd/gmr_retarget.py` | 源位姿 + C → G1 qpos |
 | `src/mmd/export_gmr_pickle.py` | G1 qpos → GMR pickle |
 | `src/mmd/mmd_profile.py` | **MMD 侧知识**：肢体方向段（`SEGMENT_BONES`）、LaFAN1→MMD 桥 |
@@ -87,16 +86,16 @@ $gmr = 'D:\MY_TOOL\GitHub_Tools\GMR'
 $g1  = "$gmr\assets\unitree_g1\g1_mocap_29dof.xml"
 
 # 1. 配置骨架 → 2. 校准（没有机器人姿态文件时先解一次：去掉 --pose 加 --write-pose）
-uv run python src/mmd/gmr_calibrate.py --pmx $pmx --robot configs/robots/g1.json `
+uv run python src/mmd/calibration.py --pmx $pmx --robot configs/robots/g1.json `
     --base "$gmr\general_motion_retargeting\ik_configs\bvh_lafan1_to_g1.json" `
     --out configs/generated/mmd_to_g1.json
-uv run python src/mmd/gmr_calibrate.py --pmx $pmx --robot configs/robots/g1.json `
-    --config configs/generated/mmd_to_g1.json --pose configs/generated/paired_pose_g1.json `
+uv run python src/mmd/calibration.py --pmx $pmx --robot configs/robots/g1.json `
+    --calibration configs/generated/calibration_g1.json --pose configs/generated/paired_pose_g1.json `
     --record configs/generated/calibration_g1.json --report
 
 # 3. 重定向（源侧无 MuJoCo，无 qpos）
 <gmr>/.venv/Scripts/python.exe src/mmd/gmr_retarget.py --pmx $pmx --vmd $vmd `
-    --config configs/generated/mmd_to_g1.json --bake-out runtime/pmx/g1.npz
+    --calibration configs/generated/calibration_g1.json --bake-out runtime/pmx/g1.npz
 
 # 4. 交付
 uv run python src/mmd/export_gmr_pickle.py --qpos runtime/pmx/g1.npz --out runtime/gmr_clips/pmx.pkl
