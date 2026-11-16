@@ -165,59 +165,39 @@ def groups(model, base_dir=None, bone_positions=None, scale=0.07, flip_v=True, m
                 'triangles': len(triangles),
             })
 
-    out, merged, dropped = merge_tiny_groups(out, bone_positions)
+    padded = pad_tiny_groups(out)
     return {'groups': out, 'materials': material_meta, 'textures': textures,
-            'skipped': skipped + dropped, 'merged_groups': merged}
+            'skipped': skipped, 'padded_groups': padded}
 
 
-def merge_tiny_groups(groups, bone_positions):
-    """(kept groups, merged count, dropped count).
+def pad_tiny_groups(groups):
+    """Give every group at least four vertices, so MuJoCo keeps all of them.
 
-    MuJoCo rejects a mesh with fewer than four vertices, and dropping such a group punches a real
-    hole: this model loses six triangles from ``衣1`` and six from ``衣1+`` at the hem - both layers at
-    the same spot - so whatever is behind (a leg, the floor) shows through. Merging into the nearest
-    group of the same material keeps every triangle; only a one- or two-triangle sliver ends up
-    animating with the neighbouring bone, which is where it already sits.
+    MuJoCo rejects a mesh with fewer than four vertices. Dropping such a group punches a real hole
+    (here ``衣1`` and ``衣1+`` each lose six triangles at the hem - both layers at once - and the leg
+    shows through), while merging it into another group moves it onto another bone. Padding keeps the
+    triangle on its own bone: the first vertex is repeated and one zero-area triangle is appended, so
+    the extra geometry is invisible.
     """
-    tiny = [group for group in groups if len(group['positions']) < 4]
-    if not tiny:
-        return groups, 0, 0
-
-    hosts = {}
+    padded = 0
     for group in groups:
-        if len(group['positions']) >= 4:
-            hosts.setdefault(group['material'], []).append(group)
-
-    merged, dropped = 0, 0
-    for group in tiny:
-        candidates = hosts.get(group['material'], [])
-        if not candidates:
-            dropped += 1
+        count = len(group['positions'])
+        if count >= 4:
             continue
-        here = np.asarray(group['positions'], dtype=float).mean(axis=0)
-        best, best_distance = None, np.inf
-        for host in candidates:
-            there = np.asarray(host['positions'], dtype=float).mean(axis=0)
-            distance = float(np.linalg.norm(here - there))
-            if distance < best_distance:
-                best, best_distance = host, distance
-        shift = np.zeros(3)
-        if bone_positions is not None:
-            shift = (np.asarray(bone_positions[group['bone']], dtype=float)
-                     - np.asarray(bone_positions[best['bone']], dtype=float))
-        base = len(best['positions'])
-        best['positions'] = np.vstack([best['positions'],
-                                       np.asarray(group['positions'], dtype=float) + shift])
-        best['normals'] = np.vstack([best['normals'], group['normals']])
-        best['uv_obj'] = np.vstack([best['uv_obj'], group['uv_obj']])
-        best['uv_msh'] = np.vstack([best['uv_msh'], group['uv_msh']])
-        best['faces'] = np.vstack([best['faces'],
-                                   np.asarray(group['faces'], dtype=np.int32) + base])
-        best['triangles'] += group['triangles']
-        merged += 1
-
-    kept = [group for group in groups if len(group['positions']) >= 4]
-    return kept, merged, dropped
+        repeat = 4 - count
+        group['positions'] = np.vstack([group['positions'],
+                                        np.repeat(group['positions'][:1], repeat, axis=0)])
+        group['normals'] = np.vstack([group['normals'],
+                                      np.repeat(group['normals'][:1], repeat, axis=0)])
+        group['uv_obj'] = np.vstack([group['uv_obj'],
+                                     np.repeat(group['uv_obj'][:1], repeat, axis=0)])
+        group['uv_msh'] = np.vstack([group['uv_msh'],
+                                     np.repeat(group['uv_msh'][:1], repeat, axis=0)])
+        extra = np.repeat(group['faces'][:1], repeat, axis=0)
+        extra[:, 1:] = extra[:, :1]                 # degenerate: same vertex three times
+        group['faces'] = np.vstack([group['faces'], extra])
+        padded += 1
+    return padded
 
 
 def write_obj(built, out_dir):

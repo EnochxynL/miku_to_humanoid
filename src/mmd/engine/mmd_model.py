@@ -126,7 +126,10 @@ def _layer(pmx_path, scale, mesh, min_alpha):
 
     assets = {}
     lines = ["<?xml version='1.0' encoding='utf-8'?>", '<mujoco model="pmx_skeleton">',
-             '  <compiler angle="radian" autolimits="true" />',
+             # the model is a kinematic skeleton: every body carries a stub inertial, so inertia must
+             # not be derived from the mesh. Flat or padded meshes have no volume, and MuJoCo refuses to
+             # compute one from them.
+             '  <compiler angle="radian" autolimits="true" inertiafromgeom="false" />',
              '  <visual>',
              '    <headlight ambient="0.45 0.45 0.45" diffuse="0.65 0.65 0.65" specular="0.1 0.1 0.1" />',
              '    <map znear="0.01" zfar="20" />',
@@ -144,7 +147,10 @@ def _layer(pmx_path, scale, mesh, min_alpha):
             filename = group['name'] + '.msh'
             assets[filename] = msh.to_msh(group['positions'], group['normals'],
                                           group['uv_msh'], group['faces'])
-            lines.append('    <mesh name="%s" file="%s" />' % (group['name'], filename))
+            # these are bone-segmented surface patches, not solids: shell inertia is the honest mode
+            # and also what MuJoCo requires before it will accept a mesh with no measurable volume
+            lines.append('    <mesh name="%s" file="%s" inertia="shell" />'
+                         % (group['name'], filename))
         names_by_png = {png: 'tex%02d' % index for index, (png, _b) in built['textures'].items()}
         for material in built['materials']:
             if material['alpha'] < min_alpha:
