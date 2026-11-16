@@ -42,7 +42,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import mmd_pose                                        # noqa: E402
-from mmd_bones import LINKS, LIMBS                     # noqa: E402
+from mmd_bones import LINKS, limb_segments             # noqa: E402
+
+LIMBS = limb_segments()
 
 PELVIS_ROT_WEIGHT = 10.0
 OFFICIAL_ARM_WEIGHT = {'left_shoulder_yaw_link': 100.0, 'right_shoulder_yaw_link': 100.0}
