@@ -29,6 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from engine.animation import Skeleton, Track        # noqa: E402
 from engine.pmx import parse_pmx                    # noqa: E402
 from engine.vmd import parse_vmd                    # noqa: E402
+from engine.vpd import parse_vpd                    # noqa: E402
 
 DEFAULT_SCALE = 0.07
 
@@ -124,6 +125,21 @@ def load(pmx_path, pose_path, wanted, step=1, solve_ik=True, scale=DEFAULT_SCALE
 
     if pose_path is None:
         return bind_pose(pmx_path, wanted), []
+
+    if str(pose_path).lower().endswith('.vpd'):
+        print('WARNING: This is a .vpd file')
+        # a pose is one frame: no tracks, no IK schedule
+        sampled, unmatched = {}, []
+        for name, (translation, rotation) in parse_vpd(str(pose_path)).items():
+            index = index_of.get(name)
+            if index is None:
+                unmatched.append(name)
+            else:
+                sampled[index] = (np.array(translation, dtype=float),
+                                  np.array(rotation, dtype=float))
+        skeleton = Skeleton(model)
+        skeleton.pose(sampled)
+        return [_frame(skeleton, bones, index_of, wanted)], unmatched
 
     vmd = parse_vmd(str(pose_path))
     tracks, unmatched = _tracks(model, vmd)

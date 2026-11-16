@@ -32,6 +32,7 @@ import mujoco                                          # noqa: E402
 from engine.animation import FPS, Skeleton, Track      # noqa: E402
 from engine.pmx import parse_pmx                       # noqa: E402
 from engine.vmd import parse_vmd                       # noqa: E402
+from engine.vpd import parse_vpd                       # noqa: E402
 
 
 def mmd_quat_to_mujoco(rotation) -> np.ndarray:
@@ -52,9 +53,13 @@ def _name_map(bones):
 
 
 def bake(pmx_path, vmd_path, xml_path, step=1, solve_ik=True, scale=0.07):
-    """(qpos frames, unmatched vmd bone names, times) for the MJCF derived from ``pmx_path``."""
+    """(qpos frames, unmatched bone names, times) for the MJCF derived from ``pmx_path``.
+
+    ``vmd_path`` may be a .vpd: a pose is a motion of one frame, so the same call serves both.
+    """
     model = parse_pmx(str(pmx_path))
-    vmd = parse_vmd(str(vmd_path))
+    is_pose = str(vmd_path).lower().endswith('.vpd')
+    vmd = {'bones': {}, 'max_frame': 0, 'ik_frames': []} if is_pose else parse_vmd(str(vmd_path))
     bones = model['bones']
     count = len(bones)
 
@@ -94,10 +99,24 @@ def bake(pmx_path, vmd_path, xml_path, step=1, solve_ik=True, scale=0.07):
             state.update(values)
         return {i for i in base_enabled if state.get(i, True)}
 
-    last = vmd['max_frame']
-    frames = list(range(0, last + 1, step))
-    if frames[-1] != last:
-        frames.append(last)
+    # A VPD contributes one frame; a VMD contributes the sampled range.
+    pose_frame = None
+    if is_pose:
+        pose = parse_vpd(str(vmd_path))
+        pose_frame = {}
+        for name, (translation, rotation) in pose.items():
+            index = name_map.get(name.encode('shift-jis', errors='replace')[:15])
+            if index is None:
+                unmatched.append(name)
+            else:
+                pose_frame[index] = (np.array(translation, dtype=float),
+                                     np.array(rotation, dtype=float))
+        frames = [0]
+    else:
+        last = vmd['max_frame']
+        frames = list(range(0, last + 1, step))
+        if frames[-1] != last:
+            frames.append(last)
 
     skeleton = Skeleton(model)
 
@@ -119,8 +138,12 @@ def bake(pmx_path, vmd_path, xml_path, step=1, solve_ik=True, scale=0.07):
         while 0 <= p < len(bones):
             p, d = bones[p]['parent'], d + 1
         depth[i] = d
-    moving = [i for i, track in tracks.items()
-              if any(abs(v) > 1e-9 for key in track.keys for v in key['pos'])]
+    if pose_frame is not None:
+        moving = [i for i, (translation, _rotation) in pose_frame.items()
+                  if abs(translation).max() > 1e-9]
+    else:
+        moving = [i for i, track in tracks.items()
+                  if any(abs(v) > 1e-9 for key in track.keys for v in key['pos'])]
     translate_index = min(moving, key=lambda i: depth[i]) if moving else None
     bind_translate = None
     if translate_index is not None:
@@ -138,8 +161,12 @@ def bake(pmx_path, vmd_path, xml_path, step=1, solve_ik=True, scale=0.07):
 
     out = []
     for frame in frames:
-        sampled = {i: track.sample(frame) for i, track in tracks.items()}
-        skeleton.pose(sampled, ik_enabled=enabled_at(frame))
+        if pose_frame is not None:
+            sampled = pose_frame
+            skeleton.pose(sampled)
+        else:
+            sampled = {i: track.sample(frame) for i, track in tracks.items()}
+            skeleton.pose(sampled, ik_enabled=enabled_at(frame))
         qpos = np.array(robot.qpos0, dtype=float)
         if free_address is not None and translate_index is not None:
             world = np.array(skeleton.world(translate_index)[1], dtype=float)
