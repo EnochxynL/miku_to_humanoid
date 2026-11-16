@@ -7,7 +7,7 @@
 | **MMD 原生** | `mmd_pose.py` | `pmx + (vmd\|vpd)` → 逐帧骨骼世界位姿。源侧唯一入口，不碰 MuJoCo |
 | | `mmd_bones.py` | MMD 知识：链接↔骨名、骨→下一关节、测量段 |
 | | `mmd_render.py` | 可视化素材：MJCF（`--mesh` 带贴图）+ qpos |
-| | `view_model.py` / `view_skeleton.py` | 播放 / 机器人+源骨架对照 |
+| | `view.py` | **一个窗口**：MMD 角色 + 机器人 + 可选骨架胶囊（三层 overlay，不跑 GMR）|
 | **GMR 桥接** | `gmr_paired_pose.py` | 解出"让机器人摆成 MMD 姿态"的关节角 → `paired_pose_*.json` |
 | | `gmr_calibrate.py` | **消费**关节角文件 → **已带 C 的 IK 配置**（骨架与 C 同一次产生）|
 | | `gmr_retarget.py` | 源位姿 + C → G1 qpos |
@@ -21,7 +21,9 @@ pmx + (vmd|vpd) ── mmd_pose ──→ 世界位姿 ──┐
                                           ├─ gmr_retarget ──→ G1 qpos ──→ export_gmr_pickle ──→ .pkl
 g1.xml + pmx ── gmr_paired_pose ──→ 关节角 ── gmr_calibrate ──→ C ──┘
 
-pmx + vmd ── mmd_render ──→ MJCF + qpos ──→ view_model（只为看）
+pmx + vmd ── mmd_render ──→ MJCF + qpos ─┐
+                                        ├─ view（只为看：一个窗口并排显示）
+g1 qpos + robot xml ────────────────────┘
 ```
 
 数学只有一条：`T_link(t) = S_bone(t) · C`，其中 `C = S_bone(P)⁻¹ · T_link(P)` 由一个配对姿态读出。
