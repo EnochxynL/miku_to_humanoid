@@ -1,0 +1,18 @@
+[project]
+name = "miku-to-humanoid"
+version = "0.1.0"
+description = "MMD (PMX + VMD/VPD) motion retargeting onto humanoid robots: calibrate the frame correspondence from a paired pose, then hand the motion to GMR"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=2.0",
+    "scipy>=1.13",
+    "mujoco>=3.2",     # source-side MJCF for rendering, and the robot FK used to read C
+    "pillow>=10.0",    # PMX textures are bmp/tga/jpg; they are normalised to PNG
+]
+
+[tool.uv]
+package = false
+
+# GMR is a separate checkout, not a PyPI package: the retarget step imports
+# ``general_motion_retargeting`` and therefore has to run inside GMR's own environment.
+# Point GMR_ROOT at that checkout, or pass --gmr-root to gmr_retarget.py.

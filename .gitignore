@@ -1,6 +1,14 @@
-runtime/
+﻿.venv/
 __pycache__/
 *.pyc
-.venv/
+.pytest_cache/
+build/
+dist/
+*.egg-info/
+.vscode/
+MUJOCO_LOG.TXT
+
+# run outputs: models, qpos, pickles, renders. Reproducible from PMX + VMD via the scripts.
+runtime/
 *.npz
 *.pkl
