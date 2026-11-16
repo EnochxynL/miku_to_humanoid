@@ -69,7 +69,7 @@ PMX + (VMD|VPD) ── mmd_pose ──┤──→ 逐帧骨骼世界位姿 {骨
 | `src/mmd/gmr_calibrate.py` | + 成对姿态（`--pose` / `--vpd`）→ C（原地写入配置）|
 | `src/mmd/gmr_retarget.py` | 源位姿 + C → G1 qpos |
 | `src/mmd/export_gmr_pickle.py` | G1 qpos → GMR pickle |
-| `src/mmd/mmd_bones.py` | **MMD 知识**：链接→骨名、骨→下一关节（跳过捩/袖骨）|
+| `src/mmd/mmd_profile.py` | **MMD 侧知识**：肢体方向段（`SEGMENT_BONES`）、LaFAN1→MMD 桥 |
 
 **可视化专用**
 
@@ -113,7 +113,7 @@ uv run python src/mmd/view_model.py --xml runtime/pmx/model.xml --qpos runtime/p
 | 换什么 | 只改 |
 |---|---|
 | **换动作** | `--vmd`（模型与校准都不动）|
-| **换 MMD 模型** | 骨名不同才需要动 `mmd_bones.py`，然后重跑 1–3 |
+| **换 MMD 模型** | 骨名不同才需要动 `mmd_profile.py` 的 `SEGMENT_BONES`，然后重跑 1–3 |
 | **换机器人** | `--robot <机器人键或配置>`；配对姿态来自 `configs/generated/paired_pose_<robot>.json` |
 
 ## 必须知道的坑（都踩过）

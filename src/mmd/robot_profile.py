@@ -8,13 +8,15 @@ A profile answers the two questions that are genuinely robot-specific:
                convention-free comparison, so a segment is (link, far end, the joints that move it).
 
 Everything else - path resolution, the stock weights, the MMD side of the skeleton - comes from GMR or
-from ``mmd_bones``. Paths in the file are relative to the GMR checkout, so a profile is portable.
+from ``mmd_profile`` (the MMD side). Paths in the file are relative to the GMR checkout, so a profile is portable.
 """
 from __future__ import annotations
 
 import json
 from dataclasses import dataclass
 from pathlib import Path
+
+from mmd_profile import LAFAN1_TO_MMD, SEGMENT_BONES
 
 WEIGHT_FIELD = {'pos_w': 1, 'rot_w': 2}
 
@@ -49,33 +51,6 @@ class RobotProfile:
 
     def segments_for(self, link):
         return [segment for segment in self.segments if segment.link == link]
-
-
-# GMR's configs all name the human side with LaFAN1 bones, so one table serves every robot.
-LAFAN1_TO_MMD = {
-    'Hips': '腰',
-    'Spine2': '上半身2',
-    'LeftUpLeg': '左足',
-    'LeftLeg': '左ひざ',
-    'LeftFootMod': '左足首',
-    'RightUpLeg': '右足',
-    'RightLeg': '右ひざ',
-    'RightFootMod': '右足首',
-    'LeftArm': '左腕',
-    'LeftForeArm': '左ひじ',
-    'LeftHand': '左手首',
-    'RightArm': '右腕',
-    'RightForeArm': '右ひじ',
-    'RightHand': '右手首',
-}
-
-# the limb directions the paired pose compares, as (bone, far bone)
-SEGMENT_BONES = (
-    ('左腕', '左ひじ'), ('左ひじ', '左手首'),
-    ('右腕', '右ひじ'), ('右ひじ', '右手首'),
-    ('左足', '左ひざ'), ('左ひざ', '左足首'),
-    ('右足', '右ひざ'), ('右ひざ', '右足首'),
-)
 
 
 def from_gmr(robot, gmr_root, model=None):
