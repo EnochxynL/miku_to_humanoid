@@ -73,6 +73,12 @@ def build_scene(mmd_xml, robot_xml, offset, ghost_alpha=None):
         mmd.attach(robot, frame=frame, prefix=ROBOT_PREFIX)
     model = mmd.compile()
 
+    # MMD textures are authored for MMD's toon shading, which MuJoCo does not have; the default
+    # headlight (0.45 ambient / 0.65 diffuse) blows skin out to flat white, so the scene runs dimmer
+    model.vis.headlight.ambient[:] = 0.25
+    model.vis.headlight.diffuse[:] = 0.35
+    model.vis.headlight.specular[:] = 0.05
+
     if ghost_alpha is not None:
         # translucent skin on both figures so the bones inside stay visible; the ground plane is left
         # alone, and where each figure stands is still decided by --offset
