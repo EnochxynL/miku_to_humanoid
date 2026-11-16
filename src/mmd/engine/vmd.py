@@ -1,96 +1,117 @@
-"""VMD reader, vendored from the author's own mmd_mujoco_player (mmd_robot_player/vmd.py).
+# -*- coding: utf-8 -*-
+"""VMD (Vocaloid Motion Data 0002) parser.
 
-Copied rather than re-implemented because the player already plays this motion correctly, so its
-name matching and key handling are known-good; a hand-written parser was tried first and silently
-mis-read the bone table.
-
-Upstream: D:\\MY_DATA\\Downloads\\mmd_mujoco_player\\src\\mmd_robot_player\\vmd.py
+Reads bone key frames (with the 4 Bezier interpolation curves X/Y/Z/R)
+and morph key frames.  Camera / light / shadow sections are skipped.
 """
-from __future__ import annotations
-
-from __future__ import annotations
 import struct
-from dataclasses import dataclass
-from pathlib import Path
-import numpy as np
-
-@dataclass
-class BoneKey:
-    frame: int
-    position: np.ndarray
-    rotation: np.ndarray  # xyzw, as stored in VMD
-    interpolation: bytes
 
 
-def _decode(raw: bytes) -> str:
-    return raw.split(b"\0", 1)[0].decode("shift_jis", errors="replace")
+def _sjis(b: bytes) -> str:
+    return b.split(b"\x00")[0].decode("shift-jis", errors="replace")
 
 
-def read_vmd(path: str | Path) -> dict[str, list[BoneKey]]:
-    """Read bone tracks from a standard VMD v2 file; unrelated chunks are skipped."""
-    data = Path(path).read_bytes()
-    if not data.startswith(b"Vocaloid Motion Data"):
-        raise ValueError("Not a VMD file")
-    # VMD model-name field is fixed at 20 bytes after its 30-byte signature.
-    off = 50
-    if len(data) < off + 4:
-        raise ValueError("Truncated VMD header")
-    (count,) = struct.unpack_from("<I", data, off); off += 4
-    record_size = 111
-    if count > 2_000_000 or off + count * record_size > len(data):
-        raise ValueError(f"Invalid/truncated VMD bone section: {count} records")
-    tracks: dict[str, list[BoneKey]] = {}
-    for _ in range(count):
-        name = _decode(data[off:off+15]); off += 15
-        frame, = struct.unpack_from("<I", data, off); off += 4
-        pos = np.array(struct.unpack_from("<3f", data, off), dtype=float); off += 12
-        # VMD stores x,y,z,w; MuJoCo/scipy convention is w,x,y,z only at API boundary.
-        quat = np.array(struct.unpack_from("<4f", data, off), dtype=float); off += 16
-        interp = data[off:off+64]; off += 64
-        if name:
-            tracks.setdefault(name, []).append(BoneKey(frame, pos, quat, interp))
-    for keys in tracks.values():
-        keys.sort(key=lambda k: k.frame)
-    return tracks
+def parse_vmd(path):
+    with open(path, "rb") as f:
+        d = f.read()
+    if not d.startswith(b"Vocaloid Motion Data 0002"):
+        raise ValueError("Not a VMD 0002 file (old 0001 format is unsupported)")
+    o = 30
+    model_name = _sjis(d[o:o + 20]); o += 20
+
+    # ---- bone frames -----------------------------------------------------
+    (n,) = struct.unpack_from("<I", d, o); o += 4
+    bones = {}
+    for _ in range(n):
+        name = _sjis(d[o:o + 15])
+        frame, px, py, pz, rx, ry, rz, rw = struct.unpack_from("<Ifffffff", d, o + 15)
+        interp = d[o + 47:o + 111]
+        o += 111
+        # bezier control points per axis (X,Y,Z,R): x1,y1,x2,y2 in 0..127
+        curves = []
+        for i in range(4):
+            curves.append((interp[i], interp[i + 4], interp[i + 8], interp[i + 12]))
+        bones.setdefault(name, []).append({
+            "frame": frame,
+            "pos": (px, py, pz),
+            "rot": (rx, ry, rz, rw),
+            "curves": curves,  # [X, Y, Z, R] each (x1, y1, x2, y2)
+        })
+    for k in bones:
+        bones[k].sort(key=lambda f: f["frame"])
+
+    # ---- morph frames ------------------------------------------------------
+    morphs = {}
+    if o + 4 <= len(d):
+        (n,) = struct.unpack_from("<I", d, o); o += 4
+        for _ in range(n):
+            name = _sjis(d[o:o + 15])
+            frame, w = struct.unpack_from("<If", d, o + 15)
+            o += 23
+            morphs.setdefault(name, []).append((frame, w))
+        for k in morphs:
+            morphs[k].sort(key=lambda f: f[0])
+
+    # ---- camera / light / self-shadow (skipped) --------------------------
+    def skip_section(record_size):
+        nonlocal o
+        if o + 4 > len(d):
+            return
+        (cnt,) = struct.unpack_from("<I", d, o); o += 4
+        o += cnt * record_size
+
+    skip_section(61)   # camera
+    skip_section(28)   # light
+    skip_section(9)    # self shadow
+
+    # ---- IK enable frames --------------------------------------------------
+    ik_frames = []
+    if o + 4 <= len(d):
+        (n,) = struct.unpack_from("<I", d, o); o += 4
+        for _ in range(n):
+            if o + 9 > len(d):
+                break
+            frame, show, cnt = struct.unpack_from("<IBI", d, o); o += 9
+            iks = {}
+            for _ in range(cnt):
+                if o + 21 > len(d):
+                    break
+                iks[_sjis(d[o:o + 20])] = bool(d[o + 20])
+                o += 21
+            ik_frames.append({"frame": frame, "show": bool(show), "ik": iks})
+        ik_frames.sort(key=lambda f: f["frame"])
+
+    max_frame = 0
+    for keys in bones.values():
+        max_frame = max(max_frame, keys[-1]["frame"])
+    for keys in morphs.values():
+        max_frame = max(max_frame, keys[-1][0])
+
+    return {"model_name": model_name, "bones": bones, "morphs": morphs,
+            "ik_frames": ik_frames, "max_frame": max_frame}
 
 
-def _curve(interp: bytes, channel: int, t: float) -> float:
-    """Evaluate one of VMD's X/Y/Z/rotation Bezier curves."""
-    # The first 16 bytes are interleaved by control-point coordinate:
-    # x1 for each channel, then y1, x2, y2.
-    x1 = interp[channel] / 127.0
-    y1 = interp[channel + 4] / 127.0
-    x2 = interp[channel + 8] / 127.0
-    y2 = interp[channel + 12] / 127.0
+def bezier_y(x, x1, y1, x2, y2):
+    """Evaluate MMD bezier curve at x (all values normalized to 0..1)."""
+    if x <= 0.0:
+        return 0.0
+    if x >= 1.0:
+        return 1.0
+    # solve t for x by bisection: X(t) = 3(1-t)^2 t x1 + 3(1-t) t^2 x2 + t^3
     lo, hi = 0.0, 1.0
-    for _ in range(18):
-        u = (lo + hi) * 0.5; v = 1-u
-        x = 3*v*v*u*x1 + 3*v*u*u*x2 + u**3
-        if x < t: lo = u
-        else: hi = u
-    u = (lo+hi)*0.5; v = 1-u
-    return 3*v*v*u*y1 + 3*v*u*u*y2 + u**3
+    for _ in range(24):
+        t = (lo + hi) * 0.5
+        u = 1.0 - t
+        xt = 3 * u * u * t * x1 + 3 * u * t * t * x2 + t * t * t
+        if xt < x:
+            lo = t
+        else:
+            hi = t
+    t = (lo + hi) * 0.5
+    u = 1.0 - t
+    return 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t
 
-def sample_track(keys: list[BoneKey], frame: float) -> tuple[np.ndarray, np.ndarray]:
-    if frame <= keys[0].frame:
-        return keys[0].position, keys[0].rotation
-    if frame >= keys[-1].frame:
-        return keys[-1].position, keys[-1].rotation
-    frames = [k.frame for k in keys]
-    i = int(np.searchsorted(frames, frame, side="right") - 1)
-    a, b = keys[i], keys[i+1]
-    t = (frame-a.frame)/(b.frame-a.frame)
-    p = np.empty(3, dtype=float)
-    for axis in range(3):
-        u = _curve(a.interpolation, axis, t)
-        p[axis] = (1-u)*a.position[axis] + u*b.position[axis]
-    t = _curve(a.interpolation, 3, t)
-    # Quaternion slerp (xyzw storage), shortest arc.
-    q0, q1 = a.rotation.copy(), b.rotation.copy()
-    dot = float(np.dot(q0, q1))
-    if dot < 0: q1, dot = -q1, -dot
-    if dot > .9995: q = q0 + t*(q1-q0); q /= np.linalg.norm(q)
-    else:
-        theta = np.arccos(np.clip(dot, -1, 1)); s = np.sin(theta)
-        q = np.sin((1-t)*theta)/s*q0 + np.sin(t*theta)/s*q1
-    return p, q
+
+def curve_is_linear(c):
+    """A curve is linear when both control points lie on the diagonal."""
+    return c[0] == c[1] and c[2] == c[3]

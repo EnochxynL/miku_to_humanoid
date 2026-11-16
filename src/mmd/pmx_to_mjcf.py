@@ -64,8 +64,12 @@ def main():
                              'capsules; the geometry is segmented by the triangle majority bone')
     parser.add_argument('--assets', default=None,
                         help='directory for mesh/texture files (default: <xml dir>/assets)')
-    parser.add_argument('--drop-alpha', action='store_true',
-                        help='omit materials whose alpha < 0.5 (MMD overlays like the blush layer)')
+    parser.add_argument('--no-flip-v', dest='flip_v', action='store_false',
+                        help='keep V as-is; by default it is flipped because MMD UVs start at the top')
+    parser.add_argument('--keep-overlays', action='store_true',
+                        help='keep materials whose alpha < 0.5 (MMD overlays: the blush layer 颜+ is '
+                             'alpha 0 and the eye shadow 目影 is alpha 0.3; MuJoCo renders them opaque '
+                             'and they blacken the face)')
     parser.add_argument('--capsule-radius', type=float, default=0.008,
                         help='draw a capsule per bone towards its tail so the skeleton is visible')
     args = parser.parse_args()
@@ -132,7 +136,7 @@ def main():
         assets = Path(args.assets) if args.assets else Path(args.out).parent / 'assets'
         mesh_info = export_mesh(model, assets, base_dir=Path(args.pmx).parent,
                                 bone_positions=absolute, scale=scale,
-                                flip_v=True, min_alpha=0.5 if args.drop_alpha else 0.0)
+                                flip_v=args.flip_v, min_alpha=0.0 if args.keep_overlays else 0.5)
         print('mesh: %d groups, %d triangles, %d textures'
               % (len(mesh_info['groups']), sum(g['triangles'] for g in mesh_info['groups']),
                  len(mesh_info['textures'])))
@@ -162,14 +166,14 @@ def main():
             lines.append(f'    <mesh name="{group["name"]}" file="{group["file"]}" />')
         tex_slot = {name: index for index, name in enumerate(mesh_info['textures'])}
         for material in mesh_info['materials']:
-            if material['alpha'] < 0.5 and args.drop_alpha:
+            if material['alpha'] < 0.5 and not args.keep_overlays:
                 continue
             r, g, b = material['diffuse']
             texture = material['texture']
             reference = (' texture="tex%02d"' % tex_slot[texture]) if texture in tex_slot else ''
             lines.append('    <material name="mat%03d"%s rgba="%.3f %.3f %.3f %.3f" '
                          'specular="0" shininess="0" />'
-                         % (material['index'], reference, r, g, b, 1.0))
+                         % (material['index'], reference, r, g, b, material['alpha']))
         lines.append('  </asset>')
     lines += [
              '  <worldbody>',

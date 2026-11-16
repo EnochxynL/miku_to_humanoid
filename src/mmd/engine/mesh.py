@@ -102,6 +102,28 @@ def export(model, out_dir, base_dir=None, bone_positions=None, scale=0.07,
         uvs[:, 1] = 1.0 - uvs[:, 1]
     dominant = [_dominant_bone(v) for v in vertices]
 
+    # Some MMD models carry a duplicated surface under a "+" material (肌2 / 肌2+ here are the same
+    # vertices with different textures). Both are opaque, so they z-fight and the region flickers
+    # between the two - keep the plain one and drop the duplicate.
+    vertex_sets = {}
+    cursor = 0
+    for material_index, material in enumerate(materials):
+        count = int(material.get('index_count', 0))
+        if count:
+            vertex_sets[material_index] = frozenset(indices[cursor:cursor + count])
+        cursor += count
+    duplicates = set()
+    seen_sets = {}
+    for material_index, material in enumerate(materials):
+        name = str(material.get('name') or '')
+        key = vertex_sets.get(material_index)
+        if key is None:
+            continue
+        if name.endswith('+') and key in seen_sets:
+            duplicates.add(material_index)
+        else:
+            seen_sets.setdefault(key, material_index)
+
     groups = []
     material_meta = []
     skipped = 0
@@ -120,6 +142,10 @@ def export(model, out_dir, base_dir=None, bone_positions=None, scale=0.07,
             'diffuse': [float(x) for x in material.get('diffuse', [1, 1, 1, 1])[:3]],
             'alpha': alpha,
         })
+        if material_index in duplicates:
+            # same surface as its plain partner, drawn on top in MMD; MuJoCo has no polygon offset
+            skipped += 1
+            continue
         if alpha < min_alpha:
             # MMD uses near-transparent materials as overlays (颜+ is a blush layer); MuJoCo blends
             # them far more heavily and they grey out the whole surface
