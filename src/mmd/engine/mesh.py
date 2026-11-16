@@ -168,32 +168,7 @@ def groups(model, base_dir=None, bone_positions=None, scale=0.07, flip_v=True, m
                 'triangles': len(triangles),
             })
 
-    separate_overlays(out, model, distance=0.0005)
     return {'groups': out, 'materials': material_meta, 'textures': textures, 'skipped': skipped}
-
-
-def separate_overlays(groups, model, distance=0.0005):
-    """Push a duplicated MMD overlay layer slightly along its normals.
-
-    MMD models routinely carry the same surface twice: ``衣1`` and ``衣1+`` share geometry (median
-    centroid distance 0.0000 m) but use a different texture, and MMD draws them in order with no depth
-    write. MuJoCo has no polygon offset, so the two coincident surfaces z-fight and the region flickers
-    into patchy holes. Nudging the overlay out by half a millimetre - far below anything visible at
-    this scale - lets it win the depth test and keeps whatever detail it carries.
-    """
-    materials = model['materials']
-    names = {group['material']: str(materials[group['material']].get('name') or '')
-             for group in groups}
-    present = {name for name in names.values()}
-    for group in groups:
-        name = names[group['material']]
-        if not name.endswith('+') or name[:-1] not in present:
-            continue
-        normals = np.asarray(group['normals'], dtype=float)
-        length = np.linalg.norm(normals, axis=1, keepdims=True)
-        direction = np.divide(normals, length, out=np.zeros_like(normals), where=length > 1e-12)
-        group['positions'] = group['positions'] + direction * distance
-        group['offset'] = distance
 
 
 def write_obj(built, out_dir):
