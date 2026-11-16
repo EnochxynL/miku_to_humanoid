@@ -93,7 +93,9 @@ def main(argv=None):
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--glb', required=True)
     parser.add_argument('--xml', required=True)
-    parser.add_argument('--nodes', required=True)
+    parser.add_argument('--nodes', default=None,
+                        help='optional provenance: write the node/bone table here; nothing '
+                             'consumes it any more because the bodies carry the bone names')
     parser.add_argument('--mesh', action='store_true', help='include the textured mesh')
     parser.add_argument('--no-flip-v', dest='flip_v', action='store_false',
                         help='keep V as-is; the default flips it, which is what makes the face read '
@@ -113,6 +115,7 @@ def main(argv=None):
 def run(args):
 
     gltf = load_gltf_module()
+    mujoco_names, xml_attr = gltf.mujoco_names, gltf.xml_attr
     doc, binary = gltf.load_glb(Path(args.glb))
     nodes = doc['nodes']
     count = len(nodes)
@@ -319,6 +322,8 @@ def run(args):
     out.append('      <freejoint name="glb_root_free" />')
     out.append('      ' + STUB_INERTIAL)
 
+    bone_names = mujoco_names(nodes)
+
     def emit(index, depth):
         pad = '  ' * depth
         node = nodes[index]
@@ -328,9 +333,10 @@ def run(args):
         rotation = node.get('rotation', [0, 0, 0, 1])
         pos = f'{translation[0]:.6f} {translation[1]:.6f} {translation[2]:.6f}'
         quat = ' '.join(f'{float(v):.6f}' for v in [rotation[3], rotation[0], rotation[1], rotation[2]])
-        out.append(f'{pad}<body name="glb_body_{index:03d}" pos="{pos}" quat="{quat}">')
+        name = xml_attr(bone_names[index])
+        out.append(f'{pad}<body name="{name}" pos="{pos}" quat="{quat}">')
         out.append(f'{pad}  {STUB_INERTIAL}')
-        out.append(f'{pad}  <joint name="glb_joint_{index:03d}" type="ball" />')
+        out.append(f'{pad}  <joint name="{name}" type="ball" />')
         for geom in body_geoms.get(index, []):
             out.append(geom.replace('      ', pad + '  ', 1))
         if not args.mesh:
@@ -355,11 +361,14 @@ def run(args):
         'scaled_nodes': [nodes[i].get('name') for i in non_unit],
         'mesh_groups': sum(len(v) for v in body_geoms.values()),
         'nodes': [
-            {'index': i, 'name': nodes[i].get('name'),
-             'body': f'glb_body_{i:03d}', 'joint': f'glb_joint_{i:03d}', 'parent': parent[i]}
+            {'index': i, 'name': bone_names[i],
+             'body': bone_names[i], 'joint': bone_names[i], 'parent': parent[i]}
             for i in range(count)
         ],
     }
+    if not args.nodes:
+        print(json.dumps({'nodes': count, 'xml': str(xml_path)}, ensure_ascii=False))
+        return Path(args.xml)
     Path(args.nodes).parent.mkdir(parents=True, exist_ok=True)
     Path(args.nodes).write_text(json.dumps(mapping, indent=2, ensure_ascii=False), encoding='utf-8')
     print(json.dumps({'nodes': count, 'roots': mapping['roots'],

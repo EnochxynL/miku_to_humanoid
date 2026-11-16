@@ -39,24 +39,21 @@ ROBOT_PARENT = {
 }
 
 
-def load_glb_frames(xml_path, nodes_path, anim_path):
-    """World pose of every MMD-named bone per frame, in GMR's human-data shape."""
-    mapping = json.loads(Path(nodes_path).read_text(encoding='utf-8'))
-    body_of = {}
-    for entry in mapping['nodes']:
-        if entry.get('name'):
-            body_of.setdefault(entry['name'], entry['index'])
+def load_glb_frames(xml_path, nodes_path, anim_path, wanted=None):
+    """World pose of every bone per frame, in GMR's human-data shape (keyed by bone name)."""
     model = mujoco.MjModel.from_xml_path(xml_path)
     data = mujoco.MjData(model)
+    bodies = {}
+    for body in range(1, model.nbody):
+        name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, body)
+        if name and name != 'glb_root' and (wanted is None or name in wanted):
+            bodies[body] = name
     frames = []
     for qpos in np.load(anim_path)['qpos']:
         data.qpos[:] = qpos
         mujoco.mj_forward(model, data)
         frame = {}
-        for name, index in body_of.items():
-            body = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, f'glb_body_{index:03d}')
-            if body < 0:
-                continue
+        for body, name in bodies.items():
             rotation = R.from_matrix(np.array(data.xmat[body]).reshape(3, 3))
             q = rotation.as_quat()
             frame[name] = [np.array(data.xpos[body], dtype=float),
@@ -165,7 +162,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--glb-xml', required=True)
-    parser.add_argument('--nodes', required=True)
+    parser.add_argument('--nodes', default=None, help='unused: bodies are looked up by bone name')
     parser.add_argument('--anim', required=True)
     parser.add_argument('--robot', default='unitree_g1')
     parser.add_argument('--gmr-root', default=r'D:\MY_TOOL\GitHub_Tools\GMR')

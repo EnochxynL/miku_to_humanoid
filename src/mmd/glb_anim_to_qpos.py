@@ -36,7 +36,7 @@ def main(argv=None):
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--glb', required=True)
     parser.add_argument('--xml', required=True)
-    parser.add_argument('--nodes', required=True)
+    parser.add_argument('--nodes', default=None, help='unused: joints are looked up by bone name')
     parser.add_argument('--out', required=True)
     parser.add_argument('--fps', type=float, default=30.0)
     parser.add_argument('--view', action='store_true')
@@ -57,19 +57,19 @@ def run(args):
 
     model = mujoco.MjModel.from_xml_path(args.xml)
     data = mujoco.MjData(model)
-    mapping = json.loads(Path(args.nodes).read_text(encoding='utf-8'))
+    # bodies and joints carry the bone names, so the node -> joint link is the name itself
+    names = gltf.mujoco_names(nodes)
     bind = {}
-    for entry in mapping['nodes']:
-        node = nodes[entry['index']]
+    for index, node in enumerate(nodes):
         q = node.get('rotation', [0, 0, 0, 1])
-        bind[entry['index']] = R.from_quat([q[0], q[1], q[2], q[3]])
+        bind[index] = R.from_quat([q[0], q[1], q[2], q[3]])
 
     # which joints exist, and at which qpos address
     address = {}
-    for entry in mapping['nodes']:
-        joint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, entry['joint'])
+    for index, name in enumerate(names):
+        joint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, name)
         if joint_id >= 0:
-            address[entry['index']] = int(model.jnt_qposadr[joint_id])
+            address[index] = int(model.jnt_qposadr[joint_id])
 
     # channels: node -> path; we only use rotation, and the root translation if animated
     animated = sorted(node for node, paths in clip.channels.items() if 'rotation' in paths)

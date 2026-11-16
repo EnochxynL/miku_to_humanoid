@@ -47,7 +47,7 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     stem = args.stem or Path(args.glb).stem
     xml_path = out_dir / f'{stem}.xml'
-    nodes_path = out_dir / f'{stem}_nodes.json'
+    nodes_path = out_dir / f'{stem}_nodes.json'   # provenance only; nothing reads it back
     anim_path = out_dir / f'{stem}_anim.npz'
 
     # --- model -----------------------------------------------------------------------------------

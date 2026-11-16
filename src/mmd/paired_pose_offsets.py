@@ -87,13 +87,12 @@ def load_vpd(path: Path):
 def apply_vpd(model, data, mapping, poses):
     """Apply MMD local rotations to the glTF-derived model: q_joint = inverse(bind) * vpd_local."""
     applied = 0
-    for entry in mapping['nodes']:
-        name = entry.get('name')
+    for body in range(model.nbody):
+        name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, body)
         if not name or name not in poses:
             continue
-        body = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, entry['body'])
-        joint = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, entry['joint'])
-        if body < 0 or joint < 0:
+        joint = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, name)
+        if joint < 0:
             continue
         _, quat = poses[name]
         local = R.from_quat([quat[0], quat[1], quat[2], quat[3]])
@@ -115,7 +114,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--glb-xml', required=True)
-    parser.add_argument('--nodes', required=True)
+    parser.add_argument('--nodes', default=None, help='unused: bodies are looked up by bone name')
     parser.add_argument('--config', required=True)
     parser.add_argument('--robot-xml',
                         default=r'D:\MY_TOOL\GitHub_Tools\GMR\assets\unitree_g1\g1_mocap_29dof.xml')
@@ -136,7 +135,8 @@ def main():
     src = mujoco.MjModel.from_xml_path(args.glb_xml)
     src_data = mujoco.MjData(src)
     src_data.qpos[:] = src.qpos0
-    mapping = json.loads(Path(args.nodes).read_text(encoding='utf-8'))
+    mapping = (json.loads(Path(args.nodes).read_text(encoding='utf-8'))
+               if args.nodes else {'nodes': []})
     index_of = {e['name']: e['index'] for e in mapping['nodes'] if e.get('name')}
     if args.vpd:
         poses = load_vpd(Path(args.vpd))
@@ -145,7 +145,7 @@ def main():
     mujoco.mj_forward(src, src_data)
 
     def source_body(name):
-        return mujoco.mj_name2id(src, mujoco.mjtObj.mjOBJ_BODY, f'glb_body_{index_of[name]:03d}')
+        return mujoco.mj_name2id(src, mujoco.mjtObj.mjOBJ_BODY, name)
 
     # --- robot -------------------------------------------------------------------------------
     robot = mujoco.MjModel.from_xml_path(args.robot_xml)
@@ -251,7 +251,7 @@ def main():
         if body < 0:
             continue
         source_pose = R.identity()
-        if bone_for_link.get(link) and bone_for_link[link] in index_of:
+        if bone_for_link.get(link) and source_body(bone_for_link[link]) >= 0:
             source_pose = R.from_matrix(np.array(
                 src_data.xmat[source_body(bone_for_link[link])]).reshape(3, 3))
         constant = source_pose.inv() * R.from_matrix(np.array(robot_data.xmat[body]).reshape(3, 3))

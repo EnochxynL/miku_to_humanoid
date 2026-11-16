@@ -24,47 +24,42 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from glb_to_gmr import load_glb_frames   # noqa: E402
 
 
-def skeleton_edges(nodes_path):
-    """(parent name, child name) pairs from the bone tree, plus the root name."""
-    mapping = json.loads(Path(nodes_path).read_text(encoding='utf-8'))
-    entries = mapping['nodes']
-    name_of = {e['index']: e.get('name', '') for e in entries}
-    parent_of = {e['index']: e.get('parent', -1) for e in entries}
+def body_tree(model):
+    """(parent name, child name) pairs from the MJCF body hierarchy, plus the root names.
+
+    The bodies carry the MMD bone names, so the model itself is the authority - no side table.
+    """
+    name_of = {body: mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, body)
+               for body in range(model.nbody)}
     edges, roots = [], []
-    for entry in entries:
-        index = entry['index']
-        parent = parent_of.get(index, -1)
-        if parent in name_of and name_of.get(parent) and name_of.get(index):
-            edges.append((name_of[parent], name_of[index]))
+    for body in range(1, model.nbody):
+        name = name_of[body]
+        if not name or name == 'glb_root':
+            continue
+        parent = int(model.body_parentid[body])
+        parent_name = name_of.get(parent)
+        if parent_name and parent_name not in ('world', 'glb_root'):
+            edges.append((parent_name, name))
         else:
-            roots.append(name_of.get(index, ''))
+            roots.append(name)
     return edges, roots
 
 
-def connect_subset(names, nodes_path):
+def connect_subset(names, model):
     """Connect each bone of a subset to its nearest ancestor that is also in the subset."""
-    mapping = json.loads(Path(nodes_path).read_text(encoding='utf-8'))
-    entries = mapping['nodes']
-    name_of = {e['index']: e.get('name', '') for e in entries}
-    parent_of = {e['index']: e.get('parent', -1) for e in entries}
-    index_of = {}
-    for e in entries:
-        name = e.get('name', '')
-        if name and name not in index_of:
-            index_of[name] = e['index']
     wanted = set(names)
     edges = []
-    for name in names:
-        index = index_of.get(name)
-        if index is None:
+    for body in range(1, model.nbody):
+        name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, body)
+        if name not in wanted:
             continue
-        parent = parent_of.get(index, -1)
-        while parent in name_of and parent >= 0:
-            parent_name = name_of[parent]
+        parent = int(model.body_parentid[body])
+        while parent > 0:
+            parent_name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, parent)
             if parent_name in wanted:
                 edges.append((parent_name, name))
                 break
-            parent = parent_of.get(parent, -1)
+            parent = int(model.body_parentid[parent])
     return edges
 
 
@@ -72,7 +67,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--glb-xml', required=True)
-    parser.add_argument('--nodes', required=True)
+    parser.add_argument('--nodes', default=None, help='unused: the bone tree comes from the MJCF')
     parser.add_argument('--anim', required=True)
     parser.add_argument('--config', required=True)
     parser.add_argument('--robot', default='unitree_g1')
@@ -100,8 +95,10 @@ def main():
 
     gmrmod.IK_CONFIG_DICT.setdefault('glb', {})[args.robot] = str(Path(args.config).resolve())
     frames = load_glb_frames(args.glb_xml, args.nodes, args.anim)
+    # the bone tree belongs to the *source* model; the robot model is only for playback
+    source_model = mujoco.MjModel.from_xml_path(args.glb_xml)
     if args.source == 'raw':
-        edges, roots = skeleton_edges(args.nodes)
+        edges, roots = body_tree(source_model)
         skip = [s for s in args.exclude.split(',') if s]
         edges = [(a, b) for a, b in edges if not any(s in a or s in b for s in skip)]
     else:
@@ -129,7 +126,7 @@ def main():
                     # the data GMR actually solves against, not the raw clip
                     human = {k: v for k, v in retargeter.scaled_human_data.items()}
                     if not edges:
-                        edges.extend(connect_subset(list(human.keys()), args.nodes))
+                        edges.extend(connect_subset(list(human.keys()), source_model))
                     frame = human
                 data.qpos[:] = qpos
                 mujoco.mj_forward(model, data)

@@ -107,22 +107,22 @@ uv run python src/mmd/glb_extract.py --glb <model.glb> --out-dir runtime/glb --m
 
 # 3. base config (bone names, weights, scale table)
 <gmr>/.venv/Scripts/python.exe src/mmd/glb_to_gmr.py `
-    --glb-xml runtime/glb/herta.xml --nodes runtime/glb/herta_nodes.json `
+    --glb-xml runtime/glb/herta.xml `
     --anim runtime/glb/herta_anim.npz --build-config runtime/gmr_inputs/glb_to_g1.json --frames 0
 
 # 4. the calibration that matters
 uv run python src/mmd/paired_pose_offsets.py --glb-xml runtime/glb/herta.xml `
-    --nodes runtime/glb/herta_nodes.json --config runtime/gmr_inputs/glb_to_g1.json --report
+    --config runtime/gmr_inputs/glb_to_g1.json --report
 
 # 5. bake the robot motion WITH the calibrated config (rebuilding it here would overwrite the
 #    paired-pose offsets and silently produce a worse motion - use --config-in)
 <gmr>/.venv/Scripts/python.exe src/mmd/glb_to_gmr.py --config configs/mmd/glb_to_g1.json 
-    --glb-xml runtime/glb/herta.xml --nodes runtime/glb/herta_nodes.json 
+    --glb-xml runtime/glb/herta.xml 
     --anim runtime/glb/herta_anim.npz --frames 0 --bake-out runtime/glb/g1_final.npz
 
 # 6. play robot + source skeleton side by side
 <gmr>/.venv/Scripts/python.exe src/mmd/view_skeleton.py --glb-xml runtime/glb/herta.xml `
-    --nodes runtime/glb/herta_nodes.json --anim runtime/glb/herta_anim.npz `
+    --anim runtime/glb/herta_anim.npz `
     --config runtime/gmr_inputs/glb_to_g1.json --loop --offset 0.85 --source gmr
 
 # 7. hand it to the control stack: GMR pickle -> the imitation clip format
@@ -131,6 +131,14 @@ uv run python src/mmd/export_gmr_pickle.py --npz runtime/glb/g1_final.npz `
 uv run python src/reference_maker/convert_gmr.py --pickle runtime/gmr_clips/herta_qqy.pkl `
     --out runtime/refs/herta_qqy/signals.npz --robot g1
 ```
+
+## Naming
+
+The MJCF does not carry generic names: every body and joint is called what the model calls it
+(左腕, 左ひじ, …), taken from the glTF node name (the exporter writes 
+odes[i].name and the names
+are unique for this model). That is why no mapping table sits in the data path any more - a bone's
+name *is* the interface. The optional *_nodes.json is kept only as provenance.
 
 ## Known gaps
 

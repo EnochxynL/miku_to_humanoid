@@ -87,3 +87,25 @@ class Clip:
         if path == 'rotation':
             return slerp(v[i], v[i + 1], a)
         return v[i] + a * (v[i + 1] - v[i])
+
+
+def mujoco_names(nodes):
+    """Node index -> MuJoCo body/joint name, taken from the glTF node name.
+
+    Shared by the model builder and the motion extractor so both agree on the names; a duplicate or an
+    empty name is disambiguated here rather than silently colliding inside MuJoCo.
+    """
+    seen = {}
+    names = []
+    for index, node in enumerate(nodes):
+        raw = (node.get('name') or '').strip() or 'bone_%d' % index
+        count = seen.get(raw, 0) + 1
+        seen[raw] = count
+        names.append(raw if count == 1 else '%s_%d' % (raw, count))
+    return names
+
+
+def xml_attr(value):
+    """Escape a name for use inside a double-quoted XML attribute."""
+    return (value.replace('&', '&amp;').replace('<', '&lt;')
+                 .replace('>', '&gt;').replace('"', '&quot;'))
