@@ -1,4 +1,4 @@
-"""Minimal .glb reader: JSON chunk, accessors, quaternion helpers and animation sampling.
+"""Minimal .glb reader: JSON chunk, accessors, quaternion slerp and animation sampling.
 
 Extracted from the retired BVH converter so the glTF path no longer depends on it.
 """
@@ -40,18 +40,6 @@ def read_accessor(doc, binary, index):
 
 
 # ---------------------------------------------------------------- math helpers
-def quat_to_matrix(q):
-    """glTF stores quaternions as (x, y, z, w)."""
-    x, y, z, w = q
-    n = (x * x + y * y + z * z + w * w) ** 0.5 or 1.0
-    x, y, z, w = x / n, y / n, z / n, w / n
-    return np.array([
-        [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
-        [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
-        [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)],
-    ])
-
-
 def slerp(q0, q1, t):
     d = float(np.dot(q0, q1))
     if d < 0:
@@ -62,14 +50,6 @@ def slerp(q0, q1, t):
     theta = np.arccos(np.clip(d, -1.0, 1.0))
     s = np.sin(theta)
     return (np.sin((1 - t) * theta) / s) * q0 + (np.sin(t * theta) / s) * q1
-
-
-def matrix_to_euler_zyx(R):
-    """Angles (z, y, x) with R = Rz(z) @ Ry(y) @ Rx(x)."""
-    y = np.arcsin(np.clip(-R[2, 0], -1.0, 1.0))
-    z = np.arctan2(R[1, 0], R[0, 0])
-    x = np.arctan2(R[2, 1], R[2, 2])
-    return z, y, x
 
 
 class Clip:

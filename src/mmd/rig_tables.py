@@ -25,16 +25,6 @@ LINKS = {
     'right_elbow_link': ('右ひじ', '右手首', 'right_wrist_yaw_link'),
     'right_wrist_yaw_link': ('右手首', '右中指１', 'right_wrist_roll_link'),
 }
-# links whose parent is the torso in the robot but a different PMX bone in the model
-ROBOT_PARENT = {
-    'torso_link': 'pelvis',
-    'left_hip_yaw_link': 'pelvis', 'right_hip_yaw_link': 'pelvis',
-    'left_knee_link': 'left_hip_yaw_link', 'right_knee_link': 'right_hip_yaw_link',
-    'left_ankle_roll_link': 'left_knee_link', 'right_ankle_roll_link': 'right_knee_link',
-    'left_shoulder_yaw_link': 'torso_link', 'right_shoulder_yaw_link': 'torso_link',
-    'left_elbow_link': 'left_shoulder_yaw_link', 'right_elbow_link': 'right_shoulder_yaw_link',
-    'left_wrist_yaw_link': 'left_elbow_link', 'right_wrist_yaw_link': 'right_elbow_link',
-}
 # measurement pairs, chosen so both sides are the same anatomical segment; the torso is measured
 # through pelvis->torso because this MJCF places head_link's origin below torso_link's, and the hand
 # is measured through the forearm because the wrist links differ by a lateral roll axis.
@@ -52,12 +42,6 @@ MEASURE = {
     'right_shoulder_yaw_link': ('右腕', '右ひじ', 'right_shoulder_yaw_link', 'right_elbow_link'),
     'right_elbow_link': ('右ひじ', '右手首', 'right_elbow_link', 'right_wrist_yaw_link'),
 }
-# kept for reference: the A-pose difference is largest at these joints, but the same mismatch
-# exists at every link, so the alignment is applied everywhere now.
-ALIGN_AT = {'left_shoulder_yaw_link', 'right_shoulder_yaw_link',
-            'left_hip_yaw_link', 'right_hip_yaw_link'}
-
-
 def rotation_between(u, v) -> R:
     u = u / (np.linalg.norm(u) or 1.0)
     v = v / (np.linalg.norm(v) or 1.0)
