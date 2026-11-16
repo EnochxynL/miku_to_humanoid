@@ -5,7 +5,7 @@ from ``mmd_pose``. No MJCF of the source rig is involved - the vendored deform p
 world poses, including the ``センター`` translation that a qpos round trip used to drop.
 
     PYTHONPATH=src;src\\mmd <gmr>/.venv/Scripts/python.exe src/mmd/gmr_retarget.py \
-        --pmx <model.pmx> --vmd <motion.vmd> --config configs/mmd/pmx_to_g1.json \
+        --pmx <model.pmx> --vmd <motion.vmd> --config configs/generated/mmd_to_g1.json \
         --bake-out runtime/pmx/g1.npz
 """
 from __future__ import annotations

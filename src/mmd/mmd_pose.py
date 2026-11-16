@@ -13,7 +13,7 @@ Conversions to the robot's space, matching the MJCF the viewer uses:
 Frames are returned in GMR's ``human_data`` shape: ``{bone name: [pos(3), quat(w,x,y,z)]}``.
 
     PYTHONPATH=src;src\\mmd uv run python -m mmd_pose --pmx <model.pmx> --pose <motion.vmd> \
-        --config configs/mmd/pmx_to_g1.json
+        --config configs/generated/mmd_to_g1.json
 """
 from __future__ import annotations
 

@@ -90,7 +90,7 @@ uv run python src/mmd/bake_pmx_vmd.py --pmx <model.pmx> --vmd <motion.vmd> --xml
 # ③ ④ 重定向到 G1 并播放（在 GMR venv 下）
 <gmr>/.venv/Scripts/python.exe src/mmd/pmx_to_gmr.py \
   --pmx-xml runtime/pmx/herta.xml --tree runtime/pmx/herta_tree.json --qpos runtime/pmx/herta_qpos.npz \
-  --config-out runtime/gmr_inputs/pmx_to_g1.json --retarget --bake-out runtime/pmx/g1_qpos.npz --view
+  --config-out configs/generated/mmd_to_g1.json --retarget --bake-out runtime/pmx/g1_qpos.npz --view
 ```
 
 ## 换机器人

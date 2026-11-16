@@ -35,7 +35,7 @@ g1 qpos + robot xml ────────────────────
 - 生产线不用 MuJoCo 算源侧：`Skeleton.world()` 直接给世界位姿，避免 qpos 往返丢掉 `センター` 平移
 - 未校准的配置**从不落盘**：`gmr_calibrate.py` 一次跑完骨架与 C
 
-细节与踩过的坑见 [`configs/mmd/README.md`](../../configs/mmd/README.md)。
+细节与踩过的坑见 [`configs/README.md`](../../configs/README.md)。
 
 ## 成对姿态不是唯一的（重要）
 
