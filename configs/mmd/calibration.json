@@ -1,7 +1,7 @@
 {
-  "method": "paired pose at the MMD bind pose; robot joints solved to match limb directions (0.0-0.3 deg), then C = R_src(bind)^-1 * R_link(matched)",
-  "why": "MMD bones carry no rest rotation, so at bind every bone frame is the identity: C collapses to a single reading instead of a fit",
-  "source_bind_note": "the GLB rig hangs under Rx90, so R_src(bind) = Rx90 and must be divided out (forgetting this gives arms 48 deg off)",
+  "method": "paired pose at the MMD bind pose; robot arm/leg joints solved to match the limb directions, then C = R_source_bind^-1 * R_link(matched pose)",
+  "why": "MMD bones carry no rest rotation, so at bind every bone frame is the identity: C collapses to a reading instead of a fit",
+  "source_bind_note": "the GLB hangs under Rx90, so R_source_bind = Rx90 and must be divided out",
   "links": {
     "pelvis": {
       "bone": "腰",
@@ -238,25 +238,11 @@
   },
   "weights_note": "all links at GMR convention: pelvis rot_w=10, torso 100, arms orientation-only (pos_w=0). No weight tuning and no position hack - the earlier pos_w=300 and pelvis rot_w=300 attempts were workarounds for the missing root yaw and are gone.",
   "root_calibration": {
-    "why": "the pelvis is the floating root; every child target is an absolute world orientation, so a wrong root is invisible on the torso and arms - the spine absorbs it and only hips/legs stay twisted",
-    "how": "closed-form yaw from the bilateral axis: rotate the robot hip line (left->right) onto the source bind hip line; applied to pelvis only",
-    "value_deg": -94.2,
-    "measured_before_after_hip_line_deg": [
-      [
-        73,
-        68,
-        75
-      ],
-      [
-        8,
-        10,
-        8
-      ]
-    ],
     "applies_to": [
       "pelvis",
       "torso_link"
     ],
-    "rule": "links the pose solve does not move must get the world-frame yaw from a bilateral axis; the limbs get it implicitly because their joints were solved against the source in world space"
+    "value_deg": -94.18,
+    "rule": "links the pose solve does not move need the world-frame yaw, measured on bilateral axes (hip line for the root, shoulder line for the torso); the limbs get it implicitly because their joints were solved against the source in world space"
   }
 }

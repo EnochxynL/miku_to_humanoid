@@ -59,6 +59,9 @@ def main():
                         default=r'D:\MY_TOOL\GitHub_Tools\GMR\assets\unitree_g1\g1_mocap_29dof.xml')
     parser.add_argument('--arm-pos-weight', type=float, default=0.0,
                         help='0 keeps GMR\'s own convention: orientation only for the arms')
+    parser.add_argument('--record', default=None,
+                        help='also write an audit record (method + per-link C + root yaw); keeps the '
+                             'record from drifting away from the config it documents')
     parser.add_argument('--report', action='store_true')
     args = parser.parse_args()
 
@@ -176,6 +179,37 @@ def main():
                 config[table][link][2] = (1.0 if args.arm_pos_weight > 0
                                           else official.get(link, 10.0))
     config_path.write_text(json.dumps(config, indent=2, ensure_ascii=True), encoding='utf-8')
+
+    if args.record:
+        record_path = Path(args.record)
+        existing = {}
+        if record_path.exists():
+            try:
+                existing = json.loads(record_path.read_text(encoding='utf-8'))
+            except Exception:
+                existing = {}
+        existing['method'] = (
+            'paired pose at the MMD bind pose; robot arm/leg joints solved to match the limb '
+            'directions, then C = R_source_bind^-1 * R_link(matched pose)')
+        existing['why'] = (
+            'MMD bones carry no rest rotation, so at bind every bone frame is the identity: C collapses '
+            'to a reading instead of a fit')
+        existing['source_bind_note'] = (
+            'the GLB hangs under Rx90, so R_source_bind = Rx90 and must be divided out')
+        existing['root_calibration'] = {
+            'applies_to': ['pelvis', 'torso_link'],
+            'value_deg': round(float(np.degrees(delta)), 2),
+            'rule': ('links the pose solve does not move need the world-frame yaw, measured on bilateral '
+                     'axes (hip line for the root, shoulder line for the torso); the limbs get it '
+                     'implicitly because their joints were solved against the source in world space'),
+        }
+        existing['links'] = {link: {'bone': config['ik_match_table1'][link][0],
+                                    'pos_w': config['ik_match_table1'][link][1],
+                                    'rot_w': config['ik_match_table1'][link][2],
+                                    'C_quat_wxyz': [round(x, 6) for x in config['ik_match_table1'][link][4]]}
+                             for link in config['ik_match_table1'] if link in LINKS}
+        record_path.write_text(json.dumps(existing, indent=2, ensure_ascii=False), encoding='utf-8')
+        print('record:', record_path)
 
     if args.report:
         print('pose solve cost %.3f   iterations %d' % (result.fun, result.nit))
