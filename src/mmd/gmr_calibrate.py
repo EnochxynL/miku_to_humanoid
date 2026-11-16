@@ -1,29 +1,23 @@
-"""Calibrate a PMX rig against a robot: build the IK config and derive its per-link offsets C.
+"""Derive the per-link offsets C from a paired pose, and write the IK config.
 
-There is one command because there is one valid output. Building the config skeleton alone leaves an
-identity orientation offset on every link, which looks like a usable config and bakes a 159 deg wrong
-motion - that mistake happened once. So the skeleton is built, calibrated, and only then written.
+This file **consumes** the joint angles produced by ``gmr_paired_pose`` - it never solves a pose itself.
+That is the whole contract: one file generates the robot pose, this one turns a robot pose into C.
 
-    source pose   --vpd <vmd>   an MMD pose; omitted = the rig's bind pose
-    robot pose    --pose <json> joint angles in degrees; omitted = solve them, then --write-pose saves
-                                the result so the next run is a pure read
+    C = R_source(P)^-1 · R_link(P)
 
-Why a paired pose: an MMD rig carries no rest rotation, so at the bind pose every bone frame is the
-identity and
+Why that is a reading and not a fit: an MMD rig carries no rest rotation, so at any pose the bone frame
+is exactly what the animation says. Two links - the pelvis (floating root) and the torso - are not moved
+by a limb pose, so their world-frame yaw comes from a *bilateral* axis (hip line, shoulder line) instead;
+without it the arms are perfect and the body stays twisted.
 
-    target(t) = R_source(t) · C,  at the paired pose  =>  C = R_source(P)^-1 · R_link(P)
-
-which turns C from a fit into a reading. Two links - the pelvis (floating root) and the torso - are not
-moved by the pose, so their world-frame yaw has to come from a *bilateral* axis (hip line, shoulder
-line); without it the arms are perfect and the body stays twisted.
-
-Source world poses come from ``mmd_pose`` (the vendored deform pipeline), so there is no qpos round
-trip and the ``センター`` translation is included.
+The config skeleton (bone names, weights, the uniform scale factor) is built here too, from the **bind**
+pose, so the scale never depends on which pose was used for calibration. Both are written only together:
+a config with identity offsets is never left on disk.
 
     PYTHONPATH=src;src\\mmd uv run python src/mmd/gmr_calibrate.py --pmx <model.pmx> \
         --g1-xml <gmr>/assets/unitree_g1/g1_mocap_29dof.xml \
         --base <gmr>/general_motion_retargeting/ik_configs/bvh_lafan1_to_g1.json \
-        --out configs/mmd/pmx_to_g1.json --pose configs/mmd/paired_pose_pmx.json \
+        --pose configs/mmd/paired_pose_pmx.json --out configs/mmd/pmx_to_g1.json \
         --record configs/mmd/calibration_pmx.json --report
 """
 from __future__ import annotations
@@ -35,19 +29,18 @@ from pathlib import Path
 
 import mujoco
 import numpy as np
-from scipy.optimize import minimize
 from scipy.spatial.transform import Rotation as R
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import mmd_pose                                        # noqa: E402
-from mmd_bones import LINKS, limb_segments             # noqa: E402
-
-LIMBS = limb_segments()
+from mmd_bones import LINKS                            # noqa: E402
 
 PELVIS_ROT_WEIGHT = 10.0
 OFFICIAL_ARM_WEIGHT = {'left_shoulder_yaw_link': 100.0, 'right_shoulder_yaw_link': 100.0}
+ARMS = ('left_shoulder_yaw_link', 'left_elbow_link', 'left_wrist_yaw_link',
+        'right_shoulder_yaw_link', 'right_elbow_link', 'right_wrist_yaw_link')
 
 
 def _rotation(quaternion):
@@ -56,18 +49,18 @@ def _rotation(quaternion):
     return R.from_quat([x, y, z, w])
 
 
-def build_skeleton(base_path, g1_xml, source_frame):
+def build_skeleton(base_path, g1_xml, bind_frame):
     """Bone names, weights and the uniform scale factor. Orientation offsets stay at identity here."""
     config = json.loads(Path(base_path).read_text(encoding='utf-8'))
 
-    if '頭' not in source_frame:
+    if '頭' not in bind_frame:
         raise SystemExit('the source rig has no 頭 bone; the scale factor needs a head')
 
     robot = mujoco.MjModel.from_xml_path(str(g1_xml))
     data = mujoco.MjData(robot)
     mujoco.mj_forward(robot, data)
     robot_height = float(data.xpos[:, 2].max())
-    source_height = float(source_frame['頭'][0][2])
+    source_height = float(bind_frame['頭'][0][2])
     factor = robot_height / source_height if source_height > 1e-6 else 0.9
 
     bones = sorted(set(LINKS.values()) | {'腰', '上半身2'})
@@ -95,20 +88,18 @@ def main():
     parser.add_argument('--g1-xml', required=True)
     parser.add_argument('--base', required=True,
                         help="template config: GMR's stock one, or an existing config to re-calibrate")
+    parser.add_argument('--pose', required=True,
+                        help='paired pose (joint angles in degrees) from gmr_paired_pose')
     parser.add_argument('--out', required=True, help='the calibrated config to write')
     parser.add_argument('--vpd', default=None,
-                        help='MMD pose file for the source side; omit = the bind pose')
-    parser.add_argument('--pose', default=None,
-                        help='robot joint angles in degrees; omit to solve them')
-    parser.add_argument('--write-pose', default=None,
-                        help='save the robot pose here so the next run is a pure read')
+                        help='MMD pose the paired pose was solved for; omitted = the bind pose')
     parser.add_argument('--arm-pos-weight', type=float, default=0.0)
     parser.add_argument('--record', default=None)
     parser.add_argument('--report', action='store_true')
     args = parser.parse_args()
 
     # --- source pose (no MuJoCo) ---------------------------------------------------------------
-    wanted = sorted({b for b, *_ in LIMBS} | set(LINKS.values()) | {'腰', '上半身2', '頭'})
+    wanted = sorted(set(LINKS.values()) | {'腰', '上半身2', '頭'})
     if args.vpd:
         frames, _ = mmd_pose.load(args.pmx, args.vpd, wanted)
         source = frames[0]
@@ -116,12 +107,17 @@ def main():
     else:
         source = mmd_pose.bind_pose(args.pmx, wanted)[0]
         note = 'bind pose'
+    bind_frame = mmd_pose.bind_pose(args.pmx, wanted)[0]
 
     def source_position(name):
         return np.asarray(source[name][0])
 
-    # --- skeleton, calibrated in the same run --------------------------------------------------
-    config, factor, source_height, robot_height = build_skeleton(args.base, args.g1_xml, source)
+    # --- skeleton from the *bind* pose, so the scale never depends on the calibration pose -----
+    config, factor, source_height, robot_height = build_skeleton(args.base, args.g1_xml, bind_frame)
+
+    # --- the robot pose is data, read from the pose file ---------------------------------------
+    supplied = json.loads(Path(args.pose).read_text(encoding='utf-8'))
+    angles = supplied.get('joints', supplied)
 
     robot = mujoco.MjModel.from_xml_path(args.g1_xml)
     data = mujoco.MjData(robot)
@@ -130,75 +126,16 @@ def main():
     def body(name):
         return mujoco.mj_name2id(robot, mujoco.mjtObj.mjOBJ_BODY, name)
 
-    addresses, order = {}, []
-    for _, _, _, _, joints in LIMBS:
-        for name in joints:
-            jid = mujoco.mj_name2id(robot, mujoco.mjtObj.mjOBJ_JOINT, name)
-            if jid >= 0 and name not in addresses:
-                addresses[name] = (int(robot.jnt_qposadr[jid]), robot.jnt_range[jid])
-                order.append(name)
+    unknown = [name for name in angles
+               if mujoco.mj_name2id(robot, mujoco.mjtObj.mjOBJ_JOINT, name) < 0]
+    if unknown:
+        raise SystemExit('pose file names joints this robot does not have: %s' % unknown)
 
-    def set_pose(degrees):
-        data.qpos[:] = robot.qpos0
-        for name in order:
-            data.qpos[addresses[name][0]] = np.radians(degrees[name])
-        mujoco.mj_forward(robot, data)
-
-    targets = []
-    for src_a, src_b, _ra, _rb, _joints in LIMBS:
-        direction = source_position(src_b) - source_position(src_a)
-        targets.append(direction / np.linalg.norm(direction))
-
-    def direction_errors():
-        values = []
-        for target, (_a, _b, robot_a, robot_b, _j) in zip(targets, LIMBS):
-            got = np.array(data.xpos[body(robot_b)]) - np.array(data.xpos[body(robot_a)])
-            got /= np.linalg.norm(got)
-            values.append(np.degrees(np.arccos(np.clip(got @ target, -1.0, 1.0))))
-        return values
-
-    if args.pose:
-        supplied = json.loads(Path(args.pose).read_text(encoding='utf-8'))
-        angles = supplied.get('joints', supplied)
-        missing = [n for n in order if n not in angles]
-        if missing:
-            raise SystemExit('pose file is missing joints: %s' % missing)
-        set_pose(angles)
-        solve_cost = None
-    else:
-        def cost(values):
-            data.qpos[:] = robot.qpos0
-            for name, value in zip(order, values):
-                data.qpos[addresses[name][0]] = value
-            mujoco.mj_forward(robot, data)
-            return float(np.sum(np.square(direction_errors())))
-
-        result = minimize(cost, np.zeros(len(order)), method='L-BFGS-B',
-                          bounds=[tuple(addresses[n][1]) for n in order],
-                          options={'maxiter': 2000, 'ftol': 1e-12})
-        data.qpos[:] = robot.qpos0
-        for name, value in zip(order, result.x):
-            data.qpos[addresses[name][0]] = value
-        mujoco.mj_forward(robot, data)
-        angles = {n: float(np.degrees(v)) for n, v in zip(order, result.x)}
-        solve_cost = float(result.fun)
-
-    errors = direction_errors()
-    mean_error = float(np.mean(errors))
-
-    if args.write_pose:
-        payload = {
-            'robot_xml': Path(args.g1_xml).name,
-            'note': ('paired pose for the C calibration: joint angles that put this robot into the '
-                     'source pose (bind pose unless --vpd was given)'),
-            'source_pose': args.vpd or '(bind pose)',
-            'joints': {n: round(float(v), 4) for n, v in angles.items()},
-            'limb_direction_error_deg': round(mean_error, 3),
-        }
-        out = Path(args.write_pose)
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding='utf-8')
-        print('pose written:', out)
+    data.qpos[:] = robot.qpos0
+    for name, value in angles.items():
+        joint = mujoco.mj_name2id(robot, mujoco.mjtObj.mjOBJ_JOINT, name)
+        data.qpos[int(robot.jnt_qposadr[joint])] = np.radians(value)
+    mujoco.mj_forward(robot, data)
 
     # --- the two links the pose does not move need a bilateral axis -----------------------------
     robot_hip = (np.array(data.xpos[body('right_hip_yaw_link')])
@@ -230,8 +167,7 @@ def main():
                 config[table][link][4] = [float(q[3]), float(q[0]), float(q[1]), float(q[2])]
         report.append((link, float(np.degrees(constant.magnitude()))))
 
-    for link in ('left_shoulder_yaw_link', 'left_elbow_link', 'left_wrist_yaw_link',
-                 'right_shoulder_yaw_link', 'right_elbow_link', 'right_wrist_yaw_link'):
+    for link in ARMS:
         for table in ('ik_match_table1', 'ik_match_table2'):
             if link in config.get(table, {}):
                 config[table][link][1] = float(args.arm_pos_weight)
@@ -252,13 +188,12 @@ def main():
             except Exception:
                 existing = {}
         existing['method'] = 'paired pose (configured, not fitted) -> C = R_source(P)^-1 * R_link(P)'
-        existing['why'] = ('MMD bones carry no rest rotation, so at the bind pose every bone frame is '
+        existing['why'] = ('MMD bones carry no rest rotation, so at the paired pose every bone frame is '
                            'the identity and C collapses to a reading')
         existing['source_bind_note'] = ('source world poses come from the vendored deform pipeline; '
                                         'no qpos round trip, the root translation is included')
-        existing['paired_pose'] = {'robot_xml': Path(args.g1_xml).name, 'pose_file': args.pose,
-                                   'source_vpd': args.vpd,
-                                   'limb_direction_error_deg': round(mean_error, 3)}
+        existing['paired_pose'] = {'robot_xml': Path(args.g1_xml).name, 'pose_file': str(args.pose),
+                                   'source_vpd': args.vpd}
         existing['scale_factor'] = round(factor, 6)
         existing['heights'] = {'source': round(source_height, 4), 'robot': round(robot_height, 4)}
         existing['root_calibration'] = {
@@ -276,12 +211,9 @@ def main():
         print('record:', record_path)
 
     if args.report:
-        print('source: %s%s' % (note, '' if solve_cost is None else '   solve cost %.6f' % solve_cost))
+        print('source: %s   pose: %s' % (note, Path(args.pose).name))
         print('scale %.4f   source height %.4f m   robot height %.4f m'
               % (factor, source_height, robot_height))
-        print('%-8s %10s' % ('limb', 'dir err'))
-        for (src_a, _b, _c, _d, _j), err in zip(LIMBS, errors):
-            print('%-8s %9.2f' % (src_a, err))
         print('root yaw: %.2f deg' % np.degrees(delta))
         print('%-26s %9s' % ('link', 'C (deg)'))
         for link, angle in report:

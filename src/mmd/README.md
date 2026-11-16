@@ -8,7 +8,8 @@
 | | `mmd_bones.py` | MMD 知识：链接↔骨名、骨→下一关节、测量段 |
 | | `mmd_render.py` | 可视化素材：MJCF（`--mesh` 带贴图）+ qpos |
 | | `view_model.py` / `view_skeleton.py` | 播放 / 机器人+源骨架对照 |
-| **GMR 桥接** | `gmr_calibrate.py` | 成对姿态 → **已带 C 的 IK 配置**（骨架与 C 同一次产生）|
+| **GMR 桥接** | `gmr_paired_pose.py` | 解出"让机器人摆成 MMD 姿态"的关节角 → `paired_pose_*.json` |
+| | `gmr_calibrate.py` | **消费**关节角文件 → **已带 C 的 IK 配置**（骨架与 C 同一次产生）|
 | | `gmr_retarget.py` | 源位姿 + C → G1 qpos |
 | | `export_gmr_pickle.py` | G1 qpos → GMR pickle |
 | **引擎** | `engine/` | vendored 自 mmd2gltf：`pmx` `vmd` `mathutil` `animation` `bake` `mesh` |
@@ -18,7 +19,7 @@
 ```
 pmx + (vmd|vpd) ── mmd_pose ──→ 世界位姿 ──┐
                                           ├─ gmr_retarget ──→ G1 qpos ──→ export_gmr_pickle ──→ .pkl
-g1.xml + 成对姿态 ── gmr_calibrate ──→ C ──┘
+g1.xml + pmx ── gmr_paired_pose ──→ 关节角 ── gmr_calibrate ──→ C ──┘
 
 pmx + vmd ── mmd_render ──→ MJCF + qpos ──→ view_model（只为看）
 ```
@@ -33,3 +34,15 @@ pmx + vmd ── mmd_render ──→ MJCF + qpos ──→ view_model（只为�
 - 未校准的配置**从不落盘**：`gmr_calibrate.py` 一次跑完骨架与 C
 
 细节与踩过的坑见 [`configs/mmd/README.md`](../../configs/mmd/README.md)。
+
+## 成对姿态不是唯一的（重要）
+
+`gmr_paired_pose.py` 只用**肢体方向**判定"同一姿态"，而绕肢体轴的**扭转**不改变方向，所以解的零空间
+是自由的实际自由：同一组方向可以对应相差 70° 以上的关节角，且残差都是 0.00°。
+
+两条推论：
+
+1. 求解加了极小正则项（`1e-6·Σq²`）让结果**确定且最小扭转**，否则两次运行会落到零空间的不同点；
+2. 扭转的取值**会改变最终动作**（每个肢体一个常数扭转），所以 `paired_pose_*.json` 是**需要人工/视觉
+   确认的数据**，不是可以随手重算的中间量。当前发布的姿态已通过目视验收，重新生成会得到另一个
+   "同样合法但不同"的解。

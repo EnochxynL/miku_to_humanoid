@@ -55,28 +55,3 @@ NEXT_JOINT = {
     '右腕': '右ひじ',
     '右ひじ': '右手首',
 }
-
-# robot link -> (far end of the measured segment, the joints that move that segment)
-LIMBS = {
-    'left_shoulder_yaw_link': ('left_elbow_link',
-        ['left_shoulder_pitch_joint', 'left_shoulder_roll_joint', 'left_shoulder_yaw_joint']),
-    'left_elbow_link': ('left_wrist_yaw_link', ['left_elbow_joint']),
-    'right_shoulder_yaw_link': ('right_elbow_link',
-        ['right_shoulder_pitch_joint', 'right_shoulder_roll_joint', 'right_shoulder_yaw_joint']),
-    'right_elbow_link': ('right_wrist_yaw_link', ['right_elbow_joint']),
-    'left_hip_yaw_link': ('left_knee_link',
-        ['left_hip_pitch_joint', 'left_hip_roll_joint', 'left_hip_yaw_joint']),
-    'left_knee_link': ('left_ankle_roll_link', ['left_knee_joint']),
-    'right_hip_yaw_link': ('right_knee_link',
-        ['right_hip_pitch_joint', 'right_hip_roll_joint', 'right_hip_yaw_joint']),
-    'right_knee_link': ('right_ankle_roll_link', ['right_knee_joint']),
-}
-
-
-def limb_segments():
-    """(source bone, source child, robot link, robot child, joints) for every measured limb."""
-    segments = []
-    for link, (robot_child, joints) in LIMBS.items():
-        bone = LINKS[link]
-        segments.append((bone, NEXT_JOINT[bone], link, robot_child, joints))
-    return segments
