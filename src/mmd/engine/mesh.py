@@ -147,9 +147,6 @@ def groups(model, base_dir=None, bone_positions=None, scale=0.07, flip_v=True, m
 
         for bone, triangles in buckets.items():
             used = sorted({i for tri in triangles for i in tri})
-            if len(used) < 4:
-                skipped += 1                # MuJoCo needs four vertices per mesh
-                continue
             remap = {vertex: slot for slot, vertex in enumerate(used)}
             faces = np.array([[remap[a], remap[b], remap[c]] for a, b, c in triangles], dtype=np.int32)
             origin = np.zeros(3)
@@ -168,7 +165,59 @@ def groups(model, base_dir=None, bone_positions=None, scale=0.07, flip_v=True, m
                 'triangles': len(triangles),
             })
 
-    return {'groups': out, 'materials': material_meta, 'textures': textures, 'skipped': skipped}
+    out, merged, dropped = merge_tiny_groups(out, bone_positions)
+    return {'groups': out, 'materials': material_meta, 'textures': textures,
+            'skipped': skipped + dropped, 'merged_groups': merged}
+
+
+def merge_tiny_groups(groups, bone_positions):
+    """(kept groups, merged count, dropped count).
+
+    MuJoCo rejects a mesh with fewer than four vertices, and dropping such a group punches a real
+    hole: this model loses six triangles from ``衣1`` and six from ``衣1+`` at the hem - both layers at
+    the same spot - so whatever is behind (a leg, the floor) shows through. Merging into the nearest
+    group of the same material keeps every triangle; only a one- or two-triangle sliver ends up
+    animating with the neighbouring bone, which is where it already sits.
+    """
+    tiny = [group for group in groups if len(group['positions']) < 4]
+    if not tiny:
+        return groups, 0, 0
+
+    hosts = {}
+    for group in groups:
+        if len(group['positions']) >= 4:
+            hosts.setdefault(group['material'], []).append(group)
+
+    merged, dropped = 0, 0
+    for group in tiny:
+        candidates = hosts.get(group['material'], [])
+        if not candidates:
+            dropped += 1
+            continue
+        here = np.asarray(group['positions'], dtype=float).mean(axis=0)
+        best, best_distance = None, np.inf
+        for host in candidates:
+            there = np.asarray(host['positions'], dtype=float).mean(axis=0)
+            distance = float(np.linalg.norm(here - there))
+            if distance < best_distance:
+                best, best_distance = host, distance
+        shift = np.zeros(3)
+        if bone_positions is not None:
+            shift = (np.asarray(bone_positions[group['bone']], dtype=float)
+                     - np.asarray(bone_positions[best['bone']], dtype=float))
+        base = len(best['positions'])
+        best['positions'] = np.vstack([best['positions'],
+                                       np.asarray(group['positions'], dtype=float) + shift])
+        best['normals'] = np.vstack([best['normals'], group['normals']])
+        best['uv_obj'] = np.vstack([best['uv_obj'], group['uv_obj']])
+        best['uv_msh'] = np.vstack([best['uv_msh'], group['uv_msh']])
+        best['faces'] = np.vstack([best['faces'],
+                                   np.asarray(group['faces'], dtype=np.int32) + base])
+        best['triangles'] += group['triangles']
+        merged += 1
+
+    kept = [group for group in groups if len(group['positions']) >= 4]
+    return kept, merged, dropped
 
 
 def write_obj(built, out_dir):
