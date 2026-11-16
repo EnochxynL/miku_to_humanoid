@@ -15,6 +15,22 @@ child from the MJCF tree, the C offsets from the paired pose.
 The bone names are Japanese MMD names and are load-bearing: they are the keys GMR looks up.
 """
 
+# limb (source bone, source child, robot link, robot child body) and the robot joints that move it
+LIMBS = [
+    ('左腕', '左ひじ', 'left_shoulder_yaw_link', 'left_elbow_link',
+     ['left_shoulder_pitch_joint', 'left_shoulder_roll_joint', 'left_shoulder_yaw_joint']),
+    ('左ひじ', '左手首', 'left_elbow_link', 'left_wrist_yaw_link', ['left_elbow_joint']),
+    ('右腕', '右ひじ', 'right_shoulder_yaw_link', 'right_elbow_link',
+     ['right_shoulder_pitch_joint', 'right_shoulder_roll_joint', 'right_shoulder_yaw_joint']),
+    ('右ひじ', '右手首', 'right_elbow_link', 'right_wrist_yaw_link', ['right_elbow_joint']),
+    ('左足', '左ひざ', 'left_hip_yaw_link', 'left_knee_link',
+     ['left_hip_pitch_joint', 'left_hip_roll_joint', 'left_hip_yaw_joint']),
+    ('左ひざ', '左足首', 'left_knee_link', 'left_ankle_roll_link', ['left_knee_joint']),
+    ('右足', '右ひざ', 'right_hip_yaw_link', 'right_knee_link',
+     ['right_hip_pitch_joint', 'right_hip_roll_joint', 'right_hip_yaw_joint']),
+    ('右ひざ', '右足首', 'right_knee_link', 'right_ankle_roll_link', ['right_knee_joint']),
+]
+
 # robot link -> MMD bone
 LINKS = {
     'pelvis': '腰',

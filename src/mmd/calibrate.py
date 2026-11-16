@@ -42,26 +42,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import mmd_pose                                        # noqa: E402
-from mmd_bones import LINKS                            # noqa: E402
+from mmd_bones import LINKS, LIMBS                     # noqa: E402
 
 PELVIS_ROT_WEIGHT = 10.0
 OFFICIAL_ARM_WEIGHT = {'left_shoulder_yaw_link': 100.0, 'right_shoulder_yaw_link': 100.0}
-
-# limb (source bone, source child, robot link, robot child body) and the robot joints that move it
-LIMBS = [
-    ('左腕', '左ひじ', 'left_shoulder_yaw_link', 'left_elbow_link',
-     ['left_shoulder_pitch_joint', 'left_shoulder_roll_joint', 'left_shoulder_yaw_joint']),
-    ('左ひじ', '左手首', 'left_elbow_link', 'left_wrist_yaw_link', ['left_elbow_joint']),
-    ('右腕', '右ひじ', 'right_shoulder_yaw_link', 'right_elbow_link',
-     ['right_shoulder_pitch_joint', 'right_shoulder_roll_joint', 'right_shoulder_yaw_joint']),
-    ('右ひじ', '右手首', 'right_elbow_link', 'right_wrist_yaw_link', ['right_elbow_joint']),
-    ('左足', '左ひざ', 'left_hip_yaw_link', 'left_knee_link',
-     ['left_hip_pitch_joint', 'left_hip_roll_joint', 'left_hip_yaw_joint']),
-    ('左ひざ', '左足首', 'left_knee_link', 'left_ankle_roll_link', ['left_knee_joint']),
-    ('右足', '右ひざ', 'right_hip_yaw_link', 'right_knee_link',
-     ['right_hip_pitch_joint', 'right_hip_roll_joint', 'right_hip_yaw_joint']),
-    ('右ひざ', '右足首', 'right_knee_link', 'right_ankle_roll_link', ['right_knee_joint']),
-]
 
 
 def _rotation(quaternion):
