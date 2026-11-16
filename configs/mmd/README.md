@@ -12,9 +12,8 @@ PMX + (VMD|VPD) ── mmd_pose ──┤──→ 逐帧骨骼世界位姿 {骨
                               │
                               └── mmd_render ──→ MJCF + qpos ──→ viewer 用（只为可视化）
 
-绑定姿态 ── build_config ──→ pmx_to_g1.json（骨名/权重/比例，C=单位）
-成对姿态 ── calibrate ─────→ 写入 C
-源位姿 + C ── retarget ────→ G1 qpos ── export_gmr_pickle ──→ .pkl
+成对姿态 + g1.xml ── gmr_calibrate ──→ pmx_to_g1.json（骨名/权重/比例 + **C**）
+源位姿 + C ───────── gmr_retarget ──→ G1 qpos ── export_gmr_pickle ──→ .pkl
 ```
 
 **关键点：源侧不经过 qpos。** `Skeleton.world()` 直接给出世界位姿（朝向 0.0000° 与 MJCF 前向运动学一致），
