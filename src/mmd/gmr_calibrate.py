@@ -33,7 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import robot_profile                                   # noqa: E402
 from engine.bake import bind_pose, world_poses         # noqa: E402
-from mmd_profile import BILATERAL_BONES, ROOT_BONE, SCALE_BONE, TORSO_BONE   # noqa: E402
+from engine.profile import BILATERAL_BONES, ROOT_BONE, SCALE_BONE, TORSO_BONE   # noqa: E402
 
 DEFAULT_GMR_ROOT = r'D:\MY_TOOL\GitHub_Tools\GMR'
 

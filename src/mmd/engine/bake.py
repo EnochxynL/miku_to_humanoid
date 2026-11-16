@@ -136,7 +136,7 @@ def world_poses(pmx_path, pose_path, wanted, step=1, solve_ik=True, scale=DEFAUL
 
 def wanted_bones(config_path):
     """The bones an IK config actually drives (its bone-name field), plus the root chain."""
-    from mmd_profile import ROOT_BONE, TORSO_BONE
+    from engine.profile import ROOT_BONE, TORSO_BONE
 
     config = json.loads(Path(config_path).read_text(encoding='utf-8'))
     names = set()

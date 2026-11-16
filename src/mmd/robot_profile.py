@@ -16,7 +16,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from mmd_profile import (BILATERAL_BONES, LAFAN1_TO_MMD, ROOT_BONE, SEGMENT_BONES,
+from engine.profile import (BILATERAL_BONES, LAFAN1_TO_MMD, ROOT_BONE, SEGMENT_BONES,
                          TORSO_BONE)
 
 WEIGHT_FIELD = {'pos_w': 1, 'rot_w': 2}
