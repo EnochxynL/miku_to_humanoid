@@ -19,9 +19,30 @@ from pathlib import Path
 
 import mujoco
 import numpy as np
+import scipy.spatial.transform as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from retarget import load_glb_frames   # noqa: E402
+def load_glb_frames(xml_path, nodes_path, anim_path):
+    """World poses of every bone per frame, from a qpos file. Viewer-only: the pipeline uses mmd_pose."""
+    model = mujoco.MjModel.from_xml_path(xml_path)
+    data = mujoco.MjData(model)
+    bodies = {}
+    for body in range(1, model.nbody):
+        name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, body)
+        if name and name != 'glb_root' and name != 'pmx_root':
+            bodies[body] = name
+    frames = []
+    for qpos in np.load(anim_path)['qpos']:
+        data.qpos[:] = qpos
+        mujoco.mj_forward(model, data)
+        frame = {}
+        for body, name in bodies.items():
+            rotation = st.Rotation.from_matrix(np.array(data.xmat[body]).reshape(3, 3))
+            q = rotation.as_quat()
+            frame[name] = [np.array(data.xpos[body], dtype=float),
+                           np.array([q[3], q[0], q[1], q[2]])]
+        frames.append(frame)
+    return frames   # noqa: E402
 
 
 def body_tree(model):
