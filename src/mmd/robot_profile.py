@@ -16,7 +16,8 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from mmd_profile import LAFAN1_TO_MMD, SEGMENT_BONES
+from mmd_profile import (BILATERAL_BONES, LAFAN1_TO_MMD, ROOT_BONE, SEGMENT_BONES,
+                         TORSO_BONE)
 
 WEIGHT_FIELD = {'pos_w': 1, 'rot_w': 2}
 
@@ -39,6 +40,7 @@ class RobotProfile:
     segments: tuple
     root_links: tuple      # links the paired pose cannot move: they need a bilateral yaw reference
     weights: dict          # link -> {field: value}, deviations from the stock config
+    bilateral: tuple = ()  # (left link, right link) whose line gives that yaw, e.g. the hips
 
     def joints(self):
         """The joints a calibration may adjust, in segment order, without repeats."""
@@ -94,9 +96,11 @@ def from_gmr(robot, gmr_root, model=None):
     segments = tuple(Segment(by_bone[start], by_bone[stop], ())
                      for start, stop in SEGMENT_BONES
                      if start in by_bone and stop in by_bone)
-    roots = tuple(by_bone[bone] for bone in ('腰', '上半身2') if bone in by_bone)
+    roots = tuple(by_bone[bone] for bone in (ROOT_BONE, TORSO_BONE) if bone in by_bone)
+    bilateral = (tuple(by_bone[bone] for bone in BILATERAL_BONES)
+                 if all(bone in by_bone for bone in BILATERAL_BONES) else ())
     return RobotProfile(name=robot, xml=xml, base_config=config_path_used, links=links,
-                        segments=segments, root_links=roots, weights={})
+                        segments=segments, root_links=roots, weights={}, bilateral=bilateral)
 
 
 def load(path, gmr_root):
@@ -123,6 +127,7 @@ def load(path, gmr_root):
         links={str(link): str(bone) for link, bone in raw['links'].items()},
         segments=segments,
         root_links=tuple(raw.get('root_links', ())),
+        bilateral=tuple(str(item) for item in raw.get('bilateral_links', ())),
         weights={str(link): {str(field): float(value) for field, value in fields.items()}
                  for link, fields in raw.get('weight_overrides', {}).items()},
     )
@@ -134,6 +139,12 @@ def validate(profile, model, mujoco):
     for link in profile.links:
         if mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, link) < 0:
             problems.append('link not in the model: %s' % link)
+    if len(profile.bilateral) != 2:
+        problems.append('bilateral_links needs exactly two links (the hip line), got %d'
+                        % len(profile.bilateral))
+    for link in profile.bilateral:
+        if mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, link) < 0:
+            problems.append('bilateral link not in the model: %s' % link)
     for link in profile.root_links:
         if link not in profile.links:
             problems.append('root link without a bone: %s' % link)

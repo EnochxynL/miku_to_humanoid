@@ -8,7 +8,7 @@ That is the whole contract: one file generates the robot pose, this one turns a 
 Why that is a reading and not a fit: an MMD rig carries no rest rotation, so at any pose the bone frame
 is exactly what the animation says. Two links - the floating root and the torso - are not moved by a
 limb pose, so their world-frame yaw comes from a *bilateral* axis (the line between the two hip links,
-which is derived from the profile by looking up the bones 左足/右足) instead.
+which comes from the profile's bilateral_links) instead.
 
 Nothing robot-specific is written here: which links exist, which bone each tracks, which joints define a
 pose and where this robot deviates from GMR's stock weights all come from ``configs/robots/<robot>.json``.
@@ -33,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import mmd_pose                                        # noqa: E402
 import robot_profile                                   # noqa: E402
+from mmd_profile import BILATERAL_BONES, ROOT_BONE, SCALE_BONE, TORSO_BONE   # noqa: E402
 
 DEFAULT_GMR_ROOT = r'D:\MY_TOOL\GitHub_Tools\GMR'
 
@@ -47,17 +48,18 @@ def build_skeleton(base_path, robot_model, bind_frame, profile):
     """Bone names, weights and the uniform scale factor. Orientation offsets stay at identity here."""
     config = json.loads(Path(base_path).read_text(encoding='utf-8'))
 
-    if '頭' not in bind_frame:
-        raise SystemExit('the source rig has no 頭 bone; the scale factor needs a head')
+    if SCALE_BONE not in bind_frame:
+        raise SystemExit('the source rig has no %s bone; the scale factor needs a head'
+                     % SCALE_BONE)
 
     data = mujoco.MjData(robot_model)
     mujoco.mj_forward(robot_model, data)
     robot_height = float(data.xpos[:, 2].max())
-    source_height = float(bind_frame['頭'][0][2])
+    source_height = float(bind_frame[SCALE_BONE][0][2])
     factor = robot_height / source_height if source_height > 1e-6 else 0.9
 
-    bones = sorted(set(profile.links.values()) | {'腰', '上半身2'})
-    config['human_root_name'] = '腰'
+    bones = sorted(set(profile.links.values()) | {ROOT_BONE, TORSO_BONE})
+    config['human_root_name'] = ROOT_BONE
     config['human_height_assumption'] = source_height
     config['ground_height'] = 0.0
     # human_scale_table is a *uniform body* scale, not a per-segment length ratio: GMR computes
@@ -104,7 +106,7 @@ def main():
         raise SystemExit('profile does not match the model:\n  ' + '\n  '.join(problems))
 
     # --- source pose (no MuJoCo) ---------------------------------------------------------------
-    wanted = sorted(set(profile.links.values()) | {'腰', '上半身2', '頭'})
+    wanted = sorted(set(profile.links.values()) | {ROOT_BONE, TORSO_BONE, SCALE_BONE})
     if args.vpd:
         frames, _ = mmd_pose.load(args.pmx, args.vpd, wanted)
         source = frames[0]
@@ -142,14 +144,12 @@ def main():
     mujoco.mj_forward(robot_model, data)
 
     # --- the links the pose does not move need a bilateral yaw --------------------------------
-    # the two hips are found through the profile: whichever link tracks 左足 / 右足
-    link_of_bone = {bone: link for link, bone in profile.links.items()}
-    left_hip, right_hip = link_of_bone.get('左足'), link_of_bone.get('右足')
-    if left_hip is None or right_hip is None:
-        raise SystemExit('the profile needs 左足 and 右足 links to measure the hip line')
+    # which two links form that axis is profile data, not something to guess here
+    left_hip, right_hip = profile.bilateral
     robot_hip = np.array(data.xpos[body(right_hip)]) - np.array(data.xpos[body(left_hip)])
     robot_hip /= np.linalg.norm(robot_hip)
-    source_hip = source_position('右足') - source_position('左足')
+    source_hip = (source_position(BILATERAL_BONES[1])
+                  - source_position(BILATERAL_BONES[0]))
     source_hip /= np.linalg.norm(source_hip)
     delta = float(np.arctan2(np.cross(robot_hip, source_hip)[2], robot_hip @ source_hip))
     root_fix = R.from_euler('z', np.degrees(delta), degrees=True)
@@ -201,8 +201,8 @@ def main():
         existing['root_calibration'] = {
             'applies_to': list(profile.root_links),
             'value_deg': round(np.degrees(delta), 2),
-            'rule': ('links the pose does not move need the world-frame yaw, measured on the hip line '
-                     'between the links that track 左足/右足; limbs get it implicitly'),
+            'rule': ('links the pose does not move need the world-frame yaw, measured on the '
+                     'bilateral_links line; limbs get it implicitly'),
         }
         existing['links'] = {link: {'bone': config['ik_match_table1'][link][0],
                                     'pos_w': config['ik_match_table1'][link][1],

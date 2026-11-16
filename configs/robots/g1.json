@@ -117,5 +117,9 @@
       "pos_w": 0.0,
       "rot_w": 10.0
     }
-  }
+  },
+  "bilateral_links": [
+    "left_hip_yaw_link",
+    "right_hip_yaw_link"
+  ]
 }

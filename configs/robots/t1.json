@@ -57,5 +57,9 @@
     "Waist",
     "Trunk"
   ],
-  "weight_overrides": {}
+  "weight_overrides": {},
+  "bilateral_links": [
+    "Hip_Yaw_Left",
+    "Hip_Yaw_Right"
+  ]
 }

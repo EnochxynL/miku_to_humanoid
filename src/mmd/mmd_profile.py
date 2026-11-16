@@ -16,6 +16,15 @@ MMD rig will otherwise have to rediscover.
 """
 from __future__ import annotations
 
+# the three bones the calibration needs by name: the root (GMR's human_root_name), the torso (the second
+# link a limb pose cannot move) and the scale reference (head height gives the body-size factor)
+ROOT_BONE = '腰'
+TORSO_BONE = '上半身2'
+SCALE_BONE = '頭'
+
+# the two thigh bones: their line gives the world-frame yaw of the links a pose cannot move
+BILATERAL_BONES = ('左足', '右足')
+
 # the limb directions a paired pose compares, as (bone, far bone); duplicated corners are deliberate:
 # both arms and both legs are checked, a missing bone just drops that segment
 SEGMENT_BONES = (
