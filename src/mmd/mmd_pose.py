@@ -110,8 +110,8 @@ def wanted_from_config(config_path):
         for entry in config.get(table, {}).values():
             if entry and entry[0]:
                 names.add(entry[0])
-    names.add('腰')
-    names.add('上半身2')
+    from mmd_profile import ROOT_BONE, TORSO_BONE
+    names.update((ROOT_BONE, TORSO_BONE))
     return sorted(names)
 
 
