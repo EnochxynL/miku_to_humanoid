@@ -10,7 +10,7 @@ This is the only file that knows GMR's config schema: it turns the neutral calib
 optionally keeps a copy with ``--dump-config``. Swapping the retargeting engine means replacing this file,
 not the calibration.
 
-    PYTHONPATH=src;src\\mmd <gmr>/.venv/Scripts/python.exe src/mmd/gmr_retarget.py \
+    PYTHONPATH=src;src\\mmd <gmr>/.venv/Scripts/python.exe src/mmd/retarget.py \
         --pmx <model.pmx> --vmd <motion.vmd> --robot configs/robots/g1.json \
         --calibration configs/generated/calibration_g1.json --bake-out runtime/pmx/g1.npz
 """
@@ -26,18 +26,19 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import robot_profile                                   # noqa: E402
 from engine.bake import world_poses                    # noqa: E402
+from engine.profile import load as load_profile        # noqa: E402
 from engine.profile import ROOT_BONE, TORSO_BONE       # noqa: E402
 
 
 def build_config(profile, calibration):
-    """GMR's ik config, built from the stock template plus the neutral calibration.
+    """GMR's ik config, built from the profile's own template plus the neutral calibration.
 
-    Only GMR's shape is written here: the template supplies the weights and offsets, the profile says
-    which bone each link tracks, and the calibration supplies C and the body scale.
+    Only GMR's shape lives here: the profile template already carries the bone names, weights and
+    offsets for this robot (it is complete on its own), and the calibration supplies C and the body
+    scale. Nothing is read from GMR's checkout.
     """
-    template = json.loads(Path(profile.base_config).read_text(encoding='utf-8'))
+    template = json.loads(json.dumps(profile.template))      # a private copy: callers mutate it
     template['human_root_name'] = ROOT_BONE
     template['human_height_assumption'] = float(calibration['heights']['source'])
     template['ground_height'] = 0.0
@@ -52,12 +53,6 @@ def build_config(profile, calibration):
                 entry[0] = profile.links[link]
                 entry[4] = [1.0, 0.0, 0.0, 0.0]
         # a profile lists only the places this robot deviates from GMR stock
-        for link, fields in profile.weights.items():
-            if link not in template.get(table, {}):
-                continue
-            for field, value in fields.items():
-                template[table][link][robot_profile.WEIGHT_FIELD[field]] = float(value)
-
     for link, info in calibration['links'].items():
         for table in ('ik_match_table1', 'ik_match_table2'):
             if link in template.get(table, {}):
@@ -70,7 +65,8 @@ def main():
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--pmx', required=True)
     parser.add_argument('--vmd', default=None, help='motion; omit for the bind pose')
-    parser.add_argument('--robot', required=True, help='robot profile json, or a GMR robot key')
+    parser.add_argument('--robot', required=True,
+                        help='robot profile, e.g. configs/robots/g1.json')
     parser.add_argument('--gmr-root', default=r'D:\MY_TOOL\GitHub_Tools\GMR')
     parser.add_argument('--calibration', required=True,
                         help='neutral calibration json from `python -m calibration`')
@@ -85,7 +81,7 @@ def main():
     parser.add_argument('--speed', type=float, default=0.6)
     args = parser.parse_args()
 
-    profile = robot_profile.load(args.robot, args.gmr_root)
+    profile = load_profile(args.robot)
     calibration = json.loads(Path(args.calibration).read_text(encoding='utf-8'))
     robot_key = args.gmr_robot or profile.name
 

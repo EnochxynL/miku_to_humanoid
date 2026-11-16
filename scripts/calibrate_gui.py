@@ -25,8 +25,8 @@ ROOT = HERE.parents[1]
 for extra in (ROOT / 'src', ROOT / 'src' / 'mmd'):
     sys.path.insert(0, str(extra))
 
-import robot_profile                                # noqa: E402
 from calibration import Calibration                 # noqa: E402
+from engine.profile import load as load_profile, validate   # noqa: E402
 
 UPDATE_MS = 33
 
@@ -175,16 +175,15 @@ def main():
     parser.add_argument('--pmx', required=True)
     parser.add_argument('--vpd', required=True, help='the MMD pose to match')
     parser.add_argument('--robot', required=True,
-                        help='robot profile json, or a GMR key such as booster_t1_29dof')
-    parser.add_argument('--gmr-root', default=r'D:\MY_TOOL\GitHub_Tools\GMR')
+                        help='robot profile, e.g. configs/robots/g1.json')
     parser.add_argument('--pose', default=None, help='start from this paired pose')
     parser.add_argument('--distance', type=float, default=2.6)
     parser.add_argument('--azimuth', type=float, default=180.0)
     parser.add_argument('--lookat', default='0 0 0.85')
     args = parser.parse_args()
 
-    profile = robot_profile.load(args.robot, args.gmr_root)
-    problems = robot_profile.validate(profile, mujoco.MjModel.from_xml_path(str(profile.xml)), mujoco)
+    profile = load_profile(args.robot)
+    problems = validate(profile, mujoco.MjModel.from_xml_path(str(profile.xml)), mujoco)
     if problems:
         raise SystemExit('profile does not match the model:\n  ' + '\n  '.join(problems))
 

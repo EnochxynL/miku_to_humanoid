@@ -143,8 +143,7 @@ class Calibration:
     def payload(self, source_pose=None):
         errors = self.errors()
         return {
-            'robot': {'name': self.profile.name, 'xml': Path(self.profile.xml).name,
-                      'base_config': Path(self.profile.base_config).name},
+            'robot': {'name': self.profile.name, 'xml': Path(self.profile.xml).name},
             'note': ('paired pose: joint angles in degrees, consumed by gmr_calibrate, which derives C '
                      'from them'),
             'source_pose': str(source_pose) if source_pose else None,
@@ -237,8 +236,7 @@ def read_c(pmx, robot_model, profile, pose_path, mdd_pose=None):
                        'angle_deg': round(float(np.degrees(constant.magnitude())), 4)}
 
     return {
-        'robot': {'name': profile.name, 'xml': Path(profile.xml).name,
-                  'base_config': Path(profile.base_config).name},
+        'robot': {'name': profile.name, 'xml': Path(profile.xml).name},
         'method': 'paired pose -> C = R_source(P)^-1 * R_link(P)',
         'why': ('MMD bones carry no rest rotation, so at the paired pose every bone frame is the identity '
                 'and C collapses to a reading rather than a fit'),
@@ -262,22 +260,22 @@ def save_c(path, c):
 def main():
     import argparse
 
-    import robot_profile
+    from engine.profile import load as load_profile, validate
 
     parser = argparse.ArgumentParser(
         description='Read C from a paired pose and write it as engine-neutral data.')
     parser.add_argument('--pmx', required=True)
-    parser.add_argument('--robot', required=True, help='robot profile json, or a GMR robot key')
-    parser.add_argument('--gmr-root', default=r'D:\MY_TOOL\GitHub_Tools\GMR')
+    parser.add_argument('--robot', required=True,
+                        help='robot profile, e.g. configs/robots/g1.json')
     parser.add_argument('--pose', required=True, help='paired pose (joint angles in degrees)')
     parser.add_argument('--vpd', default=None, help='the MMD pose the angles were solved for')
     parser.add_argument('--out', required=True, help='where to write the neutral calibration')
     parser.add_argument('--report', action='store_true')
     args = parser.parse_args()
 
-    profile = robot_profile.load(args.robot, args.gmr_root)
+    profile = load_profile(args.robot)
     model = mujoco.MjModel.from_xml_path(str(profile.xml))
-    problems = robot_profile.validate(profile, model, mujoco)
+    problems = validate(profile, model, mujoco)
     if problems:
         raise SystemExit('profile does not match the model:\n  ' + '\n  '.join(problems))
 

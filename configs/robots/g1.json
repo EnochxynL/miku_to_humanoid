@@ -1,17 +1,15 @@
 {
   "name": "unitree_g1",
-  "note": "Robot-side knowledge only. Paths are relative to the GMR checkout, so this file is portable. weight_overrides lists the few places this robot deviates from GMR stock; GMR ships pelvis rot_w=10 in table1 but 5 in table2, and both are used depending on the contact mode.",
-  "xml": "assets/unitree_g1/g1_mocap_29dof.xml",
-  "base_config": "general_motion_retargeting/ik_configs/bvh_lafan1_to_g1.json",
+  "xml": "D:\\MY_TOOL\\GitHub_Tools\\GMR\\assets\\unitree_g1\\g1_mocap_29dof.xml",
   "links": {
     "pelvis": "腰",
-    "torso_link": "上半身2",
     "left_hip_yaw_link": "左足",
     "left_knee_link": "左ひざ",
     "left_ankle_roll_link": "左足首",
     "right_hip_yaw_link": "右足",
     "right_knee_link": "右ひざ",
     "right_ankle_roll_link": "右足首",
+    "torso_link": "上半身2",
     "left_shoulder_yaw_link": "左腕",
     "left_elbow_link": "左ひじ",
     "left_wrist_yaw_link": "左手首",
@@ -22,104 +20,502 @@
   "segments": [
     {
       "link": "left_shoulder_yaw_link",
-      "to": "left_elbow_link",
-      "joints": [
-        "left_shoulder_pitch_joint",
-        "left_shoulder_roll_joint",
-        "left_shoulder_yaw_joint"
-      ]
+      "to": "left_elbow_link"
     },
     {
       "link": "left_elbow_link",
-      "to": "left_wrist_yaw_link",
-      "joints": [
-        "left_elbow_joint"
-      ]
+      "to": "left_wrist_yaw_link"
     },
     {
       "link": "right_shoulder_yaw_link",
-      "to": "right_elbow_link",
-      "joints": [
-        "right_shoulder_pitch_joint",
-        "right_shoulder_roll_joint",
-        "right_shoulder_yaw_joint"
-      ]
+      "to": "right_elbow_link"
     },
     {
       "link": "right_elbow_link",
-      "to": "right_wrist_yaw_link",
-      "joints": [
-        "right_elbow_joint"
-      ]
+      "to": "right_wrist_yaw_link"
     },
     {
       "link": "left_hip_yaw_link",
-      "to": "left_knee_link",
-      "joints": [
-        "left_hip_pitch_joint",
-        "left_hip_roll_joint",
-        "left_hip_yaw_joint"
-      ]
+      "to": "left_knee_link"
     },
     {
       "link": "left_knee_link",
-      "to": "left_ankle_roll_link",
-      "joints": [
-        "left_knee_joint"
-      ]
+      "to": "left_ankle_roll_link"
     },
     {
       "link": "right_hip_yaw_link",
-      "to": "right_knee_link",
-      "joints": [
-        "right_hip_pitch_joint",
-        "right_hip_roll_joint",
-        "right_hip_yaw_joint"
-      ]
+      "to": "right_knee_link"
     },
     {
       "link": "right_knee_link",
-      "to": "right_ankle_roll_link",
-      "joints": [
-        "right_knee_joint"
-      ]
+      "to": "right_ankle_roll_link"
     }
   ],
   "root_links": [
     "pelvis",
     "torso_link"
   ],
-  "weight_overrides": {
-    "pelvis": {
-      "rot_w": 10.0
-    },
-    "left_shoulder_yaw_link": {
-      "pos_w": 0.0,
-      "rot_w": 100.0
-    },
-    "right_shoulder_yaw_link": {
-      "pos_w": 0.0,
-      "rot_w": 100.0
-    },
-    "left_elbow_link": {
-      "pos_w": 0.0,
-      "rot_w": 10.0
-    },
-    "right_elbow_link": {
-      "pos_w": 0.0,
-      "rot_w": 10.0
-    },
-    "left_wrist_yaw_link": {
-      "pos_w": 0.0,
-      "rot_w": 10.0
-    },
-    "right_wrist_yaw_link": {
-      "pos_w": 0.0,
-      "rot_w": 10.0
-    }
-  },
   "bilateral_links": [
     "left_hip_yaw_link",
     "right_hip_yaw_link"
-  ]
+  ],
+  "template": {
+    "robot_root_name": "pelvis",
+    "human_root_name": "腰",
+    "ground_height": 0.0,
+    "use_ik_match_table1": true,
+    "use_ik_match_table2": true,
+    "ik_match_table1": {
+      "pelvis": [
+        "腰",
+        0,
+        10.0,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "left_hip_yaw_link": [
+        "左足",
+        0,
+        10,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "left_knee_link": [
+        "左ひざ",
+        0,
+        10,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "left_ankle_roll_link": [
+        "左足首",
+        50,
+        10,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "right_hip_yaw_link": [
+        "右足",
+        0,
+        10,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "right_knee_link": [
+        "右ひざ",
+        0,
+        10,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "right_ankle_roll_link": [
+        "右足首",
+        50,
+        10,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "torso_link": [
+        "上半身2",
+        0,
+        100,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "left_shoulder_yaw_link": [
+        "左腕",
+        0.0,
+        100.0,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "left_elbow_link": [
+        "左ひじ",
+        0.0,
+        10.0,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "left_wrist_yaw_link": [
+        "左手首",
+        0.0,
+        10.0,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "right_shoulder_yaw_link": [
+        "右腕",
+        0.0,
+        100.0,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "right_elbow_link": [
+        "右ひじ",
+        0.0,
+        10.0,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "right_wrist_yaw_link": [
+        "右手首",
+        0.0,
+        10.0,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ]
+    },
+    "ik_match_table2": {
+      "pelvis": [
+        "腰",
+        100,
+        10.0,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "left_hip_yaw_link": [
+        "左足",
+        10,
+        5,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "left_knee_link": [
+        "左ひざ",
+        10,
+        5,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "left_ankle_roll_link": [
+        "左足首",
+        50,
+        10,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "right_hip_yaw_link": [
+        "右足",
+        10,
+        5,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "right_knee_link": [
+        "右ひざ",
+        10,
+        5,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "right_ankle_roll_link": [
+        "右足首",
+        50,
+        10,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "torso_link": [
+        "上半身2",
+        0,
+        10,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "left_shoulder_yaw_link": [
+        "左腕",
+        0.0,
+        100.0,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "left_elbow_link": [
+        "左ひじ",
+        0.0,
+        10.0,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "left_wrist_yaw_link": [
+        "左手首",
+        0.0,
+        10.0,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "right_shoulder_yaw_link": [
+        "右腕",
+        0.0,
+        100.0,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "right_elbow_link": [
+        "右ひじ",
+        0.0,
+        10.0,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "right_wrist_yaw_link": [
+        "右手首",
+        0.0,
+        10.0,
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ]
+    }
+  }
 }
