@@ -22,7 +22,8 @@ Only the **glTF path** is kept in `src/mmd`; the PMX and BVH routes were removed
 | script | role |
 |---|---|
 | `glb_io.py` | minimal .glb reader (JSON chunk, accessors, animation sampling) |
-| `rig_tables.py` | MMD bone name → G1 link tables and the measurement pairs |
+| `mmd_bones.py` | **the MMD knowledge**: robot link → MMD bone, and MMD bone → next joint (twist/sleeve bones skipped). The only file to edit when the source model changes |
+| `measurements.py` | which segment to compare when reporting accuracy - the ruler, not the model |
 | `glb_to_mjcf.py` | GLB → MJCF skeleton and textured mesh |
 | `glb_anim_to_qpos.py` | GLB animation → per-frame qpos of that MJCF |
 | `glb_to_gmr.py` | source frames → GMR config + baked robot qpos |

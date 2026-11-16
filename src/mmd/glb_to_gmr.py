@@ -130,6 +130,14 @@ def build_config(base, robot_xml, glb_xml, nodes_path, two_axis=False):
     base['human_scale_table'] = {bone: float(factor) for bone in
                                  set(LINKS.values()) | {'腰', '上半身2'}}
 
+    # The pelvis is the floating root: its orientation target carries the whole body's facing, so it
+    # must be weighted the same in both tables (GMR ships 10 in table1 and 5 in table2, and which one
+    # is used depends on the contact mode). Leaving table2 at the stock 5 made a rebuild differ from
+    # the calibrated config by 3.6 deg.
+    for table in ('ik_match_table1', 'ik_match_table2'):
+        if 'pelvis' in base.get(table, {}):
+            base[table]['pelvis'][2] = 10.0
+
     report = []
     for table in ('ik_match_table1', 'ik_match_table2'):
         for link in list(base[table].keys()):
