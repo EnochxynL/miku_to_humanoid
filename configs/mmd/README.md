@@ -99,16 +99,11 @@ it to 0 sharpens the shin to 1.3° but slides the feet 8–15 cm. Keep 50.
 ```powershell
 $env:PYTHONPATH='src'
 
-# 1. GLB -> MuJoCo skeleton (the mesh variant adds --mesh)
-uv run python src/mmd/glb_to_mjcf.py --glb <model.glb> `
-    --xml runtime/glb/herta.xml --nodes runtime/glb/herta_nodes.json
-uv run python src/mmd/glb_to_mjcf.py --glb <model.glb> `
-    --xml runtime/glb/herta_mesh.xml --nodes runtime/glb/herta_mesh_nodes.json --mesh
-
-# 2. animation -> qpos for the source model
-uv run python src/mmd/glb_anim_to_qpos.py --glb <model.glb> `
-    --xml runtime/glb/herta.xml --nodes runtime/glb/herta_nodes.json `
-    --out runtime/glb/herta_anim.npz
+# 1+2. the .glb carries both assets, and the two extractors are siblings, not a sequence -
+#      one pass over the container produces the model *and* the motion
+uv run python src/mmd/glb_extract.py --glb <model.glb> --out-dir runtime/glb --mesh
+#      -> herta.xml (skeleton) + herta_mesh.xml with assets/ (textured) + herta_anim.npz (motion)
+#      the individual scripts still work alone: glb_to_mjcf.py / glb_anim_to_qpos.py
 
 # 3. base config (bone names, weights, scale table)
 <gmr>/.venv/Scripts/python.exe src/mmd/glb_to_gmr.py `
