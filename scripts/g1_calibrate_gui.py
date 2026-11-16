@@ -13,7 +13,7 @@ The saved file is exactly what ``gmr_calibrate.py --pose`` reads:
     {"joints": {"left_shoulder_pitch_joint": -53.05, ...}, ...}
 
     PYTHONPATH=src;src\\mmd uv run python scripts/g1_calibrate_gui.py \
-        --mmd-xml runtime/pmx2/model.xml --mmd-qpos runtime/vpd/herta_vpd.npz \
+        --pmx <model.pmx> --vpd <pose.vpd> \
         --robot-xml <gmr>/assets/unitree_g1/g1_mocap_29dof.xml \
         --pose configs/mmd/paired_pose_pmx.json
 """
@@ -45,8 +45,12 @@ UPDATE_MS = 33
 class Calibration:
     """The composed scene plus the joint values being edited."""
 
-    def __init__(self, mmd_xml, mmd_qpos, robot_xml, pose_path):
-        self.model = view.build_scene(mmd_xml, robot_xml, 0.0, None)
+    def __init__(self, pmx, vpd, robot_xml, pose_path):
+        from engine import mmd_model
+        from engine.bake import bake
+
+        self.bundle = mmd_model.build(pmx)
+        self.model = view.build_scene(self.bundle.spec, robot_xml, 0.0, None)
         self.data = mujoco.MjData(self.model)
 
         # the character stays static (it *is* the target); make only it translucent
@@ -58,9 +62,9 @@ class Calibration:
                 rgba[3] = MMD_ALPHA
                 self.model.geom_rgba[geom] = rgba
 
-        self.mmd_slices, _ = view.joint_slices(self.model, mmd_xml)
-        frame = np.load(mmd_qpos)['qpos']
-        self.mmd_qpos = frame[0] if frame.ndim > 1 else frame
+        self.mmd_slices, _ = view.joint_slices(self.model, self.bundle.model)
+        clip, _unmatched, _times, _missing = bake(pmx, vpd, self.bundle.model)
+        self.mmd_qpos = clip[0]
         self.apply_mmd()
 
         self.segments = segments()
@@ -274,9 +278,8 @@ class Panel:
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--mmd-xml', required=True, help='character MJCF from mmd_render --mesh')
-    parser.add_argument('--mmd-qpos', required=True,
-                        help='one frame of that model at the VPD pose (mmd_render --vmd pose.vpd)')
+    parser.add_argument('--pmx', required=True, help='the character model, built in memory')
+    parser.add_argument('--vpd', required=True, help='the MMD pose to match (a .vpd file)')
     parser.add_argument('--robot-xml', default=view.DEFAULT_ROBOT_XML)
     parser.add_argument('--pose', default=None, help='start from this pose file')
     parser.add_argument('--distance', type=float, default=2.6)
@@ -284,7 +287,7 @@ def main():
     parser.add_argument('--lookat', default='0 0 0.85')
     args = parser.parse_args()
 
-    calibration = Calibration(args.mmd_xml, args.mmd_qpos, args.robot_xml, args.pose)
+    calibration = Calibration(args.pmx, args.vpd, args.robot_xml, args.pose)
     model, data = calibration.model, calibration.data
     lookat = [float(v) for v in args.lookat.split()]
 
@@ -296,7 +299,7 @@ def main():
     viewer.cam.elevation = -6
 
     root = tk.Tk()
-    Panel(root, calibration, viewer, args.robot_xml, args.mmd_qpos)
+    Panel(root, calibration, viewer, args.robot_xml, args.vpd)
     try:
         root.mainloop()
     finally:

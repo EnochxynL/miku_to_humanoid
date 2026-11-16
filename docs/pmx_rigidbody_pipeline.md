@@ -18,7 +18,7 @@
 ## 四段流水线
 
 ```
-① PMX ──► MuJoCo 刚体模型          mmd_render.py
+① PMX ──► MuJoCo 刚体模型          engine/mmd_model.py
       每骨一个 body + ball joint，根一个 free joint，零位 FK 误差 9.9e-10 m
       坐标：(-z, x, y) * scale，scale=0.07
       可视化：仅主干 24 根骨画胶囊（否则裙摆/头发淹没画面）
@@ -84,7 +84,7 @@
 
 ```powershell
 # ① ② PMX → qpos（--view 开窗口）
-uv run python src/mmd/mmd_render.py --pmx <model.pmx> --out runtime/pmx/herta.xml --tree runtime/pmx/herta_tree.json
+uv run python src/mmd/engine/mmd_model.py --pmx <model.pmx> --out runtime/pmx/herta.xml --tree runtime/pmx/herta_tree.json
 uv run python src/mmd/bake_pmx_vmd.py --pmx <model.pmx> --vmd <motion.vmd> --xml runtime/pmx/herta.xml --tree runtime/pmx/herta_tree.json --out runtime/pmx/herta_qpos.npz --view
 
 # ③ ④ 重定向到 G1 并播放（在 GMR venv 下）

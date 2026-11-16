@@ -10,7 +10,7 @@
                               │
 PMX + (VMD|VPD) ── mmd_pose ──┤──→ 逐帧骨骼世界位姿 {骨名: [位置, 四元数]}    ← 生产线用这个
                               │
-                              └── mmd_render ──→ MJCF + qpos ──→ viewer 用（只为可视化）
+                              └── mmd_model ──→ MjModel（纯内存）──→ view（只为看）
 
 成对姿态 + g1.xml ── gmr_calibrate ──→ pmx_to_g1.json（骨名/权重/比例 + **C**）
 源位姿 + C ───────── gmr_retarget ──→ G1 qpos ── export_gmr_pickle ──→ .pkl
@@ -53,8 +53,7 @@ PMX + (VMD|VPD) ── mmd_pose ──┤──→ 逐帧骨骼世界位姿 {骨
 
 | 文件 | 用途 |
 |---|---|
-| `src/mmd/mmd_render.py` | PMX 骨架 → MJCF；`--mesh` 出贴图模型 |
-| `src/mmd/mmd_render.py` | 位姿 → qpos（由 `engine.bake` 驱动，只有一个目的：让 viewer 能播）|
+| `src/mmd/engine/mmd_model.py` | **PMX → MjModel（纯内存）**；qpos 由 `engine.bake` 现算 |
 | `src/mmd/view_model.py` / `view_skeleton.py` | 播放 / 机器人+源骨架对照 |
 
 ## 复现
@@ -84,8 +83,6 @@ uv run python src/mmd/export_gmr_pickle.py --qpos runtime/pmx/g1.npz --out runti
 可视化（可选）：
 
 ```powershell
-uv run python src/mmd/mmd_render.py --pmx $pmx --out runtime/pmx/model.xml --tree runtime/pmx/tree.json --mesh
-uv run python src/mmd/mmd_render.py --pmx $pmx --vmd $vmd --xml runtime/pmx/model.xml --out runtime/pmx/anim.npz
 uv run python src/mmd/view_model.py --xml runtime/pmx/model.xml --qpos runtime/pmx/anim.npz --loop
 ```
 

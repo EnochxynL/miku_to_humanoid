@@ -3,7 +3,8 @@ optionally the source skeleton drawn as capsules.
 
 Everything is read from files the pipeline already wrote - this module never imports GMR and never
 retargets anything. That separation is the point: ``gmr_retarget.py`` produces ``g1.npz``,
-``mmd_render.py`` produces the model and its qpos, and this file only plays them back.
+``engine.mmd_model`` builds the character in memory and ``engine.bake`` turns a pose into qpos;
+this file only composes and plays them.
 
 One window shows both figures, which is possible because MuJoCo can hold several kinematic trees in a
 single model: the robot is attached into the MMD model's world with its own ``g1_`` prefix
@@ -11,8 +12,7 @@ single model: the robot is attached into the MMD model's world with its own ``g1
 model and mesh geometry is referenced inside that model's own mesh table.
 
     PYTHONPATH=src;src\\mmd uv run python src/mmd/view.py \
-        --mmd-xml runtime/pmx2/model.xml --mmd-qpos runtime/pmx2/model_anim.npz \
-        --robot-qpos runtime/pmx2/g1.npz --offset 1.6 --skeleton
+        --pmx <model.pmx> --pose <pose.vpd> --robot-qpos runtime/pmx2/g1.npz --offset 1.6
 """
 from __future__ import annotations
 
@@ -57,7 +57,10 @@ def build_scene(mmd_xml, robot_xml, offset, ghost_alpha=None):
 
     Returns the composed model plus the joint slices each source model writes into.
     """
-    mmd = mujoco.MjSpec.from_file(str(mmd_xml)) if mmd_xml else mujoco.MjSpec()
+    if isinstance(mmd_xml, mujoco.MjSpec):
+        mmd = mmd_xml
+    else:
+        mmd = mujoco.MjSpec.from_file(str(mmd_xml)) if mmd_xml else mujoco.MjSpec()
     robot = mujoco.MjSpec.from_file(str(robot_xml)) if robot_xml else None
     if robot is not None and mmd_xml:
         # the robot's floor and lights win: its MJCF is the one that describes the working environment
@@ -82,9 +85,13 @@ def build_scene(mmd_xml, robot_xml, offset, ghost_alpha=None):
     return model
 
 
-def joint_slices(composed, source_xml, prefix=''):
-    """(destination address, source address, width) for every joint of one source model."""
-    source = mujoco.MjModel.from_xml_path(str(source_xml))
+def joint_slices(composed, source, prefix=''):
+    """(destination address, source address, width) for every joint of one source model.
+
+    ``source`` is an MjModel (the in-memory build) or a path to an MJCF.
+    """
+    if not isinstance(source, mujoco.MjModel):
+        source = mujoco.MjModel.from_xml_path(str(source))
     pairs = []
     for joint in range(composed.njnt):
         name = mujoco.mj_id2name(composed, mujoco.mjtObj.mjOBJ_JOINT, joint)
@@ -117,11 +124,11 @@ class Overlay:
 class QposOverlay(Overlay):
     """Drive one attached model's subtree from a qpos clip."""
 
-    def __init__(self, label, source_xml, clip_path, prefix='', translate=(0.0, 0.0, 0.0)):
+    def __init__(self, label, source_model, clip, prefix='', translate=(0.0, 0.0, 0.0)):
         self.label = label
-        self.source_xml = source_xml
+        self.source_xml = source_model
+        self.clip = clip
         self.prefix = prefix
-        self.clip = np.load(clip_path)['qpos']
         self.frames = len(self.clip)
         # A model whose root is a free joint gets its world position from qpos, not from where the
         # spec was attached - so placing it beside another figure means translating the clip.
@@ -247,8 +254,9 @@ class BaseDisplay:
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--mmd-xml', default=None, help='textured or skeleton MJCF of the character')
-    parser.add_argument('--mmd-qpos', default=None, help='its qpos clip (mmd_render output)')
+    parser.add_argument('--pmx', default=None, help='the character model, built in memory')
+    parser.add_argument('--pose', default=None,
+                        help='what the character plays: a .vpd (one frame) or a .vmd (a clip)')
     parser.add_argument('--robot-xml', default=DEFAULT_ROBOT_XML)
     parser.add_argument('--robot-qpos', default=None, help='the retargeted robot clip (gmr_retarget)')
     parser.add_argument('--ghost', action='store_true',
@@ -271,21 +279,38 @@ def main():
     parser.add_argument('--show-ui', action='store_true')
     args = parser.parse_args()
 
-    if not args.robot_qpos and not args.mmd_qpos:
-        raise SystemExit('nothing to play: pass --robot-qpos and/or --mmd-qpos')
-    if args.mmd_qpos and not args.mmd_xml:
-        raise SystemExit('--mmd-qpos needs --mmd-xml')
+    if not args.robot_qpos and not args.pmx:
+        raise SystemExit('nothing to play: pass --robot-qpos and/or --pmx')
+    if args.pose and not args.pmx:
+        raise SystemExit('--pose needs --pmx')
+
+    from engine import mmd_model
+    from engine.bake import bake
+
+    bundle = mmd_model.build(args.pmx) if args.pmx else None
+    if bundle is not None:
+        print('  character: %d bones, %d mesh groups, %d textures'
+              % (bundle.info['bones'], bundle.info['mesh_groups'], bundle.info['textures']))
+    robot_model = (mujoco.MjModel.from_xml_path(args.robot_xml) if args.robot_qpos else None)
 
     print('composing scene')
-    model = build_scene(args.mmd_xml, args.robot_xml if args.robot_qpos else None,
+    model = build_scene(bundle.spec if bundle else None,
+                        args.robot_xml if args.robot_qpos else None,
                         args.offset, args.ghost_alpha if args.ghost else None)
     print('  nbody=%d nmesh=%d nq=%d' % (model.nbody, model.nmesh, model.nq))
 
     overlays = []
-    if args.mmd_qpos:
-        overlays.append(QposOverlay('mmd', args.mmd_xml, args.mmd_qpos))
+    if bundle is not None:
+        if args.pose:
+            clip, unmatched, _times, missing = bake(args.pmx, args.pose, bundle.model)
+            print('  motion: %d frames from %s (%d bones matched)'
+                  % (len(clip), Path(args.pose).name, len(bundle.info['names']) - len(unmatched)))
+        else:
+            clip = np.array([bundle.model.qpos0])
+            print('  motion: bind pose')
+        overlays.append(QposOverlay('mmd', bundle.model, clip))
     if args.robot_qpos:
-        overlays.append(QposOverlay('g1', args.robot_xml, args.robot_qpos,
+        overlays.append(QposOverlay('g1', robot_model, np.load(args.robot_qpos)['qpos'],
                                     prefix=ROBOT_PREFIX,
                                     translate=(args.offset, 0.0, 0.0)))
     if args.skeleton:

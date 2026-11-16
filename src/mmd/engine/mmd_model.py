@@ -62,6 +62,7 @@ class Bundle:
 
     model: mujoco.MjModel
     info: dict = field(default_factory=dict)
+    spec: object = None          # the MjSpec it came from, so another model can be attached to it
     _xml: str = ''
     _assets: dict = field(default_factory=dict)
 
@@ -201,16 +202,22 @@ def _layer(pmx_path, scale, mesh, min_alpha):
     return _LAYERS[key]
 
 
-def build(pmx_path, *, scale=0.07, mesh=True, cache=True, min_alpha=0.5):
-    """Compile a PMX rig into an MjModel. ``mesh=False`` gives joints only, which is all baking needs."""
-    if cache:
-        xml, assets, info = _layer(pmx_path, scale, mesh, min_alpha)
-    else:
+def spec(pmx_path, *, scale=0.07, mesh=True, cache=True, min_alpha=0.5):
+    """(MjSpec, info) - un-compiled, so another model can be attached before compiling."""
+    if not cache:
         key = (str(Path(pmx_path).resolve()), Path(pmx_path).stat().st_mtime_ns, scale, mesh, min_alpha)
         _LAYERS.pop(key, None)
-        xml, assets, info = _layer(pmx_path, scale, mesh, min_alpha)
-    model = mujoco.MjModel.from_xml_string(xml, assets=assets)
-    return Bundle(model=model, info=info, _xml=xml, _assets=assets)
+    xml, assets, info = _layer(pmx_path, scale, mesh, min_alpha)
+    return mujoco.MjSpec.from_string(xml, assets=assets), info
+
+
+def build(pmx_path, *, scale=0.07, mesh=True, cache=True, min_alpha=0.5):
+    """Compile a PMX rig into an MjModel. ``mesh=False`` gives joints only, which is all baking needs."""
+    built, info = spec(pmx_path, scale=scale, mesh=mesh, cache=cache, min_alpha=min_alpha)
+    layer = _LAYERS[(str(Path(pmx_path).resolve()), Path(pmx_path).stat().st_mtime_ns,
+                     scale, mesh, min_alpha)]
+    xml, assets = layer[0], layer[1]
+    return Bundle(model=built.compile(), info=info, spec=built, _xml=xml, _assets=assets)
 
 
 def clear_cache():

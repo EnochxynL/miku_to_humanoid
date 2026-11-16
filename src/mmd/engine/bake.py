@@ -10,7 +10,7 @@ and a hand port misses them:
   switch them on/off per frame (``ik_frames``).
 
 This module only turns the reference's per-bone local rotations into qpos for the MJCF that
-``mmd_render`` produced: bodies carry the bone names, so joints are found by name, and the
+``mmd_model`` produced: bodies carry the bone names, so joints are found by name, and the
 MMD -> MuJoCo basis (a reflection) is undone by ``mmd_quat_to_mujoco``.
 
     PYTHONPATH=src;src\\mmd uv run python -m engine.bake --pmx <model.pmx> --vmd <motion.vmd> \
@@ -52,14 +52,16 @@ def _name_map(bones):
     return mapping
 
 
-def bake(pmx_path, vmd_path, xml_path, step=1, solve_ik=True, scale=0.07):
+def bake(pmx_path, pose_path, robot_model, step=1, solve_ik=True, scale=0.07):
     """(qpos frames, unmatched bone names, times) for the MJCF derived from ``pmx_path``.
 
-    ``vmd_path`` may be a .vpd: a pose is a motion of one frame, so the same call serves both.
+    ``pose_path`` may be a .vpd: a pose is a motion of one frame, so the same call serves both.
+    ``model`` is the compiled PMX model (``mmd_model.build(..., mesh=False)`` is enough: baking
+    only needs the joint names).
     """
     model = parse_pmx(str(pmx_path))
-    is_pose = str(vmd_path).lower().endswith('.vpd')
-    vmd = {'bones': {}, 'max_frame': 0, 'ik_frames': []} if is_pose else parse_vmd(str(vmd_path))
+    is_pose = str(pose_path).lower().endswith('.vpd')
+    vmd = {'bones': {}, 'max_frame': 0, 'ik_frames': []} if is_pose else parse_vmd(str(pose_path))
     bones = model['bones']
     count = len(bones)
 
@@ -102,7 +104,7 @@ def bake(pmx_path, vmd_path, xml_path, step=1, solve_ik=True, scale=0.07):
     # A VPD contributes one frame; a VMD contributes the sampled range.
     pose_frame = None
     if is_pose:
-        pose = parse_vpd(str(vmd_path))
+        pose = parse_vpd(str(pose_path))
         pose_frame = {}
         for name, (translation, rotation) in pose.items():
             index = name_map.get(name.encode('shift-jis', errors='replace')[:15])
@@ -120,7 +122,7 @@ def bake(pmx_path, vmd_path, xml_path, step=1, solve_ik=True, scale=0.07):
 
     skeleton = Skeleton(model)
 
-    robot = mujoco.MjModel.from_xml_path(str(xml_path))
+    robot = robot_model
 
     # MMD moves the character through センター, which is a *translation*. A qpos built only from ball
     # joints drops it and the character dances in place, so the free joint takes it.
@@ -185,13 +187,16 @@ def main():
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--pmx', required=True)
     parser.add_argument('--vmd', required=True)
-    parser.add_argument('--xml', required=True, help='MJCF produced by mmd_render for this PMX')
+    parser.add_argument('--mesh', action='store_true',
+                        help='build the textured model; baking only needs the joints')
     parser.add_argument('--out', required=True)
     parser.add_argument('--step', type=int, default=1, help='sample every N VMD frames')
     parser.add_argument('--no-ik', dest='solve_ik', action='store_false')
     args = parser.parse_args()
 
-    qpos, unmatched, times, missing = bake(args.pmx, args.vmd, args.xml,
+    from engine import mmd_model
+    model = mmd_model.build(args.pmx, mesh=args.mesh)
+    qpos, unmatched, times, missing = bake(args.pmx, args.vmd, model.model,
                                            step=args.step, solve_ik=args.solve_ik)
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
