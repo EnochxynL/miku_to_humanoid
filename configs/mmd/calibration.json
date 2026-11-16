@@ -1,7 +1,7 @@
 {
-  "method": "paired pose at the MMD bind pose; robot arm/leg joints solved to match the limb directions, then C = R_source_bind^-1 * R_link(matched pose)",
-  "why": "MMD bones carry no rest rotation, so at bind every bone frame is the identity: C collapses to a reading instead of a fit",
-  "source_bind_note": "the GLB hangs under Rx90, so R_source_bind = Rx90 and must be divided out",
+  "method": "paired pose (configured, not fitted) -> C = R_source(pose)^-1 * R_link(pose)",
+  "why": "MMD bones carry no rest rotation, so at the bind pose every bone frame is the identity and C collapses to a reading",
+  "source_bind_note": "the GLB hangs under Rx90, so R_source(pose) carries it and it must be divided out",
   "links": {
     "pelvis": {
       "bone": "腰",
@@ -21,7 +21,7 @@
       "C_quat_wxyz": [
         0.398888,
         -0.584949,
-        -0.581644,
+        -0.581645,
         -0.400516
       ]
     },
@@ -31,9 +31,9 @@
       "rot_w": 10,
       "C_quat_wxyz": [
         0.522379,
-        -0.476699,
+        -0.476698,
         -0.473859,
-        -0.524725
+        -0.524726
       ]
     },
     "left_ankle_roll_link": {
@@ -42,9 +42,9 @@
       "rot_w": 10,
       "C_quat_wxyz": [
         0.522379,
-        -0.476699,
+        -0.476698,
         -0.473859,
-        -0.524725
+        -0.524726
       ]
     },
     "right_hip_yaw_link": {
@@ -52,10 +52,10 @@
       "pos_w": 0,
       "rot_w": 10,
       "C_quat_wxyz": [
-        0.470355,
+        0.470356,
         -0.61961,
         -0.538275,
-        -0.324205
+        -0.324204
       ]
     },
     "right_knee_link": {
@@ -63,10 +63,10 @@
       "pos_w": 0,
       "rot_w": 10,
       "C_quat_wxyz": [
-        0.581634,
+        0.581635,
         -0.528338,
-        -0.415544,
-        -0.458132
+        -0.415543,
+        -0.458131
       ]
     },
     "right_ankle_roll_link": {
@@ -74,10 +74,10 @@
       "pos_w": 50,
       "rot_w": 10,
       "C_quat_wxyz": [
-        0.581634,
+        0.581635,
         -0.528338,
-        -0.415544,
-        -0.458132
+        -0.415543,
+        -0.458131
       ]
     },
     "torso_link": {
@@ -98,7 +98,7 @@
       "C_quat_wxyz": [
         0.738991,
         -0.170492,
-        -0.598981,
+        -0.598982,
         -0.256993
       ]
     },
@@ -109,7 +109,7 @@
       "C_quat_wxyz": [
         0.950253,
         0.015254,
-        -0.043655,
+        -0.043656,
         -0.308026
       ]
     },
@@ -120,7 +120,7 @@
       "C_quat_wxyz": [
         0.950253,
         0.015254,
-        -0.043655,
+        -0.043656,
         -0.308026
       ]
     },
@@ -132,7 +132,7 @@
         0.278988,
         -0.606877,
         -0.142386,
-        -0.730474
+        -0.730473
       ]
     },
     "right_elbow_link": {
@@ -140,9 +140,9 @@
       "pos_w": 0.0,
       "rot_w": 10.0,
       "C_quat_wxyz": [
-        0.309038,
-        -0.054769,
-        0.051024,
+        0.309039,
+        -0.05477,
+        0.051025,
         -0.948099
       ]
     },
@@ -151,9 +151,9 @@
       "pos_w": 0.0,
       "rot_w": 10.0,
       "C_quat_wxyz": [
-        0.309038,
-        -0.054769,
-        0.051024,
+        0.309039,
+        -0.05477,
+        0.051025,
         -0.948099
       ]
     }
@@ -243,6 +243,12 @@
       "torso_link"
     ],
     "value_deg": -94.18,
-    "rule": "links the pose solve does not move need the world-frame yaw, measured on bilateral axes (hip line for the root, shoulder line for the torso); the limbs get it implicitly because their joints were solved against the source in world space"
+    "rule": "links the pose does not move need the world-frame yaw, measured on bilateral axes (hip line, shoulder line); limbs get it implicitly"
+  },
+  "paired_pose": {
+    "robot_xml": "g1_mocap_29dof.xml",
+    "pose_file": "configs/mmd/paired_pose_g1.json",
+    "source_vpd": null,
+    "limb_direction_error_deg": 0.113
   }
 }

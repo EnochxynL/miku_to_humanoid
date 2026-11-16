@@ -1,0 +1,24 @@
+{
+  "robot_xml": "D:\\MY_TOOL\\GitHub_Tools\\GMR\\assets\\unitree_g1\\g1_mocap_29dof.xml",
+  "note": "paired pose for the C calibration: joint angles that put this robot into the source pose (MMD bind pose unless --vpd was given)",
+  "source_pose": "(bind pose)",
+  "joints": {
+    "left_shoulder_pitch_joint": -53.0491,
+    "left_shoulder_roll_joint": 19.5216,
+    "left_shoulder_yaw_joint": -80.2141,
+    "left_elbow_joint": 72.7915,
+    "right_shoulder_pitch_joint": 60.1043,
+    "right_shoulder_roll_joint": 5.4127,
+    "right_shoulder_yaw_joint": -68.1145,
+    "right_elbow_joint": 72.8272,
+    "left_hip_pitch_joint": 10.3,
+    "left_hip_roll_joint": -21.1586,
+    "left_hip_yaw_joint": -89.9544,
+    "left_knee_joint": 16.6714,
+    "right_hip_pitch_joint": 3.6166,
+    "right_hip_roll_joint": -20.3231,
+    "right_hip_yaw_joint": -75.5593,
+    "right_knee_joint": 16.5966
+  },
+  "limb_direction_error_deg": 0.113
+}
