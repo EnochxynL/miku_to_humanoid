@@ -164,3 +164,74 @@ def validate(profile, model, mujoco):
         if unknown:
             problems.append('unknown weight field on %s: %s' % (link, ', '.join(unknown)))
     return problems
+
+
+def dump(profile):
+    """The whole resolved picture as one dict, with the GMR template inlined.
+
+    ``load()`` answers a robot key out of GMR's checkout, so part of the answer lives in files this repo
+    does not own. This shows what was read: the template's *contents*, the derived tables, and where each
+    piece came from - which is also the list of what would have to be written by hand for a robot GMR has
+    never seen.
+    """
+    template = {}
+    base_config = Path(profile.base_config)
+    if base_config.exists():
+        template = json.loads(base_config.read_text(encoding='utf-8'))
+    return {
+        'name': profile.name,
+        'provenance': {'xml': str(profile.xml), 'base_config': str(profile.base_config)},
+        'links': profile.links,
+        'segments': [{'link': segment.link, 'to': segment.to, 'joints': list(segment.joints)}
+                     for segment in profile.segments],
+        'root_links': list(profile.root_links),
+        'bilateral_links': list(profile.bilateral),
+        'weight_overrides': profile.weights,
+        'derivation': {
+            'links': "links 每一项的 bone 字段来自模板，经 LAFAN1_TO_MMD 翻译成 MMD 骨名",
+            'segments': 'SEGMENT_BONES 里每个骨对，映射到追踪这两根骨的链接',
+            'root_links': '追踪 %s / %s 的链接' % (ROOT_BONE, TORSO_BONE),
+            'bilateral_links': '追踪 %s / %s 的链接' % BILATERAL_BONES,
+        },
+        'template': template,
+    }
+
+
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Show what a robot profile resolved to.')
+    parser.add_argument('--robot', required=True, help='profile json, or a GMR robot key')
+    parser.add_argument('--gmr-root', default=r'D:\MY_TOOL\GitHub_Tools\GMR')
+    parser.add_argument('--out', default=None, help='write the resolved profile here')
+    parser.add_argument('--full', action='store_true', help='print the whole resolved profile')
+    args = parser.parse_args()
+
+    profile = load(args.robot, args.gmr_root)
+    resolved = dump(profile)
+
+    if args.out:
+        path = Path(args.out)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(resolved, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+        print('written %s' % path)
+
+    template = resolved['template']
+    tables = {key: len(value) for key, value in template.items() if isinstance(value, dict)}
+    print('robot: %s' % resolved['name'])
+    print('  xml            %s' % resolved['provenance']['xml'])
+    print('  base_config    %s' % resolved['provenance']['base_config'])
+    print('  links          %d' % len(resolved['links']))
+    print('  segments       %d' % len(resolved['segments']))
+    print('  root_links     %s' % ', '.join(resolved['root_links']))
+    print('  bilateral      %s' % ', '.join(resolved['bilateral_links']))
+    print('  weight overrides %d' % len(resolved['weight_overrides']))
+    print('  template       %s' % (', '.join('%s (%d)' % item for item in tables.items()) or 'empty'))
+
+    if args.full:
+        print(json.dumps(resolved, indent=2, ensure_ascii=False))
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
