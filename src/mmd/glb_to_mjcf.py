@@ -88,7 +88,7 @@ def sample_alpha(alpha, uv):
     return alpha[y, x]
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--glb', required=True)
@@ -106,7 +106,11 @@ def main():
     parser.add_argument('--no-rollup', dest='rollup', action='store_false',
                         help='keep every accessory bone; by default a hair/skirt/sleeve chain is '
                              'bound to its group root so the surface cannot tear between links')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    return run(args)
+
+
+def run(args):
 
     gltf = load_gltf_module()
     doc, binary = gltf.load_glb(Path(args.glb))
@@ -362,6 +366,7 @@ def main():
                       'scaled_nodes': len(non_unit), 'mesh_groups': mapping['mesh_groups'],
                       'alpha_trimmed_triangles': removed if args.mesh else 0,
                       'xml': str(xml_path)}, ensure_ascii=False))
+    return Path(args.xml)
 
 
 if __name__ == '__main__':

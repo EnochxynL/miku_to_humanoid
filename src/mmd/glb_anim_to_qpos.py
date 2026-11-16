@@ -31,7 +31,7 @@ def load_gltf_module():
     return module
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--glb', required=True)
@@ -43,7 +43,11 @@ def main():
     parser.add_argument('--speed', type=float, default=0.6)
     parser.add_argument('--camera-distance', type=float, default=2.0)
     parser.add_argument('--camera-azimuth', type=float, default=90.0)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    return run(args)
+
+
+def run(args):
 
     gltf = load_gltf_module()
     doc, binary = gltf.load_glb(Path(args.glb))
@@ -95,10 +99,11 @@ def main():
     print(f'wrote {len(cache)} frames to {out}')
 
     if not args.view:
-        return
+        return np.array(cache)
     from view_model import play
     play(model, data, cache, speed=args.speed,
          distance=args.camera_distance, azimuth=args.camera_azimuth)
+    return np.array(cache)
 
 
 if __name__ == '__main__':
