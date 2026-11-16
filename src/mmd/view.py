@@ -257,6 +257,10 @@ def main():
     parser.add_argument('--pmx', default=None, help='the character model, built in memory')
     parser.add_argument('--pose', default=None,
                         help='what the character plays: a .vpd (one frame) or a .vmd (a clip)')
+    parser.add_argument('--robot', default=None,
+                        help='robot profile json, or a GMR key such as booster_t1_29dof; '
+                             'overrides --robot-xml')
+    parser.add_argument('--gmr-root', default=r'D:\MY_TOOL\GitHub_Tools\GMR')
     parser.add_argument('--robot-xml', default=DEFAULT_ROBOT_XML)
     parser.add_argument('--robot-qpos', default=None, help='the retargeted robot clip (gmr_retarget)')
     parser.add_argument('--ghost', action='store_true',
@@ -278,6 +282,9 @@ def main():
     parser.add_argument('--lookat', default='0.6 0 0.95')
     parser.add_argument('--show-ui', action='store_true')
     args = parser.parse_args()
+    if args.robot:
+        import robot_profile
+        args.robot_xml = str(robot_profile.load(args.robot, args.gmr_root).xml)
 
     if not args.robot_qpos and not args.pmx:
         raise SystemExit('nothing to play: pass --robot-qpos and/or --pmx')

@@ -1,0 +1,61 @@
+{
+  "name": "booster_t1_29dof",
+  "note": "Generated from GMR stock config by robot_profile.from_gmr; paths are relative to the GMR checkout. Kept on disk so the pairing is readable, but `--robot booster_t1_29dof` derives the same profile without this file.",
+  "xml": "assets/booster_t1_29dof/t1_mocap.xml",
+  "base_config": "general_motion_retargeting/ik_configs/bvh_lafan1_to_t1_29dof.json",
+  "links": {
+    "Waist": "腰",
+    "Hip_Yaw_Left": "左足",
+    "Shank_Left": "左ひざ",
+    "left_foot_link": "左足首",
+    "Hip_Yaw_Right": "右足",
+    "Shank_Right": "右ひざ",
+    "right_foot_link": "右足首",
+    "Trunk": "上半身2",
+    "AL2": "左腕",
+    "AL4": "左ひじ",
+    "AL5": "左手首",
+    "AR2": "右腕",
+    "AR4": "右ひじ",
+    "AR5": "右手首"
+  },
+  "segments": [
+    {
+      "link": "AL2",
+      "to": "AL4"
+    },
+    {
+      "link": "AL4",
+      "to": "AL5"
+    },
+    {
+      "link": "AR2",
+      "to": "AR4"
+    },
+    {
+      "link": "AR4",
+      "to": "AR5"
+    },
+    {
+      "link": "Hip_Yaw_Left",
+      "to": "Shank_Left"
+    },
+    {
+      "link": "Shank_Left",
+      "to": "left_foot_link"
+    },
+    {
+      "link": "Hip_Yaw_Right",
+      "to": "Shank_Right"
+    },
+    {
+      "link": "Shank_Right",
+      "to": "right_foot_link"
+    }
+  ],
+  "root_links": [
+    "Waist",
+    "Trunk"
+  ],
+  "weight_overrides": {}
+}

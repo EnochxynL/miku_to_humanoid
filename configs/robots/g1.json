@@ -92,6 +92,30 @@
   "weight_overrides": {
     "pelvis": {
       "rot_w": 10.0
+    },
+    "left_shoulder_yaw_link": {
+      "pos_w": 0.0,
+      "rot_w": 100.0
+    },
+    "right_shoulder_yaw_link": {
+      "pos_w": 0.0,
+      "rot_w": 100.0
+    },
+    "left_elbow_link": {
+      "pos_w": 0.0,
+      "rot_w": 10.0
+    },
+    "right_elbow_link": {
+      "pos_w": 0.0,
+      "rot_w": 10.0
+    },
+    "left_wrist_yaw_link": {
+      "pos_w": 0.0,
+      "rot_w": 10.0
+    },
+    "right_wrist_yaw_link": {
+      "pos_w": 0.0,
+      "rot_w": 10.0
     }
   }
 }
