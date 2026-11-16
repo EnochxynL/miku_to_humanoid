@@ -10,7 +10,7 @@ and a hand port misses them:
   switch them on/off per frame (``ik_frames``).
 
 This module only turns the reference's per-bone local rotations into qpos for the MJCF that
-``mmd_model`` produced: bodies carry the bone names, so joints are found by name, and the
+``mjcf`` produced: bodies carry the bone names, so joints are found by name, and the
 MMD -> MuJoCo basis (a reflection) is undone by ``mmd_quat_to_mujoco``.
 
     PYTHONPATH=src;src\\mmd uv run python -m engine.bake --pmx <model.pmx> --vmd <motion.vmd> \
@@ -56,7 +56,7 @@ def bake(pmx_path, pose_path, robot_model, step=1, solve_ik=True, scale=0.07):
     """(qpos frames, unmatched bone names, times) for the MJCF derived from ``pmx_path``.
 
     ``pose_path`` may be a .vpd: a pose is a motion of one frame, so the same call serves both.
-    ``model`` is the compiled PMX model (``mmd_model.build(..., mesh=False)`` is enough: baking
+    ``model`` is the compiled PMX model (``mjcf.build(..., mesh=False)`` is enough: baking
     only needs the joint names).
     """
     model = parse_pmx(str(pmx_path))

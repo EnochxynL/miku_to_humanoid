@@ -1,0 +1,97 @@
+{
+  "name": "unitree_g1",
+  "note": "Robot-side knowledge only. Paths are relative to the GMR checkout, so this file is portable. weight_overrides lists the few places this robot deviates from GMR stock; GMR ships pelvis rot_w=10 in table1 but 5 in table2, and both are used depending on the contact mode.",
+  "xml": "assets/unitree_g1/g1_mocap_29dof.xml",
+  "base_config": "general_motion_retargeting/ik_configs/bvh_lafan1_to_g1.json",
+  "links": {
+    "pelvis": "腰",
+    "torso_link": "上半身2",
+    "left_hip_yaw_link": "左足",
+    "left_knee_link": "左ひざ",
+    "left_ankle_roll_link": "左足首",
+    "right_hip_yaw_link": "右足",
+    "right_knee_link": "右ひざ",
+    "right_ankle_roll_link": "右足首",
+    "left_shoulder_yaw_link": "左腕",
+    "left_elbow_link": "左ひじ",
+    "left_wrist_yaw_link": "左手首",
+    "right_shoulder_yaw_link": "右腕",
+    "right_elbow_link": "右ひじ",
+    "right_wrist_yaw_link": "右手首"
+  },
+  "segments": [
+    {
+      "link": "left_shoulder_yaw_link",
+      "to": "left_elbow_link",
+      "joints": [
+        "left_shoulder_pitch_joint",
+        "left_shoulder_roll_joint",
+        "left_shoulder_yaw_joint"
+      ]
+    },
+    {
+      "link": "left_elbow_link",
+      "to": "left_wrist_yaw_link",
+      "joints": [
+        "left_elbow_joint"
+      ]
+    },
+    {
+      "link": "right_shoulder_yaw_link",
+      "to": "right_elbow_link",
+      "joints": [
+        "right_shoulder_pitch_joint",
+        "right_shoulder_roll_joint",
+        "right_shoulder_yaw_joint"
+      ]
+    },
+    {
+      "link": "right_elbow_link",
+      "to": "right_wrist_yaw_link",
+      "joints": [
+        "right_elbow_joint"
+      ]
+    },
+    {
+      "link": "left_hip_yaw_link",
+      "to": "left_knee_link",
+      "joints": [
+        "left_hip_pitch_joint",
+        "left_hip_roll_joint",
+        "left_hip_yaw_joint"
+      ]
+    },
+    {
+      "link": "left_knee_link",
+      "to": "left_ankle_roll_link",
+      "joints": [
+        "left_knee_joint"
+      ]
+    },
+    {
+      "link": "right_hip_yaw_link",
+      "to": "right_knee_link",
+      "joints": [
+        "right_hip_pitch_joint",
+        "right_hip_roll_joint",
+        "right_hip_yaw_joint"
+      ]
+    },
+    {
+      "link": "right_knee_link",
+      "to": "right_ankle_roll_link",
+      "joints": [
+        "right_knee_joint"
+      ]
+    }
+  ],
+  "root_links": [
+    "pelvis",
+    "torso_link"
+  ],
+  "weight_overrides": {
+    "pelvis": {
+      "rot_w": 10.0
+    }
+  }
+}

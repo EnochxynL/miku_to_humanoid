@@ -3,7 +3,7 @@ optionally the source skeleton drawn as capsules.
 
 Everything is read from files the pipeline already wrote - this module never imports GMR and never
 retargets anything. That separation is the point: ``gmr_retarget.py`` produces ``g1.npz``,
-``engine.mmd_model`` builds the character in memory and ``engine.bake`` turns a pose into qpos;
+``engine.mjcf`` builds the character in memory and ``engine.bake`` turns a pose into qpos;
 this file only composes and plays them.
 
 One window shows both figures, which is possible because MuJoCo can hold several kinematic trees in a
