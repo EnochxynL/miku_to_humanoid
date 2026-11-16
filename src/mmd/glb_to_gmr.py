@@ -25,7 +25,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from pmx_to_gmr import LINKS, MEASURE, rotation_between   # noqa: E402  (same link tables)
+from rig_tables import LINKS, MEASURE, rotation_between   # noqa: E402  (same link tables)
 
 # link -> (parent robot link) for the constant chain
 ROBOT_PARENT = {

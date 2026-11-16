@@ -25,7 +25,7 @@ from scipy.spatial.transform import Rotation as R
 
 def load_gltf_module():
     spec = importlib.util.spec_from_file_location(
-        'mmd_glb_to_bvh', Path(__file__).with_name('mmd_glb_to_bvh.py'))
+        'mmd_glb_to_bvh', Path(__file__).with_name('glb_io.py'))
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module

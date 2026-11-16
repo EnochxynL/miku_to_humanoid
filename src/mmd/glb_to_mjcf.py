@@ -32,7 +32,7 @@ STUB_INERTIAL = '<inertial pos="0 0 0" mass="0.00001" diaginertia="1e-9 1e-9 1e-
 
 def load_gltf_module():
     spec = importlib.util.spec_from_file_location(
-        'mmd_glb_to_bvh', Path(__file__).with_name('mmd_glb_to_bvh.py'))
+        'mmd_glb_to_bvh', Path(__file__).with_name('glb_io.py'))
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module

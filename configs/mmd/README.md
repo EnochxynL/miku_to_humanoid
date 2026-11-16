@@ -1,51 +1,109 @@
-﻿# MMD → G1 retargeting: the configuration that works
+# MMD → G1 retargeting: the configuration that works
 
 This directory is the **versioned copy** of everything the working retargeting configuration depends
 on. `runtime/` is gitignored (generated assets), so without this copy the configuration that produced
 the good result exists only on one machine.
+
+Only the **glTF path** is kept in `src/mmd`; the PMX and BVH routes were removed.
 
 ## Files
 
 | file | what it is |
 |---|---|
 | `glb_to_g1.json` | GMR IK config: per-link rotation offsets + weights + scale table |
+| `calibration.json` | how every constant was derived, the measured errors, and the retractions |
 | `herta_nodes.json` | GLB node index → MMD bone name → body/joint/parent mapping |
 | `herta_mesh_nodes.json` | same mapping for the textured mesh model |
 | `herta_anim.npz` | the baked source animation, 319 frames of joint values |
 | `README.md` | this file |
 
-## Why the offsets look the way they do
+## The scripts (all glTF)
 
-`C = rotation_between(a_local, a_src)` — the minimal rotation taking **the robot link's limb axis**
-onto **the source bone's limb axis** (`src/mmd/distal_offsets.py`). That fixes the limb *direction*;
-the third degree of freedom (roll about the limb) is left free, which a hinge does not care about.
+| script | role |
+|---|---|
+| `glb_io.py` | minimal .glb reader (JSON chunk, accessors, animation sampling) |
+| `rig_tables.py` | MMD bone name → G1 link tables and the measurement pairs |
+| `glb_to_mjcf.py` | GLB → MJCF skeleton and textured mesh |
+| `glb_anim_to_qpos.py` | GLB animation → per-frame qpos of that MJCF |
+| `glb_to_gmr.py` | source frames → GMR config + baked robot qpos |
+| `paired_pose_offsets.py` | **the calibration**: derives every constant from the MMD bind pose |
+| `export_gmr_pickle.py` | our qpos → the GMR pickle `reference_maker/convert_gmr.py` reads |
+| `view_model.py` | plain MuJoCo playback of a qpos sequence |
+| `view_skeleton.py` | robot + source skeleton side by side (`--source gmr` shows exactly what GMR gets) |
 
-Two earlier constructions were wrong, and both were hidden by a lucky property of the PMX models:
+## What C is, and why it took so long
 
-* `C = rest · align` (PMX route) worked only because the PMX rig binds with **identity** bone
-  orientation, so a world-frame rotation could be used as a local-frame one;
-* `C = src_bind⁻¹ · rest · align` (first GLB attempt) divided the bind rotation out in the wrong
-  place and left a ~180° yaw error: the targets pointed the arms *inward*, the shoulder roll hit its
-  lower limit (-34.4°) and looked "locked at the factory".
+GMR asks for one constant per link:
 
-Measured arm direction error at three frames: **43°/65° before → 2°/1° after**.
+```
+target_orientation(robot link, t) = R_source_bone(t) · C
+```
 
-## Arms are driven by position, not orientation
+`C` is the **frame convention** between one bone in the source rig and one link in the robot rig. It is
+not part of the motion; both frames are rigidly attached to the same physical segment.
 
-A hinge elbow cannot satisfy a full 3-dof orientation target; with orientation-only weights the
-forearm stayed 60-92° off. Driving the arm chain by position (`pos_w=300, rot_w=1`) brings the
-forearm to **11/38°**. `distal_offsets.py --arm-pos-weight 300` (the default) writes this.
+Two things made it hard, and both were my own errors:
+
+* **It is under-determined from geometry.** A pose only observes two of its three degrees of freedom
+  (the limb direction); the roll about the limb is invisible. Every "two-axis" attempt failed because
+  the second axis degenerates when the limb is straight - and at the MMD bind pose the limbs are.
+* **The GLB hides a 90° rotation.** The whole tree hangs under an `Rx90` root (Y-up → Z-up), so
+  `R_source_bind = Rx90`. Forgetting to divide it out either pitches the robot flat or leaves the arms
+  48° off. The same `Rx90` cost two separate debugging rounds.
+
+**The resolution is the paired pose.** MMD bones carry no rest rotation, so at the bind pose every
+bone frame is the identity and
+
+```
+C = R_source_bind^-1 · R_link(robot posed to match)
+```
+
+becomes a *reading* instead of a fit. `paired_pose_offsets.py` solves the robot's arm and leg joints
+to match the bind pose limb directions (0.0–0.3° residual) and reads C off the model.
+
+The two links that solve does **not** move - `pelvis` (the floating root) and `torso_link` - also need
+the world-frame yaw, measured on **bilateral axes** (hip line, shoulder line) because those are the
+only convention-free measures of body facing. They were 70–75° off before that correction and 8–11°
+after. This is why "the arms were perfect but the body was twisted" for so long: every child target is
+an absolute world orientation, so the spine silently absorbed a wrong root.
+
+## Weights are GMR's, not tuned
+
+Everything runs at the shipped convention: `pelvis rot_w=10`, `torso 100`, arms orientation-only
+(`pos_w=0`), ankle `pos_w=50`. Two workarounds were tried and removed, because both were hiding the
+missing root yaw rather than fixing it:
+
+* `pos_w=300` on the arms (position-driven limbs): it bypasses the frame correspondence entirely;
+* `pelvis rot_w=300`: the target was wrong, so pushing harder only made the twist more rigid.
+
+`pos_w` is a quadratic cost weight; only ratios matter. Measured effect of the arm weight once the
+offsets are right: from 10 to 3000 the forearm error stays on the same 4–22° plateau - the cliff is
+*whether a position term exists at all*, not its value.
+
+## Measured accuracy
+
+| quantity | value |
+|---|---|
+| upper arm direction | **0.0°** |
+| forearm direction | 2–6° (13–20° mid-clip) |
+| shoulder line (torso facing) | 3–7° |
+| hip line (body facing) | 8–11° |
+| knee bend amount | 3.9° median (the knee sweeps 0–69° correctly) |
+| thigh / shin direction | 6.7° / 5.6° median |
+
+The leg figure is a **trade-off, not a bug**: `ankle pos_w=50` holds the feet on the ground. Dropping
+it to 0 sharpens the shin to 1.3° but slides the feet 8–15 cm. Keep 50.
 
 ## Reproduce from scratch
 
 ```powershell
 $env:PYTHONPATH='src'
 
-# 1. GLB -> MuJoCo (skeleton + textured mesh)
-uv run python src/mmd/glb_to_mjcf.py --glb <model.glb> `
-    --xml runtime/glb/herta_mesh.xml --nodes runtime/glb/herta_mesh_nodes.json --mesh
+# 1. GLB -> MuJoCo skeleton (the mesh variant adds --mesh)
 uv run python src/mmd/glb_to_mjcf.py --glb <model.glb> `
     --xml runtime/glb/herta.xml --nodes runtime/glb/herta_nodes.json
+uv run python src/mmd/glb_to_mjcf.py --glb <model.glb> `
+    --xml runtime/glb/herta_mesh.xml --nodes runtime/glb/herta_mesh_nodes.json --mesh
 
 # 2. animation -> qpos for the source model
 uv run python src/mmd/glb_anim_to_qpos.py --glb <model.glb> `
@@ -57,41 +115,27 @@ uv run python src/mmd/glb_anim_to_qpos.py --glb <model.glb> `
     --glb-xml runtime/glb/herta.xml --nodes runtime/glb/herta_nodes.json `
     --anim runtime/glb/herta_anim.npz --config-out runtime/gmr_inputs/glb_to_g1.json --frames 0
 
-# 4. the offsets that matter
-uv run python src/mmd/distal_offsets.py --glb-xml runtime/glb/herta.xml `
-    --nodes runtime/glb/herta_nodes.json --config runtime/gmr_inputs/glb_to_g1.json
+# 4. the calibration that matters
+uv run python src/mmd/paired_pose_offsets.py --glb-xml runtime/glb/herta.xml `
+    --nodes runtime/glb/herta_nodes.json --config runtime/gmr_inputs/glb_to_g1.json --report
 
 # 5. play robot + source skeleton side by side
 <gmr>/.venv/Scripts/python.exe src/mmd/view_skeleton.py --glb-xml runtime/glb/herta.xml `
     --nodes runtime/glb/herta_nodes.json --anim runtime/glb/herta_anim.npz `
     --config runtime/gmr_inputs/glb_to_g1.json --loop --offset 0.85 --source gmr
+
+# 6. hand it to the control stack: GMR pickle -> the imitation clip format
+uv run python src/mmd/export_gmr_pickle.py --npz runtime/glb/g1_final.npz `
+    --out runtime/gmr_clips/herta_qqy.pkl --fps 30
+uv run python src/reference_maker/convert_gmr.py --pickle runtime/gmr_clips/herta_qqy.pkl `
+    --out runtime/refs/herta_qqy/signals.npz --robot g1
 ```
 
-## Known gaps (measured, not guessed)
+## Known gaps
 
-* **right forearm**: 33-38° off, with a 127° outlier mid-clip;
-* **legs**: 9-54°, and the robot stands **0.22 m lower** than the skeleton;
-* **shoulder width**: the source's arm-root bones are 0.16 m apart, G1's shoulder links 0.31 m — a
-  structural mismatch that a rigid bone→link mapping cannot absorb;
-* **hands**: GMR receives no palm bones, so finger/palm orientation is not retargeted at all.
-
-## `pos_w` is a ratio, not a tuned optimum
-
-`pos_w` is the quadratic cost weight of a position task in mink's weighted least-squares solve
-(`cost = w * ||error||^2`); its absolute value means nothing without the other weights.
-
-Measured forearm direction error while sweeping it (frames 0/159/318):
-
-| pos_w | left forearm | right forearm |
-|---|---|---|
-| 10 | 21/17/10 | 22/20/14 |
-| 30 | 18/16/13 | 19/20/18 |
-| 100 | 7/18/10 | 9/19/15 |
-| 300 | 11/16/4 | 15/18/4 |
-| 1000 | 11/18/5 | 14/17/8 |
-| 3000 | 8/18/8 | 10/17/11 |
-
-The cliff is **whether a position term exists at all**: with `pos_w = 0` the link gets no task and the
-arm is driven purely by an orientation target a hinge cannot satisfy (61/92 deg). Any value from 10 to
-3000 lands on the same 4-22 deg plateau, so 300 is simply a point on it - 100 would do as well.
-The real change was *adding* the position term and lowering `rot_w` from 10 to 1.
+* **hands**: GMR receives no palm bones, so finger and palm orientation are not retargeted at all;
+* **legs** 5–7°: the ankle position weight above, not an unknown twist;
+* **flight frames**: `convert_gmr.py` labels 23% of this dance as flight (both feet up), which the
+  WBC cannot support - start from a double-support frame or trim the airborne section;
+* the **PMX and BVH routes are gone on purpose**. They live in git history if ever needed; the BVH
+  route failed for the same C reason as everything else, not because BVH is a bad format.
