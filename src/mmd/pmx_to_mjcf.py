@@ -59,7 +59,14 @@ def main():
     parser.add_argument('--model-name', default='pmx_skeleton')
     parser.add_argument('--all-bones', dest='main_bones_only', action='store_false',
                         help='draw every bone, including hair and skirt chains')
-    parser.add_argument('--capsule-radius', type=float, default=0.012,
+    parser.add_argument('--mesh', action='store_true',
+                        help='emit the textured mesh (one OBJ group per material and bone) instead of '
+                             'capsules; the geometry is segmented by the triangle majority bone')
+    parser.add_argument('--assets', default=None,
+                        help='directory for mesh/texture files (default: <xml dir>/assets)')
+    parser.add_argument('--drop-alpha', action='store_true',
+                        help='omit materials whose alpha < 0.5 (MMD overlays like the blush layer)')
+    parser.add_argument('--capsule-radius', type=float, default=0.008,
                         help='draw a capsule per bone towards its tail so the skeleton is visible')
     args = parser.parse_args()
 
@@ -108,14 +115,63 @@ def main():
             return None
         return vector, min(args.capsule_radius, length / 2.0)
 
+    # absolute bone positions in MuJoCo space (offsets are stored parent-relative)
+    absolute = [np.zeros(3) for _ in range(count)]
+
+    def _accumulate(index, parent_position):
+        absolute[index] = np.asarray(parent_position) + np.asarray(offsets[index])
+        for child in children[index]:
+            _accumulate(child, absolute[index])
+
+    for root_index in roots:
+        _accumulate(root_index, np.zeros(3))
+
+    mesh_info = None
+    if args.mesh:
+        from engine.mesh import export as export_mesh
+        assets = Path(args.assets) if args.assets else Path(args.out).parent / 'assets'
+        mesh_info = export_mesh(model, assets, base_dir=Path(args.pmx).parent,
+                                bone_positions=absolute, scale=scale,
+                                flip_v=True, min_alpha=0.5 if args.drop_alpha else 0.0)
+        print('mesh: %d groups, %d triangles, %d textures'
+              % (len(mesh_info['groups']), sum(g['triangles'] for g in mesh_info['groups']),
+                 len(mesh_info['textures'])))
+        geoms_by_bone = {}
+        for group in mesh_info['groups']:
+            geoms_by_bone.setdefault(group['bone'], []).append(group)
+
     lines = ["<?xml version='1.0' encoding='utf-8'?>",
-             f'<mujoco model="{args.model_name}">',
-             '  <compiler angle="radian" autolimits="true" />',
+             f'<mujoco model="{args.model_name}">']
+    if mesh_info:
+        lines.append('  <compiler angle="radian" autolimits="true" meshdir="assets" texturedir="assets" />')
+    else:
+        lines.append('  <compiler angle="radian" autolimits="true" />')
+    lines += [
              '  <visual>',
              '    <headlight ambient="0.45 0.45 0.45" diffuse="0.65 0.65 0.65" specular="0.1 0.1 0.1" />',
              '    <map znear="0.01" zfar="20" />',
+             '    <global offwidth="1280" offheight="1024" />',
              '  </visual>',
              '  <statistic center="0 0 0.8" extent="1.1" />',
+             ]
+    if mesh_info:
+        lines.append('  <asset>')
+        for index, name in enumerate(mesh_info['textures']):
+            lines.append(f'    <texture name="tex{index:02d}" type="2d" file="{name}" />')
+        for group in mesh_info['groups']:
+            lines.append(f'    <mesh name="{group["name"]}" file="{group["file"]}" />')
+        tex_slot = {name: index for index, name in enumerate(mesh_info['textures'])}
+        for material in mesh_info['materials']:
+            if material['alpha'] < 0.5 and args.drop_alpha:
+                continue
+            r, g, b = material['diffuse']
+            texture = material['texture']
+            reference = (' texture="tex%02d"' % tex_slot[texture]) if texture in tex_slot else ''
+            lines.append('    <material name="mat%03d"%s rgba="%.3f %.3f %.3f %.3f" '
+                         'specular="0" shininess="0" />'
+                         % (material['index'], reference, r, g, b, 1.0))
+        lines.append('  </asset>')
+    lines += [
              '  <worldbody>',
              '    <light pos="1 -1 2" dir="-0.4 0.4 -1" directional="true" diffuse="0.7 0.7 0.7" />',
              '    <geom name="floor" type="plane" size="3 3 0.05" rgba="0.28 0.30 0.34 1" contype="0" conaffinity="0" group="0" />',
@@ -131,7 +187,14 @@ def main():
         lines.append(f'{pad}<body name="{xml_attr(names[index])}" pos="{x:.9g} {y:.9g} {z:.9g}">')
         lines.append(f'{pad}  <inertial pos="0 0 0" mass="0.00001" diaginertia="1e-9 1e-9 1e-9" />')
         lines.append(f'{pad}  <joint name="{xml_attr(names[index])}" type="ball" />')
-        cap = capsule(index) if (not args.main_bones_only or bones[index]['name'] in MAIN_BONES) else None
+        if mesh_info:
+            for group in geoms_by_bone.get(index, []):
+                lines.append(f'{pad}  <geom type="mesh" mesh="{group["name"]}" '
+                             f'material="mat{group["material"]:03d}" contype="0" conaffinity="0" '
+                             f'group="1" />')
+            cap = None
+        else:
+            cap = capsule(index) if (not args.main_bones_only or bones[index]['name'] in MAIN_BONES) else None
         if cap is not None:
             (vx, vy, vz), radius = cap
             lines.append(
