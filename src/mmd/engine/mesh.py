@@ -165,9 +165,10 @@ def groups(model, base_dir=None, bone_positions=None, scale=0.07, flip_v=True, m
                 'triangles': len(triangles),
             })
 
-    padded = pad_tiny_groups(out)
+    padded, split, degenerate = pad_tiny_groups(out)
     return {'groups': out, 'materials': material_meta, 'textures': textures,
-            'skipped': skipped, 'padded_groups': padded}
+            'skipped': skipped, 'padded_groups': padded,
+            'split_edges': split, 'degenerate_pads': degenerate}
 
 
 def pad_tiny_groups(groups):
@@ -175,29 +176,62 @@ def pad_tiny_groups(groups):
 
     MuJoCo rejects a mesh with fewer than four vertices. Dropping such a group punches a real hole
     (here ``衣1`` and ``衣1+`` each lose six triangles at the hem - both layers at once - and the leg
-    shows through), while merging it into another group moves it onto another bone. Padding keeps the
-    triangle on its own bone: the first vertex is repeated and one zero-area triangle is appended, so
-    the extra geometry is invisible.
+    shows through), and merging it into another group animates it with the wrong bone.
+
+    The pad splits one triangle at the midpoint of an edge: the surface keeps its shape and its area,
+    and the two halves are real triangles rather than degenerate ones. A group whose triangles are all
+    degenerate falls back to repeating a vertex, which MuJoCo tolerates only because the mesh declares
+    shell inertia.
     """
-    padded = 0
+    padded, split, degenerate = 0, 0, 0
     for group in groups:
-        count = len(group['positions'])
-        if count >= 4:
+        if len(group['positions']) >= 4:
             continue
-        repeat = 4 - count
-        group['positions'] = np.vstack([group['positions'],
-                                        np.repeat(group['positions'][:1], repeat, axis=0)])
-        group['normals'] = np.vstack([group['normals'],
-                                      np.repeat(group['normals'][:1], repeat, axis=0)])
-        group['uv_obj'] = np.vstack([group['uv_obj'],
-                                     np.repeat(group['uv_obj'][:1], repeat, axis=0)])
-        group['uv_msh'] = np.vstack([group['uv_msh'],
-                                     np.repeat(group['uv_msh'][:1], repeat, axis=0)])
-        extra = np.repeat(group['faces'][:1], repeat, axis=0)
-        extra[:, 1:] = extra[:, :1]                 # degenerate: same vertex three times
-        group['faces'] = np.vstack([group['faces'], extra])
         padded += 1
-    return padded
+        faces = np.asarray(group['faces'], dtype=np.int32)
+        guard = 0
+        while len(group['positions']) < 4 and guard < 8:
+            guard += 1
+            target = None
+            for index, (a, b, c) in enumerate(faces):
+                if len({int(a), int(b), int(c)}) == 3:
+                    target = index
+                    break
+            if target is None:
+                break
+            a, b, c = (int(v) for v in faces[target])
+            position = 0.5 * (group['positions'][a] + group['positions'][b])
+            normal = 0.5 * (group['normals'][a] + group['normals'][b])
+            uv_obj = 0.5 * (group['uv_obj'][a] + group['uv_obj'][b])
+            uv_msh = 0.5 * (group['uv_msh'][a] + group['uv_msh'][b])
+            middle = len(group['positions'])
+            group['positions'] = np.vstack([group['positions'], position[None, :]])
+            group['normals'] = np.vstack([group['normals'], normal[None, :]])
+            group['uv_obj'] = np.vstack([group['uv_obj'], uv_obj[None, :]])
+            group['uv_msh'] = np.vstack([group['uv_msh'], uv_msh[None, :]])
+            faces[target] = [a, middle, c]
+            faces = np.vstack([faces, np.array([[middle, b, c]], dtype=np.int32)])
+            group['triangles'] += 1
+            split += 1
+
+        if len(group['positions']) < 4:
+            # every triangle is degenerate: repeat the first vertex, which only works because the mesh
+            # declares shell inertia
+            repeat = 4 - len(group['positions'])
+            group['positions'] = np.vstack([group['positions'],
+                                            np.repeat(group['positions'][:1], repeat, axis=0)])
+            group['normals'] = np.vstack([group['normals'],
+                                          np.repeat(group['normals'][:1], repeat, axis=0)])
+            group['uv_obj'] = np.vstack([group['uv_obj'],
+                                         np.repeat(group['uv_obj'][:1], repeat, axis=0)])
+            group['uv_msh'] = np.vstack([group['uv_msh'],
+                                         np.repeat(group['uv_msh'][:1], repeat, axis=0)])
+            extra = np.repeat(group['faces'][:1], repeat, axis=0)
+            extra[:, 1:] = extra[:, :1]
+            faces = np.vstack([faces, extra])
+            degenerate += 1
+        group['faces'] = faces
+    return padded, split, degenerate
 
 
 def write_obj(built, out_dir):

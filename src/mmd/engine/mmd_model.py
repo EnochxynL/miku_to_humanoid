@@ -129,7 +129,7 @@ def _layer(pmx_path, scale, mesh, min_alpha):
              # the model is a kinematic skeleton: every body carries a stub inertial, so inertia must
              # not be derived from the mesh. Flat or padded meshes have no volume, and MuJoCo refuses to
              # compute one from them.
-             '  <compiler angle="radian" autolimits="true" inertiafromgeom="false" />',
+             '  <compiler angle="radian" autolimits="true" />',
              '  <visual>',
              '    <headlight ambient="0.45 0.45 0.45" diffuse="0.65 0.65 0.65" specular="0.1 0.1 0.1" />',
              '    <map znear="0.01" zfar="20" />',
@@ -202,6 +202,8 @@ def _layer(pmx_path, scale, mesh, min_alpha):
         'textures': len(built['textures']) if built else 0,
         'skipped_groups': built['skipped'] if built else 0,
         'padded_groups': built.get('padded_groups', 0) if built else 0,
+        'split_edges': built.get('split_edges', 0) if built else 0,
+        'degenerate_pads': built.get('degenerate_pads', 0) if built else 0,
         'built': built,
         'names': names,
     }
