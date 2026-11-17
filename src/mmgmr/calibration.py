@@ -12,9 +12,9 @@ from pathlib import Path
 import mujoco
 import numpy as np
 
-import view
-from engine import mjcf
-from engine.bake import bake
+from . import view
+from .mmd import mjcf
+from .mmd.bake import bake
 
 CHARACTER_ALPHA = 0.25
 
@@ -64,7 +64,7 @@ class Calibration:
             self.address[short] = int(self.model.jnt_qposadr[joint])
             self.limits[short] = (np.degrees(low), np.degrees(high))
 
-        from engine.constraints import SEGMENT_BONES
+        from .mmd.constraints import SEGMENT_BONES
         weight_of = {(item.start, item.stop): item.weight for item in SEGMENT_BONES}
 
         self.segments = []
@@ -194,8 +194,8 @@ def read_c(pmx, robot_model, profile, pose, mdd_pose=None):
     comes from a *bilateral* axis: the profile names the two hip links, and the source side uses the two
     thigh bones.
     """
-    from engine.bake import bind_pose, world_poses
-    from engine.constraints import BILATERAL_BONES, ROOT_BONE, SCALE_BONE, TORSO_BONE
+    from .mmd.bake import bind_pose, world_poses
+    from .mmd.constraints import BILATERAL_BONES, ROOT_BONE, SCALE_BONE, TORSO_BONE
 
     wanted = sorted(set(profile.links.values()) | {ROOT_BONE, TORSO_BONE, SCALE_BONE})
     bind_frame = bind_pose(pmx, wanted)[0]
@@ -280,7 +280,7 @@ def save_c(path, c):
 def main():
     import argparse
 
-    from config import load as load_profile, validate
+    from .config import load as load_profile, validate
 
     parser = argparse.ArgumentParser(
         description='Solve the paired pose if asked, then read C from it as engine-neutral data.')

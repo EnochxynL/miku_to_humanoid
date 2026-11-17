@@ -27,10 +27,10 @@ from pathlib import Path
 import mujoco
 import numpy as np
 
-from engine import msh
-from engine.mesh import groups as build_groups
-from engine.mesh import to_mujoco, write_obj
-from engine.pmx import parse_pmx
+from . import msh
+from .mesh import groups as build_groups
+from .mesh import to_mujoco, write_obj
+from .pmx import parse_pmx
 
 STUB_INERTIAL = '<inertial pos="0 0 0" mass="0.00001" diaginertia="1e-9 1e-9 1e-9" />'
 FLOOR = ('<geom name="floor" type="plane" size="3 3 0.05" rgba="0.28 0.30 0.34 1" '

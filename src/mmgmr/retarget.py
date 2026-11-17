@@ -24,12 +24,10 @@ from pathlib import Path
 import mujoco
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from engine.bake import world_poses                    # noqa: E402
-from config import load as load_profile                # noqa: E402
-from engine.constraints import ROOT_BONE, TORSO_BONE   # noqa: E402
+from .mmd.bake import world_poses                    # noqa: E402
+from .config import load as load_profile                # noqa: E402
+from .mmd.constraints import ROOT_BONE, TORSO_BONE   # noqa: E402
 
 
 def build_config(engine_config, profile, calibration):
@@ -132,10 +130,10 @@ def main():
     if not args.view:
         return
 
-    import view                                        # noqa: E402  (only the preview needs it)
-    from engine import mjcf                            # noqa: E402
-    from engine.bake import bake                       # noqa: E402
-    from engine.constraints import SKELETON_EDGES      # noqa: E402
+    from . import view                                 # noqa: E402  (only the preview needs it)
+    from .mmd import mjcf                            # noqa: E402
+    from .mmd.bake import bake                       # noqa: E402
+    from .mmd.constraints import SKELETON_EDGES      # noqa: E402
 
     robot_model = mujoco.MjModel.from_xml_path(str(profile.xml))
     bundle = mjcf.build(args.pmx)

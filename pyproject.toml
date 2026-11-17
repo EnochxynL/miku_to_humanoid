@@ -10,9 +10,18 @@ dependencies = [
     "pillow>=10.0",    # PMX textures are bmp/tga/jpg; they are normalised to PNG
 ]
 
-[tool.uv]
-package = false
+[project.scripts]
+mmgmr-gui = "mmgmr.gui:main"
+mmgmr-calibration = "mmgmr.calibration:main"
+mmgmr-retarget = "mmgmr.retarget:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mmgmr"]
 
 # GMR is a separate checkout, not a PyPI package: the retarget step imports
-# ``general_motion_retargeting`` and therefore has to run inside GMR's own environment.
-# Point GMR_ROOT at that checkout, or pass --gmr-root to gmr_retarget.py.
+# ``general_motion_retargeting`` and therefore has to run inside GMR's own environment. The GUI does that
+# for you; from a shell, point --gmr-root at the checkout.

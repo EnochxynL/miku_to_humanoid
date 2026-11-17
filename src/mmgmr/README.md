@@ -5,10 +5,10 @@
 | 层 | 文件 | 作用 |
 |---|---|---|
 | **MMD 原生** | `engine/bake.py` | `pmx + (vmd\|vpd)` → 逐帧骨骼世界位姿。源侧唯一入口，不碰 MuJoCo |
-| | `mmd_profile.py` | **MMD 侧知识**：哪几条肢体方向定义姿态、LaFAN1→MMD 一览、捩骨参考 |
-| | `engine/mjcf.py` | **PMX → MjModel（纯内存）**：MJCF 文本 + MSH 网格 + PNG 贴图字节 |
+| | `mmd/constraints.py` | **MMD 侧知识**：哪几条肢体方向定义姿态、LaFAN1→MMD 一览、捩骨参考 |
+| | `src/mmgmr/mmd/mjcf.py` | **PMX → MjModel（纯内存）**：MJCF 文本 + MSH 网格 + PNG 贴图字节 |
 | | `view.py` | **一个窗口**：MMD 角色 + 机器人 + 可选骨架胶囊（三层 overlay，不跑 GMR）|
-| **GMR 桥接** | `python -m calibration --solve` | 解出"让机器人摆成 MMD 姿态"的关节角 → `paired_pose_*.json` |
+| **GMR 桥接** | `uv run mmgmr-calibration --solve` | 解出"让机器人摆成 MMD 姿态"的关节角 → `paired_pose_*.json` |
 | | `calibration.py` | **消费**关节角文件 → **中性 C**（每链接旋转 + 尺度），不认任何引擎格式 |
 | | `retarget.py` | 源位姿 + C → G1 qpos |
 | | `export_gmr_pickle.py` | G1 qpos → GMR pickle |

@@ -40,15 +40,13 @@ from pathlib import Path
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import mujoco                                          # noqa: E402
 
-from engine.animation import FPS, Skeleton             # noqa: E402
-from engine.basis import to_quaternion, to_vector      # noqa: E402
-from engine.pmx import parse_pmx                       # noqa: E402
-from engine.vmd import parse_vmd                       # noqa: E402
+from .animation import FPS, Skeleton             # noqa: E402
+from .basis import to_quaternion, to_vector      # noqa: E402
+from .pmx import parse_pmx                       # noqa: E402
+from .vmd import parse_vmd                       # noqa: E402
 
 """The VMD side of the pipeline, shared by every consumer.
 
@@ -64,8 +62,8 @@ Three pieces of knowledge, none of which should exist twice - ``engine.bake`` wr
 A VPD is a pose, not a motion: it carries full bone names and contributes a single frame.
 """
 
-from engine.animation import Track
-from engine.vpd import parse_vpd
+from .animation import Track
+from .vpd import parse_vpd
 
 NAME_LIMIT = 15          # shift-jis bytes of a bone name in a VMD
 IK_NAME_LIMIT = 20       # ... and in an ik_frames entry
@@ -331,7 +329,7 @@ def main():
               % (len(frames), len(names), len(unmatched), out))
         return
 
-    from engine import mjcf
+    from . import mjcf
     model = mjcf.build(args.pmx, mesh=args.mesh)
     qpos, unmatched, times, missing = bake(args.pmx, args.vmd, model.model,
                                            step=args.step, solve_ik=args.solve_ik,

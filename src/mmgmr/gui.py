@@ -15,6 +15,7 @@ live in GMR's venv), so the retarget step is a subprocess and this window is onl
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tkinter as tk
@@ -27,11 +28,9 @@ import numpy as np
 
 HERE = Path(__file__).resolve()
 ROOT = HERE.parents[2]        # src/mmd/gui.py -> repo root
-for extra in (ROOT / 'src', ROOT / 'src' / 'mmd'):
-    sys.path.insert(0, str(extra))
-
-import config as robot_config                       # noqa: E402
-from calibration import Calibration, read_c, save_c  # noqa: E402
+    
+from . import config as robot_config                       # noqa: E402
+from .calibration import Calibration, read_c, save_c  # noqa: E402
 
 UPDATE_MS = 33
 POLL_MS = 300
@@ -311,7 +310,7 @@ class Launcher(tk.Tk):
         if not python.exists():
             self.report('no interpreter under %s' % (needed['gmr_root'] / '.venv'))
             return None
-        command = [str(python), str(ROOT / 'src' / 'mmd' / 'retarget.py'),
+        command = [str(python), '-m', 'mmgmr.retarget',
                    '--pmx', str(needed['pmx']), '--vmd', str(needed['vmd']),
                    '--robot', str(needed['robot']), '--calibration', str(needed['calibration']),
                    '--gmr-root', str(needed['gmr_root']), '--bake-out', str(needed['qpos']),
@@ -330,8 +329,11 @@ class Launcher(tk.Tk):
             return
         self.report('$ ' + ' '.join(command))
         self.retarget_button.state(['disabled'])
+        # GMR's interpreter does not have this package installed, so the child gets src/ on its path
+        environment = dict(os.environ)
+        environment['PYTHONPATH'] = str(ROOT / 'src')
         try:
-            self.process = subprocess.Popen(command, cwd=str(ROOT), text=True,
+            self.process = subprocess.Popen(command, cwd=str(ROOT), text=True, env=environment,
                                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                             encoding='utf-8', errors='replace')
         except OSError as error:

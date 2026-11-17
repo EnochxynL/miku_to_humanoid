@@ -331,7 +331,7 @@ def main():
     parser.add_argument('--show-ui', action='store_true')
     args = parser.parse_args()
     if args.robot:
-        from config import load as load_profile
+        from .config import load as load_profile
         args.robot_xml = str(load_profile(args.robot).xml)
 
     if not args.robot_qpos and not args.pmx:
@@ -339,8 +339,8 @@ def main():
     if args.pose and not args.pmx:
         raise SystemExit('--pose needs --pmx')
 
-    from engine import mjcf
-    from engine.bake import bake
+    from .mmd import mjcf
+    from .mmd.bake import bake
 
     bundle = mjcf.build(args.pmx) if args.pmx else None
     if bundle is not None:
