@@ -310,7 +310,7 @@ class Launcher(tk.Tk):
         if not python.exists():
             self.report('no interpreter under %s' % (needed['gmr_root'] / '.venv'))
             return None
-        command = [str(python), '-m', 'mmgmr.retarget',
+        command = [str(python), '-m', 'mmdmr.retarget',
                    '--pmx', str(needed['pmx']), '--vmd', str(needed['vmd']),
                    '--robot', str(needed['robot']), '--calibration', str(needed['calibration']),
                    '--gmr-root', str(needed['gmr_root']), '--bake-out', str(needed['qpos']),

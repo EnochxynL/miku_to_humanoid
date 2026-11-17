@@ -26,8 +26,8 @@ ROOT = HERE.parents[1]
 
 import mujoco                                          # noqa: E402
 
-from mmgmr import config as config_module                          # noqa: E402
-from mmgmr.mmd.constraints import (BILATERAL_BONES, ROOT_BONE, SEGMENT_BONES,   # noqa: E402
+from mmdmr import config as config_module                          # noqa: E402
+from mmdmr.mmd.constraints import (BILATERAL_BONES, ROOT_BONE, SEGMENT_BONES,   # noqa: E402
                                 TORSO_BONE)
 
 # How GMR names the human side reads as MMD bone names. This table is only needed while borrowing GMR's
