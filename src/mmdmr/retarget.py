@@ -88,7 +88,7 @@ def main():
                              'the robot')
     parser.add_argument('--no-pin-character', dest='pin_character', action='store_false',
                         help='keep the source travelling through センター')
-    parser.add_argument('--speed', type=float, default=0.5,
+    parser.add_argument('--speed', type=float, default=1,
                         help='playback speed against the 30 fps source')
     parser.add_argument('--loop-pause', type=float, default=0.4,
                         help='pause between loops, in seconds')

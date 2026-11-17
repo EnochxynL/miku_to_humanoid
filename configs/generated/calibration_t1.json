@@ -1,0 +1,162 @@
+{
+  "robot": {
+    "name": "booster_t1_29dof",
+    "xml": "t1_mocap.xml"
+  },
+  "method": "paired pose -> C = R_source(P)^-1 * R_link(P)",
+  "why": "MMD bones carry no rest rotation, so at the paired pose every bone frame is the identity and C collapses to a reading rather than a fit",
+  "scale": 0.9633415156804426,
+  "heights": {
+    "source": 1.043088026046753,
+    "robot": 1.00485
+  },
+  "root_yaw_deg": 0.0,
+  "root_links": [
+    "Waist",
+    "Trunk"
+  ],
+  "pose_file": "<in memory>",
+  "source_pose": "D:/MY_WORK/contribute/miku_to_humanoid/assets/default.vpd",
+  "links": {
+    "Waist": {
+      "bone": "腰",
+      "C_quat_wxyz": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "angle_deg": 0.0
+    },
+    "Hip_Yaw_Left": {
+      "bone": "左足",
+      "C_quat_wxyz": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "angle_deg": 0.0
+    },
+    "Shank_Left": {
+      "bone": "左ひざ",
+      "C_quat_wxyz": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "angle_deg": 0.0
+    },
+    "left_foot_link": {
+      "bone": "左足首",
+      "C_quat_wxyz": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "angle_deg": 0.0
+    },
+    "Hip_Yaw_Right": {
+      "bone": "右足",
+      "C_quat_wxyz": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "angle_deg": 0.0
+    },
+    "Shank_Right": {
+      "bone": "右ひざ",
+      "C_quat_wxyz": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "angle_deg": 0.0
+    },
+    "right_foot_link": {
+      "bone": "右足首",
+      "C_quat_wxyz": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "angle_deg": 0.0
+    },
+    "Trunk": {
+      "bone": "上半身2",
+      "C_quat_wxyz": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "angle_deg": 0.0
+    },
+    "AL2": {
+      "bone": "左腕",
+      "C_quat_wxyz": [
+        0.9537168581911933,
+        -0.30070577032115253,
+        0.0004201742676290032,
+        0.0001324804377015386
+      ],
+      "angle_deg": 35.0
+    },
+    "AL4": {
+      "bone": "左ひじ",
+      "C_quat_wxyz": [
+        0.9537168581911933,
+        -0.30070577032115253,
+        0.0004201742676290032,
+        0.0001324804377015386
+      ],
+      "angle_deg": 35.0
+    },
+    "AL5": {
+      "bone": "左手首",
+      "C_quat_wxyz": [
+        0.9537168581911933,
+        -0.30070577032115253,
+        0.0004201742676290032,
+        0.0001324804377015386
+      ],
+      "angle_deg": 35.0
+    },
+    "AR2": {
+      "bone": "右腕",
+      "C_quat_wxyz": [
+        0.9537168581911933,
+        0.30070577032115253,
+        0.0004201742676290032,
+        -0.0001324804377015386
+      ],
+      "angle_deg": 35.0
+    },
+    "AR4": {
+      "bone": "右ひじ",
+      "C_quat_wxyz": [
+        0.9537168581911933,
+        0.30070577032115253,
+        0.0004201742676290032,
+        -0.0001324804377015386
+      ],
+      "angle_deg": 35.0
+    },
+    "AR5": {
+      "bone": "右手首",
+      "C_quat_wxyz": [
+        0.9537168581911933,
+        0.30070577032115253,
+        0.0004201742676290032,
+        -0.0001324804377015386
+      ],
+      "angle_deg": 35.0
+    }
+  }
+}

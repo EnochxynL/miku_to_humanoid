@@ -1,0 +1,58 @@
+{
+  "robot": {
+    "name": "booster_t1_29dof",
+    "xml": "t1_mocap.xml"
+  },
+  "note": "paired pose: joint angles in degrees, consumed by calibration, which derives C from them",
+  "source_pose": "D:/MY_WORK/contribute/miku_to_humanoid/assets/default.vpd",
+  "joints": {
+    "Left_Shoulder_Pitch": 0.0,
+    "Left_Shoulder_Roll": -35.0,
+    "Left_Elbow_Pitch": 0.0,
+    "Left_Elbow_Yaw": 0.0,
+    "Left_Wrist_Pitch": 0.0,
+    "Left_Wrist_Yaw": 0.0,
+    "Left_Hand_Roll": 0.0,
+    "Right_Shoulder_Pitch": 0.0,
+    "Right_Shoulder_Roll": 35.0,
+    "Right_Elbow_Pitch": 0.0,
+    "Right_Elbow_Yaw": 0.0,
+    "Right_Wrist_Pitch": 0.0,
+    "Right_Wrist_Yaw": 0.0,
+    "Right_Hand_Roll": 0.0,
+    "Waist": 0.0,
+    "Left_Hip_Pitch": 0.0,
+    "Left_Hip_Roll": 0.0,
+    "Left_Hip_Yaw": 0.0,
+    "Left_Knee_Pitch": 0.0,
+    "Left_Ankle_Pitch": 0.0,
+    "Left_Ankle_Roll": 0.0,
+    "Right_Hip_Pitch": 0.0,
+    "Right_Hip_Roll": 0.0,
+    "Right_Hip_Yaw": 0.0,
+    "Right_Knee_Pitch": 0.0,
+    "Right_Ankle_Pitch": 0.0,
+    "Right_Ankle_Roll": 0.0
+  },
+  "limb_direction_error_deg": 3.212,
+  "per_segment_error_deg": {
+    "AL2-AL4": 3.02,
+    "AL4-AL5": 2.296,
+    "AR2-AR4": 3.02,
+    "AR4-AR5": 2.296,
+    "Hip_Yaw_Left-Shank_Left": 3.472,
+    "Shank_Left-left_foot_link": 4.061,
+    "Hip_Yaw_Right-Shank_Right": 3.472,
+    "Shank_Right-right_foot_link": 4.061
+  },
+  "segment_weights": {
+    "AL2-AL4": 1.0,
+    "AL4-AL5": 1.0,
+    "AR2-AR4": 1.0,
+    "AR4-AR5": 1.0,
+    "Hip_Yaw_Left-Shank_Left": 1.0,
+    "Shank_Left-left_foot_link": 1.0,
+    "Hip_Yaw_Right-Shank_Right": 1.0,
+    "Shank_Right-right_foot_link": 1.0
+  }
+}
