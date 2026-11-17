@@ -224,7 +224,8 @@ class Launcher(tk.Tk):
 
     def __init__(self, initial):
         super().__init__()
-        self.title('mmd -> humanoid')
+        self.title('MMDMR: mmd -> humanoid')
+        self.iconphoto(True, tk.PhotoImage(file='app.png'))
         # docked to the right edge, tall enough to show every field and the log
         width, height = 640, 470
         self.geometry('%dx%d+%d+%d' % (width, height,

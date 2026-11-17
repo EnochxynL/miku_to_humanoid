@@ -1,13 +1,13 @@
-# miku-to-humanoid
+# <img src="app.png" alt="mmdmr" width="32"> MMDMR (miku-to-humanoid)
 
 把 MMD 模型（PMX）的动作（VMD/VPD）重定向到人形机器人上。**源侧不经过 glTF，也不经过 MuJoCo 的 qpos
 往返**：形变管线直接给出每根骨的世界位姿，标定出「MMD 骨坐标系 ↔ 机器人链接坐标系」的固定关系 C，再由
 GMR 的 IK 解出机器人 qpos。
 
-最终目标是 MPC-WBC 的参考轨迹，所以机器人侧只输出 qpos 与 pickle，不掺渲染用的中间件。
+机器人侧只输出 qpos 与 pickle，不掺渲染用的中间件。
 
 MMD 引擎解析借鉴 [yohawing/mmd-anim](https://github.com/yohawing/mmd-anim) 与
-[masaka1024/mmd2gltf-gui](https://github.com/masaka1024/mmd2gltf-gui)（`src/mmdmr/mmd/` 为 vendored）。
+[masaka1024/mmd2gltf-gui](https://github.com/masaka1024/mmd2gltf-gui)（`src/mmdmr/mmd/` 为 vendored）。计划编写 rust 后端，采用 mmd-anim 为直接 rust 依赖。
 
 ## 安装
 
@@ -126,11 +126,6 @@ MMD 骨**没有静止旋转**，所以在配对姿态下每个骨坐标系都是
 
 ## 已知限制（实测结论，不是猜测）
 
-- **T1 的腰只有 1 个 yaw 自由度**（±90°），躯干不能前后/侧向弯；G1 有 yaw + roll + pitch（±29.8°）。源动作
-  里上身相对髋部摆动可达 41.5°，T1 只能靠**浮动基座整体倾斜**跟随（实测躯干朝向误差中位 9.4°，大腿方向
-  误差中位 4.7°）。
-- **无名 `<freejoint/>`**：T1 的自由关节没有名字。早期按关节名匹配会整段丢掉 7 个 qpos 槽，表现为「机器人
-  站原地、`--offset` 无效、躯干像被挂起来」；现在按所属 body 匹配。
 - **手指级重定向未支持**：GMR 的 IK 没有手指目标，G1 29dof 也没有手指关节；MMD 的 38 根手指骨被有意丢弃
   （`SEGMENT_BONES` 预留了带权重的段位，启用前得先有机器人手指关节与拓扑映射）。
 - **MMD 双层材质**（`X` 与 `X+`）空间重合会 z-fighting，当前以半透明叠加渲染；细节见 `mmd/mesh.py`。
