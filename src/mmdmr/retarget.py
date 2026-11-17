@@ -82,12 +82,6 @@ def main():
                              'target skeleton the engine aims at (green)')
     parser.add_argument('--offset', type=float, default=1.6,
                         help='gap between the two figures in the preview (metres)')
-    parser.add_argument('--pin-character', dest='pin_character', action='store_true',
-                        default=True,
-                        help='freeze the source root translation so it does not walk into '
-                             'the robot')
-    parser.add_argument('--no-pin-character', dest='pin_character', action='store_false',
-                        help='keep the source travelling through センター')
     parser.add_argument('--speed', type=float, default=1,
                         help='playback speed against the 30 fps source')
     parser.add_argument('--loop-pause', type=float, default=0.4,
@@ -147,16 +141,6 @@ def main():
     robot_model = mujoco.MjModel.from_xml_path(str(profile.xml))
     bundle = mjcf.build(args.pmx)
     character, _unmatched, _times, _missing = bake(args.pmx, args.vmd, bundle.model, step=args.step)
-    if args.pin_character:
-        # the source walks around through センター (up to a couple of metres); for comparing poses it
-        # should stay put, or it wanders into the robot standing next to it
-        free = next((int(bundle.model.jnt_qposadr[j]) for j in range(bundle.model.njnt)
-                     if bundle.model.jnt_type[j] == mujoco.mjtJoint.mjJNT_FREE), None)
-        if free is not None:
-            character = character.copy()
-            # zero, not frame 0: the bind-pose root is the model origin, so the character stays centred
-            # over the floor origin instead of wherever its first frame happened to start
-            character[:, free:free + 3] = 0.0
     model = view.build_scene(bundle.spec, profile.xml, args.offset, None)
 
     # the engine's target poses live in robot space, so they are drawn where the robot stands
