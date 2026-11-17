@@ -27,8 +27,27 @@ sys.path.insert(0, str(ROOT / 'src' / 'mmd'))
 import mujoco                                          # noqa: E402
 
 from engine import profile as profile_module           # noqa: E402
-from engine.profile import (BILATERAL_BONES, LAFAN1_TO_MMD, ROOT_BONE, SEGMENT_BONES,   # noqa: E402
-                            TORSO_BONE)
+from engine.profile import (BILATERAL_BONES, ROOT_BONE, SEGMENT_BONES, TORSO_BONE)   # noqa: E402
+
+# How GMR names the human side reads as MMD bone names. This table is only needed while borrowing GMR's
+# configs, so it lives here rather than in the profile format: a finished profile already carries MMD
+# names and needs no translation.
+LAFAN1_TO_MMD = {
+    'Hips': '腰',
+    'Spine2': '上半身2',
+    'LeftUpLeg': '左足',
+    'LeftLeg': '左ひざ',
+    'LeftFootMod': '左足首',
+    'RightUpLeg': '右足',
+    'RightLeg': '右ひざ',
+    'RightFootMod': '右足首',
+    'LeftArm': '左腕',
+    'LeftForeArm': '左ひじ',
+    'LeftHand': '左手首',
+    'RightArm': '右腕',
+    'RightForeArm': '右ひじ',
+    'RightHand': '右手首',
+}
 
 WEIGHT_FIELD = {'pos_w': 1, 'rot_w': 2}
 

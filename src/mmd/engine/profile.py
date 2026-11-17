@@ -25,45 +25,19 @@ SCALE_BONE = '頭'
 # the two thigh bones: their line gives the world-frame yaw of the links a pose cannot move
 BILATERAL_BONES = ('左足', '右足')
 
-# the limb directions a paired pose compares, as (bone, far bone); duplicated corners are deliberate:
-# both arms and both legs are checked, a missing bone just drops that segment
+# These bone pairs are **not** parent-child: MMD inserts twist bones (捩), sleeve chains and shoulder
+# helpers between what a human reads as consecutive joints, so "the next real joint" skips them:
+#     左腕 -> 左ひじ     跳过 左腕捩 / 左袖 / 左肩C
+#     左ひじ -> 左手首   跳过 左ひじ捩 / 左手捩
+#     左足 -> 左ひざ     跳过 左足捩 / 左足D
+#     左ひざ -> 左足首   跳过 左ひざD / 左足首D 等
+# A new MMD rig otherwise has to rediscover this; the table below states the resulting pairs directly.
 SEGMENT_BONES = (
     ('左腕', '左ひじ'), ('左ひじ', '左手首'),
     ('右腕', '右ひじ'), ('右ひじ', '右手首'),
     ('左足', '左ひざ'), ('左ひざ', '左足首'),
     ('右足', '右ひざ'), ('右ひざ', '右足首'),
 )
-
-# GMR names every human skeleton with LaFAN1 bones, so one table serves all of its robots
-LAFAN1_TO_MMD = {
-    'Hips': '腰',
-    'Spine2': '上半身2',
-    'LeftUpLeg': '左足',
-    'LeftLeg': '左ひざ',
-    'LeftFootMod': '左足首',
-    'RightUpLeg': '右足',
-    'RightLeg': '右ひざ',
-    'RightFootMod': '右足首',
-    'LeftArm': '左腕',
-    'LeftForeArm': '左ひじ',
-    'LeftHand': '左手首',
-    'RightArm': '右腕',
-    'RightForeArm': '右ひじ',
-    'RightHand': '右手首',
-}
-
-# reference only, kept for the explanation above
-NEXT_JOINT = {
-    '左腕': '左ひじ',
-    '右腕': '右ひじ',
-    '左足': '左ひざ',
-    '右足': '右ひざ',
-    '左ひじ': '左手首',
-    '右ひじ': '右手首',
-    '左ひざ': '左足首',
-    '右ひざ': '右足首',
-}
-
 
 # ---------------------------------------------------------------------------- robot profiles
 # A profile is an authored file, not something derived at run time: it holds the pairing, which limb
