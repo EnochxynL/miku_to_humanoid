@@ -1,13 +1,16 @@
 # <img src="app.png" alt="mmdmr" width="32"> MMDMR (miku-to-humanoid)
 
-把 MMD 模型（PMX）的动作（VMD/VPD）重定向到人形机器人上。**源侧不经过 glTF，也不经过 MuJoCo 的 qpos
-往返**：形变管线直接给出每根骨的世界位姿，标定出「MMD 骨坐标系 ↔ 机器人链接坐标系」的固定关系 C，再由
+把 MMD 模型（PMX）的动作（VMD/VPD）重定向到人形机器人上。形变管线直接给出每根骨的世界位姿，标定出「MMD 骨坐标系 ↔ 机器人链接坐标系」的固定关系 C，再由
 GMR 的 IK 解出机器人 qpos。
 
 机器人侧只输出 qpos 与 pickle，不掺渲染用的中间件。
 
 MMD 引擎解析借鉴 [yohawing/mmd-anim](https://github.com/yohawing/mmd-anim) 与
 [masaka1024/mmd2gltf-gui](https://github.com/masaka1024/mmd2gltf-gui)（`src/mmdmr/mmd/` 为 vendored）。计划编写 rust 后端，采用 mmd-anim 为直接 rust 依赖。
+
+## 预览
+
+https://github.com/user-attachments/assets/50415e94-0bda-4738-a990-2a1fd74c138a
 
 ## 安装
 
