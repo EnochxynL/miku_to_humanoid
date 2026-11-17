@@ -200,17 +200,23 @@ class CalibrationWindow(tk.Toplevel):
 
 
 # ---------------------------------------------------------------------------- the launcher
+# (key, label, what the browser should do): inputs are opened, outputs are saved, one is a directory.
+# Getting this wrong is invisible until someone clicks "..." and finds a save dialog on an input.
 FIELDS = (
-    ('pmx', 'MMD model (.pmx)'),
-    ('vmd', 'motion to retarget (.vmd)'),
-    ('vpd', 'pose to calibrate against (.vpd)'),
-    ('robot', 'robot profile (.json)'),
-    ('gmr_config', 'GMR config (.json, optional)'),
-    ('pose', 'paired pose out (.json)'),
-    ('calibration', 'calibration out (.json)'),
-    ('qpos', 'retargeted qpos out (.npz)'),
-    ('gmr_root', 'GMR checkout'),
+    ('pmx', 'MMD model (.pmx)', 'open'),
+    ('vmd', 'motion to retarget (.vmd)', 'open'),
+    ('vpd', 'pose to calibrate against (.vpd)', 'open'),
+    ('robot', 'robot profile (.json)', 'open'),
+    ('gmr_config', 'GMR config (.json, optional)', 'open'),
+    ('pose', 'paired pose out (.json)', 'save'),
+    ('calibration', 'calibration out (.json)', 'save'),
+    ('qpos', 'retargeted qpos out (.npz)', 'save'),
+    ('gmr_root', 'GMR checkout', 'dir'),
 )
+
+PATTERN = {'pmx': '*.pmx', 'vmd': '*.vmd', 'vpd': '*.vpd',
+           'robot': '*.json', 'gmr_config': '*.json',
+           'pose': '*.json', 'calibration': '*.json', 'qpos': '*.npz'}
 
 
 class Launcher(tk.Tk):
@@ -219,13 +225,14 @@ class Launcher(tk.Tk):
     def __init__(self, initial):
         super().__init__()
         self.title('mmd -> humanoid')
-        self.values = {name: tk.StringVar(value=str(initial.get(name) or '')) for name, _ in FIELDS}
+        self.values = {name: tk.StringVar(value=str(initial.get(name) or ''))
+                       for name, _label, _kind in FIELDS}
         self.calibration_window = None
         self.process = None
 
         outer = ttk.Frame(self, padding=8)
         outer.pack(fill='both', expand=True)
-        for row, (name, label) in enumerate(FIELDS):
+        for row, (name, label, _kind) in enumerate(FIELDS):
             ttk.Label(outer, text=label, width=30).grid(row=row, column=0, sticky='w', pady=2)
             ttk.Entry(outer, textvariable=self.values[name], width=64).grid(row=row, column=1, sticky='we')
             ttk.Button(outer, text='...', width=3,
@@ -253,13 +260,18 @@ class Launcher(tk.Tk):
         return Path(value) if value else None
 
     def browse(self, name):
-        current = self.values[name].get()
-        if name == 'gmr_root' or name == 'robot':
-            chosen = filedialog.askdirectory() if name == 'gmr_root' else \
-                filedialog.askopenfilename(filetypes=[('json', '*.json')])
+        pattern = PATTERN.get(name, '*.*')
+        # the label's extension is the truth: pick the dialog from it, not from the current text
+        kind = dict((field[0], field[2]) for field in FIELDS)[name]
+        filetypes = [(pattern.replace('*', 'file'), pattern), ('all files', '*.*')]
+        if kind == 'dir':
+            chosen = filedialog.askdirectory(title='choose a directory')
+        elif kind == 'open':
+            chosen = filedialog.askopenfilename(title='open %s' % name, filetypes=filetypes)
         else:
-            chosen = filedialog.asksaveasfilename(defaultextension=Path(current).suffix
-                                                  if current else '')
+            chosen = filedialog.asksaveasfilename(title='save %s as' % name,
+                                                  defaultextension=pattern.replace('*', ''),
+                                                  filetypes=filetypes)
         if chosen:
             self.values[name].set(chosen)
 
