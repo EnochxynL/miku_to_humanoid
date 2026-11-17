@@ -145,8 +145,9 @@ def main():
         view.QposOverlay('mmd', bundle.model, character),
         view.QposOverlay('robot', robot_model, np.array(cache),
                          prefix=view.ROBOT_PREFIX, translate=(args.offset, 0.0, 0.0)),
+        # the engine's targets sit exactly halfway between the two figures, owned by neither
         view.ChainOverlay(bones, SKELETON_EDGES, radius=0.012,
-                          translate=(args.offset, 0.0, 0.0)),
+                          translate=(args.offset * 0.5, 0.0, 0.0)),
     ]
     print('  intermediate: %d bones, %d frames' % (len(bones), len(intermediate)))
     for overlay in overlays:
