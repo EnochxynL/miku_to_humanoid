@@ -68,3 +68,15 @@ SEGMENT_BONES = (
 # A missing bone simply drops that segment (``Calibration`` skips pairs whose bones the profile does not
 # map), so adding these entries is safe before any robot can use them. Keep the weight low: 30 hand
 # directions at weight 1.0 would drown the eight limb directions that define the pose.
+
+
+# How the fourteen driven bones hang together, for drawing the retargeting engine's *intermediate*
+# representation (the scaled, offset-corrected targets it actually aims at). It is a display-only view of
+# the same bones SEGMENT_BONES measures, plus the trunk and the two hip joints.
+SKELETON_EDGES = (
+    (ROOT_BONE, TORSO_BONE),
+    (ROOT_BONE, '左足'), ('左足', '左ひざ'), ('左ひざ', '左足首'),
+    (ROOT_BONE, '右足'), ('右足', '右ひざ'), ('右ひざ', '右足首'),
+    (TORSO_BONE, '左腕'), ('左腕', '左ひじ'), ('左ひじ', '左手首'),
+    (TORSO_BONE, '右腕'), ('右腕', '右ひじ'), ('右ひじ', '右手首'),
+)

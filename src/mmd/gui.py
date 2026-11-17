@@ -53,7 +53,8 @@ class CalibrationWindow(tk.Toplevel):
 
         self.cal = Calibration(paths['pmx'], paths['vpd'], self.profile,
                                paths.get('pose') or None)
-        self.viewer = mujoco.viewer.launch_passive(self.cal.model, self.cal.data)
+        self.viewer = mujoco.viewer.launch_passive(self.cal.model, self.cal.data,
+                                                  show_left_ui=False, show_right_ui=False)
         self.viewer.cam.type = mujoco.mjtCamera.mjCAMERA_FREE
         self.viewer.cam.lookat[:] = [0.0, 0.0, 0.85]
         self.viewer.cam.distance = 2.6
@@ -312,7 +313,8 @@ class Launcher(tk.Tk):
         return [str(python), str(ROOT / 'src' / 'mmd' / 'retarget.py'),
                 '--pmx', str(needed['pmx']), '--vmd', str(needed['vmd']),
                 '--robot', str(needed['robot']), '--calibration', str(needed['calibration']),
-                '--gmr-root', str(needed['gmr_root']), '--bake-out', str(needed['qpos'])]
+                '--gmr-root', str(needed['gmr_root']), '--bake-out', str(needed['qpos']),
+                '--view']
 
     def start_retarget(self):
         if self.process is not None and self.process.poll() is None:

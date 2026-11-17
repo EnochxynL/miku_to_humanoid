@@ -121,6 +121,10 @@ class Overlay:
         raise NotImplementedError
 
 
+class SceneOverlay(Overlay):
+    """An overlay that only appends geometry, after forward kinematics."""
+
+
 class QposOverlay(Overlay):
     """Drive one attached model's subtree from a qpos clip."""
 
@@ -154,7 +158,7 @@ class QposOverlay(Overlay):
             qpos[destination:destination + 3] += self.translate
 
 
-class SkeletonOverlay(Overlay):
+class SkeletonOverlay(SceneOverlay):
     """Draw every bone of one rig: a capsule towards the child, a sphere when there is no length.
 
     The class describes a single style; which rig it draws is the ``select`` predicate, so two
@@ -192,6 +196,50 @@ class SkeletonOverlay(Overlay):
                 break
             start = np.array(data.xpos[parent])
             end = np.array(data.xpos[body])
+            geom = scene.geoms[scene.ngeom]
+            if np.linalg.norm(end - start) < 1e-4:
+                mujoco.mjv_initGeom(geom, type=mujoco.mjtGeom.mjGEOM_SPHERE,
+                                    size=np.array([self.radius * 1.6, 0.0, 0.0]),
+                                    pos=start, mat=np.eye(3).flatten(), rgba=self.rgba)
+            else:
+                mujoco.mjv_initGeom(geom, type=mujoco.mjtGeom.mjGEOM_CAPSULE,
+                                    size=np.array([self.radius, 0.0, 0.0]),
+                                    pos=np.zeros(3), mat=np.eye(3).flatten(), rgba=self.rgba)
+                mujoco.mjv_connector(geom, type=mujoco.mjtGeom.mjGEOM_CAPSULE,
+                                     width=self.radius, from_=start, to=end)
+            scene.ngeom += 1
+
+
+class ChainOverlay(SceneOverlay):
+    """Draw a skeleton that has no bodies behind it: explicit world points per frame.
+
+    This is how the retargeting engine's *intermediate* representation is shown - the selected, scaled
+    and offset-corrected target poses it actually aims at. They are plain arrays, so a capsule is built
+    from two points instead of from ``data.xpos``.
+    """
+
+    def __init__(self, points, edges, radius=0.010, rgba=(0.25, 0.95, 0.35, 1.0),
+                 translate=(0.0, 0.0, 0.0)):
+        self.points = points              # {bone name: array (frames, 3)}
+        self.edges = tuple(edges)         # ((bone, bone), ...)
+        self.radius = radius
+        self.rgba = np.array(rgba)
+        self.translate = np.asarray(translate, dtype=float)
+        self.frames = len(next(iter(points.values()))) if points else 0
+
+    def prepare(self, model):
+        missing = [name for edge in self.edges for name in edge if name not in self.points]
+        if missing:
+            raise SystemExit('chain overlay is missing bones: %s' % ', '.join(sorted(set(missing))))
+        print('  chain %d edges (%d bones, %d frames)'
+              % (len(self.edges), len(self.points), self.frames))
+
+    def apply(self, qpos, data, scene, index):
+        for start_name, end_name in self.edges:
+            if scene.ngeom >= scene.maxgeom:
+                break
+            start = self.points[start_name][index % self.frames] + self.translate
+            end = self.points[end_name][index % self.frames] + self.translate
             geom = scene.geoms[scene.ngeom]
             if np.linalg.norm(end - start) < 1e-4:
                 mujoco.mjv_initGeom(geom, type=mujoco.mjtGeom.mjGEOM_SPHERE,

@@ -21,6 +21,7 @@ import json
 import sys
 from pathlib import Path
 
+import mujoco
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -77,7 +78,11 @@ def main():
     parser.add_argument('--gmr-robot', default=None,
                         help='GMR robot key; defaults to the profile name')
     parser.add_argument('--step', type=int, default=1)
-    parser.add_argument('--view', action='store_true')
+    parser.add_argument('--view', action='store_true',
+                        help='preview afterwards: character, robot and the intermediate '
+                             'target skeleton the engine aims at (green)')
+    parser.add_argument('--offset', type=float, default=1.5,
+                        help='where the robot stands in the preview (metres)')
     parser.add_argument('--speed', type=float, default=0.6)
     args = parser.parse_args()
 
@@ -103,7 +108,14 @@ def main():
     gmrmod.IK_CONFIG_DICT.setdefault('mmd', {})[robot_key] = str(config_path.resolve())
     retargeter = GMR(src_human='mmd', tgt_robot=robot_key,
                      actual_human_height=config['human_height_assumption'], verbose=False)
-    cache = [np.array(retargeter.retarget(frame)) for frame in frames]
+
+    cache, intermediate = [], []
+    for frame in frames:
+        cache.append(np.array(retargeter.retarget(frame)))
+        # what GMR actually aims at: the source poses after its scale, the per-link C offset and the
+        # ground offset. It keeps that in ``scaled_human_data``, so there is nothing to recompute.
+        intermediate.append({bone: np.array(pos, dtype=float)
+                             for bone, (pos, _quat) in retargeter.scaled_human_data.items()})
 
     out = Path(args.bake_out)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -112,23 +124,36 @@ def main():
 
     if not args.view:
         return
-    from general_motion_retargeting import ROBOT_XML_DICT
-    import mujoco as mj
-    model = mj.MjModel.from_xml_path(str(ROBOT_XML_DICT[robot_key]))
-    data = mj.MjData(model)
-    import time
-    with mj.viewer.launch_passive(model, data) as viewer:
-        viewer.cam.type = mj.mjtCamera.mjCAMERA_FREE
-        viewer.cam.lookat[:] = [0.0, 0.0, 0.9]
-        viewer.cam.distance = 3.0
-        viewer.cam.elevation = -8
-        viewer.cam.azimuth = 90
-        while viewer.is_running():
-            for qpos in cache:
-                data.qpos[:] = qpos
-                mj.mj_forward(model, data)
-                viewer.sync()
-                time.sleep(args.speed / 60.0)
+
+    import view                                        # noqa: E402  (only the preview needs it)
+    from engine import mjcf                            # noqa: E402
+    from engine.bake import bake                       # noqa: E402
+    from engine.constraints import SKELETON_EDGES      # noqa: E402
+
+    robot_model = mujoco.MjModel.from_xml_path(str(profile.xml))
+    bundle = mjcf.build(args.pmx)
+    character, _unmatched, _times, _missing = bake(args.pmx, args.vmd, bundle.model, step=args.step)
+    model = view.build_scene(bundle.spec, profile.xml, args.offset, None)
+
+    # the engine's target poses live in robot space, so they are drawn where the robot stands
+    bones = {}
+    for index in range(len(intermediate)):
+        for bone, position in intermediate[index].items():
+            bones.setdefault(bone, np.zeros((len(intermediate), 3)))[index] = position
+
+    overlays = [
+        view.QposOverlay('mmd', bundle.model, character),
+        view.QposOverlay('robot', robot_model, np.array(cache),
+                         prefix=view.ROBOT_PREFIX, translate=(args.offset, 0.0, 0.0)),
+        view.ChainOverlay(bones, SKELETON_EDGES, radius=0.012,
+                          translate=(args.offset, 0.0, 0.0)),
+    ]
+    print('  intermediate: %d bones, %d frames' % (len(bones), len(intermediate)))
+    for overlay in overlays:
+        overlay.prepare(model)
+
+    view.BaseDisplay(model, speed=args.speed, loop=True, distance=3.4, azimuth=180.0,
+                     lookat=(args.offset * 0.5, 0.0, 0.9)).run(overlays)
 
 
 if __name__ == '__main__':
