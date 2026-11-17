@@ -31,7 +31,7 @@ GMR 的机器人键（如 `booster_t1_29dof`），`links` 与 `segments` 由 `ro
                               │
 PMX + (VMD|VPD) ── engine.bake ──┤──→ 逐帧骨骼世界位姿 {骨名: [位置, 四元数]}    ← 生产线用这个
                               │
-                              └── mmd_model ──→ MjModel（纯内存）──→ view（只为看）
+                              └── engine.mjcf ──→ MjModel（纯内存）──→ view（只为看）
 
 成对姿态 + robots/<robot>.json ── calibration ──→ generated/calibration_<robot>.json（中性 C + 尺度）
 源位姿 + C ──────────────────── retarget  ──→ 机器人 qpos ── export_gmr_pickle ──→ .pkl

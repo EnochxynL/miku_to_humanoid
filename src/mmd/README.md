@@ -21,7 +21,7 @@ pmx + (vmd|vpd) ── engine/bake.py ──→ 世界位姿 ──┐
                                           ├─ retarget ──→ G1 qpos ──→ export_gmr_pickle ──→ .pkl
 pmx + pose ── calibration ──→ 关节角 → C（中性） ──┘
 
-pmx + (vpd|vmd) ── mmd_model ──→ MjModel ─┐
+pmx + (vpd|vmd) ── engine.mjcf ──→ MjModel ─┐
                                          ├─ view（一个窗口并排显示，全在内存里）
 g1 qpos + robot xml ─────────────────────┘
 ```
