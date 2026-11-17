@@ -379,7 +379,7 @@ class Launcher(tk.Tk):
         return [sys.executable, '-m', 'mmdmr.view',
                 '--pmx', str(needed['pmx']), '--pose', str(needed['vmd']),
                 '--robot', str(needed['robot']), '--robot-qpos', str(needed['qpos']),
-                '--offset', '1.6', '--speed', '0.5', '--loop']
+                '--offset', '1.6', '--loop']
 
     def start_preview(self):
         if self.process is not None and self.process.poll() is None:

@@ -50,3 +50,10 @@ g1 qpos + robot xml ────────────────────
 2. 扭转的取值**会改变最终动作**（每个肢体一个常数扭转），所以 `paired_pose_*.json` 是**需要人工/视觉
    确认的数据**，不是可以随手重算的中间量。当前发布的姿态已通过目视验收，重新生成会得到另一个
    "同样合法但不同"的解。
+
+# 测试文件（借物表）
+
+- [胡桃待機モーション.vmd](https://bowlroll.net/file/257704)
+- [丘丘摇.vmd](https://www.aplaybox.com/details/motion/HDLRono2SdAG)
+- default.vpd 是 [MikuMikuDance 9.26](https://github.com/ayaka-mmd/MikuMikuDance-926-CHS) 保存的空白动作
+- 参与测试的人物模型是官方的 https://www.aplaybox.com/details/model/bnX7ynEPaP1C 和 https://www.aplaybox.com/details/model/0dSde2NajZJV
