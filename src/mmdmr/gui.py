@@ -254,6 +254,9 @@ class Launcher(tk.Tk):
         self.retarget_button.pack(side='left', padx=6)
         self.preview_button = ttk.Button(buttons, text='开始预览', command=self.start_preview)
         self.preview_button.pack(side='left')
+        # a preview window is optional: if GL fails, the qpos should still be produced
+        self.view_after = tk.BooleanVar(value=True)
+        ttk.Checkbutton(buttons, text='重定向后预览', variable=self.view_after).pack(side='left', padx=12)
 
         self.log = tk.Text(outer, height=10)
         self.log.grid(row=len(FIELDS) + 1, column=0, columnspan=3, sticky='nsew', pady=(8, 0))
@@ -335,8 +338,9 @@ class Launcher(tk.Tk):
         command = [str(python), '-m', 'mmdmr.retarget',
                    '--pmx', str(needed['pmx']), '--vmd', str(needed['vmd']),
                    '--robot', str(needed['robot']), '--calibration', str(needed['calibration']),
-                   '--gmr-root', str(needed['gmr_root']), '--bake-out', str(needed['qpos']),
-                   '--view']
+                   '--gmr-root', str(needed['gmr_root']), '--bake-out', str(needed['qpos'])]
+        if self.view_after.get():
+            command.append('--view')
         engine = self.path('gmr_config')            # optional: the profile may name its own
         if engine is not None:
             command += ['--gmr-config', str(engine)]
@@ -404,13 +408,27 @@ class Launcher(tk.Tk):
     def poll_child(self):
         if self.process is None:
             return
-        line = self.process.stdout.readline() if self.process.stdout else ''
-        if line:
+        # read a few lines per tick, not one: a child that prints in bursts (GMR does) would otherwise
+        # back up the pipe and look frozen
+        for _ in range(20):
+            line = self.process.stdout.readline() if self.process.stdout else ''
+            if not line:
+                break
             self.report(line.rstrip())
         if self.process.poll() is None:
             self.after(POLL_MS, self.poll_child)
             return
-        self.report('child finished with %s' % self.process.returncode)
+        # drain what is still buffered - a traceback written just before exit lives here, and dropping it
+        # leaves the panel with nothing but "child finished with 1"
+        tail = self.process.stdout.read() if self.process.stdout else ''
+        for line in (tail or '').splitlines():
+            if line.strip():
+                self.report(line.rstrip())
+        code = self.process.returncode
+        if code:
+            self.report('child failed with %s - the reason is above, usually the last lines' % code)
+        else:
+            self.report('child finished')
         self.retarget_button.state(['!disabled'])
         self.preview_button.state(['!disabled'])
         self.process = None
