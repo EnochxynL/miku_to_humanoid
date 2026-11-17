@@ -80,8 +80,14 @@ def main():
     parser.add_argument('--view', action='store_true',
                         help='preview afterwards: character, robot and the intermediate '
                              'target skeleton the engine aims at (green)')
-    parser.add_argument('--offset', type=float, default=1.5,
-                        help='where the robot stands in the preview (metres)')
+    parser.add_argument('--offset', type=float, default=2.6,
+                        help='gap between the two figures in the preview (metres)')
+    parser.add_argument('--pin-character', dest='pin_character', action='store_true',
+                        default=True,
+                        help='freeze the source root translation so it does not walk into '
+                             'the robot')
+    parser.add_argument('--no-pin-character', dest='pin_character', action='store_false',
+                        help='keep the source travelling through センター')
     parser.add_argument('--speed', type=float, default=0.6)
     args = parser.parse_args()
 
@@ -138,6 +144,14 @@ def main():
     robot_model = mujoco.MjModel.from_xml_path(str(profile.xml))
     bundle = mjcf.build(args.pmx)
     character, _unmatched, _times, _missing = bake(args.pmx, args.vmd, bundle.model, step=args.step)
+    if args.pin_character:
+        # the source walks around through センター (up to a couple of metres); for comparing poses it
+        # should stay put, or it wanders into the robot standing next to it
+        free = next((int(bundle.model.jnt_qposadr[j]) for j in range(bundle.model.njnt)
+                     if bundle.model.jnt_type[j] == mujoco.mjtJoint.mjJNT_FREE), None)
+        if free is not None:
+            character = character.copy()
+            character[:, free:free + 3] = character[0, free:free + 3]
     model = view.build_scene(bundle.spec, profile.xml, args.offset, None)
 
     # the engine's target poses live in robot space, so they are drawn where the robot stands
