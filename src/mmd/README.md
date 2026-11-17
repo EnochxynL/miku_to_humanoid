@@ -12,7 +12,9 @@
 | | `calibration.py` | **消费**关节角文件 → **中性 C**（每链接旋转 + 尺度），不认任何引擎格式 |
 | | `retarget.py` | 源位姿 + C → G1 qpos |
 | | `export_gmr_pickle.py` | G1 qpos → GMR pickle |
-| **引擎** | `engine/` | vendored 自 mmd2gltf：`pmx` `vpd` `vmd` `mathutil` `animation` `bake` `mesh` `msh` `mmd_model` |
+| **引擎** | `engine/` | vendored 自 mmd2gltf：`pmx` `vpd` `vmd` `mathutil` `animation` `bake` `mesh` `msh` `mjcf` |
+| | `engine/constraints.py` | MMD 事实（标准骨名）与项目选择（带权重的 `SEGMENT_BONES`）|
+| | `config.py` | 机器人 profile 的格式、加载与校验（不认识 GMR）|
 
 ## 数据流
 
