@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import dataclasses
 import json
 import sys
 from pathlib import Path
@@ -131,8 +132,7 @@ def build(gmr, robot, overrides):
         root_links=tuple(by_bone[bone] for bone in (ROOT_BONE, TORSO_BONE) if bone in by_bone),
         bilateral=(tuple(by_bone[bone] for bone in BILATERAL_BONES)
                    if all(bone in by_bone for bone in BILATERAL_BONES) else ()),
-        template=template,
-    ), config_path
+    ), template, config_path
 
 
 def main():
@@ -140,21 +140,30 @@ def main():
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--robot', required=True, help='GMR robot key, e.g. booster_t1_29dof')
     parser.add_argument('--gmr-root', default=r'D:\MY_TOOL\GitHub_Tools\GMR')
-    parser.add_argument('--out', required=True, help='the complete profile to write')
+    parser.add_argument('--out', required=True, help='the robot profile to write')
+    parser.add_argument('--gmr-out', required=True,
+                        help='the engine config for this robot, e.g. configs/gmr/g1.json')
     parser.add_argument('--override', action='append', default=[],
                         help='link.field=value, e.g. pelvis.rot_w=10 (applied to both tables)')
     args = parser.parse_args()
 
-    profile, config_path = build(args.gmr_root, args.robot, args.override)
+    profile, template, config_path = build(args.gmr_root, args.robot, args.override)
+
+    # the engine config goes to its own file; the profile only points at it
+    engine_path = Path(args.gmr_out)
+    engine_path.parent.mkdir(parents=True, exist_ok=True)
+    engine_path.write_text(json.dumps(template, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+    profile = dataclasses.replace(profile, gmr_config=engine_path.resolve())
     config_module.save(profile, args.out)
 
     print('wrote %s' % args.out)
+    print('wrote %s' % engine_path)
     print('  borrowed  %s' % config_path)
     print('  xml       %s' % profile.xml)
     print('  links     %d   segments %d   roots %s   bilateral %s'
           % (len(profile.links), len(profile.segments),
              ', '.join(profile.root_links), ', '.join(profile.bilateral)))
-    print('  template  %s' % ', '.join(sorted(profile.template)))
+    print('  engine    %s' % ', '.join(sorted(template)))
 
 
 if __name__ == '__main__':

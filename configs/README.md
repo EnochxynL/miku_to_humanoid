@@ -7,22 +7,32 @@
 
 | 目录 | 内容 | 谁维护 |
 |---|---|---|
-| `robots/` | **机器人侧的源配置**：链接↔MMD 骨、段、根链接、权重偏离 | 手写，或由 `robot_profile.from_gmr` 生成 |
-| `generated/` | 命令产物：配对姿态、C 配置、校准记录 | **不要手改**，随时可重算 |
+| `robots/` | **机器人描述**（引擎无关）：链接↔MMD 骨、段、根链接、髋线 | 手写，或由生成器脚本写出 |
+| `gmr/` | **GMR 的引擎配置**：权值表 `ik_match_table1/2`、偏移、根名、开关 | 生成器脚本写出；换引擎时整个作废 |
+| `generated/` | 命令产物：配对姿态、中性 C | **不要手改**，随时可重算 |
 
-`generated/` 里的三个文件各自的重算方式：
+`robots/<robot>.json` 里只有一个 `gmr_config: "../gmr/<robot>.json"` 指向引擎配置，因此机器人描述
+**不认识任何引擎格式**；`retarget.py` 是唯一读 `gmr/` 的文件。
+
+`generated/` 里的两个文件各自的重算方式：
 
 ```powershell
 uv run python -m calibration --pmx $pmx --robot configs/robots/g1.json `
     --solve --pose-out configs/generated/paired_pose_g1.json          # 配对姿态（关节角）
 uv run python -m calibration --pmx $pmx --robot configs/robots/g1.json `
     --pose configs/generated/paired_pose_g1.json `
-    --out configs/generated/calibration_g1.json       # C 配置 + 记录
+    --out configs/generated/calibration_g1.json       # 中性 C
 ```
 
-换机器人时**不需要新写 `robots/*.json`**：GMR 出厂配置里的人类骨骼统一是 LaFAN1 命名，`--robot` 直接接受
-GMR 的机器人键（如 `booster_t1_29dof`），`links` 与 `segments` 由 `robot_profile.from_gmr` 推出；
-`configs/robots/t1.json` 只是这份推导结果的快照，便于肉眼核对。
+换机器人时用生成器一次写出两个文件（GMR 出厂配置里的人类骨骼统一是 LaFAN1 命名）：
+
+```powershell
+uv run python scripts/get_robot_profile_from_gmr.py --robot booster_t1_29dof `
+    --gmr-root $gmr --out configs/robots/t1.json --gmr-out configs/gmr/t1.json
+```
+
+`t1.json` 与 `gmr/t1.json` 都是这次生成的快照，便于肉眼核对；GMR 若不在，profile 仍然可用，只是
+`retarget.py` 需要的 `gmr/` 那份得另外手写。
 
 ## 数据流
 

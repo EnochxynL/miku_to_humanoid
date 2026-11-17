@@ -10,8 +10,8 @@ convenience: nothing here knows GMR exists, and a robot GMR has never seen is de
 """
 from __future__ import annotations
 
-import copy
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -32,7 +32,7 @@ class RobotProfile:
     segments: tuple                # Segment list: which link pairs are compared
     root_links: tuple              # links a limb pose cannot move (they need the bilateral yaw)
     bilateral: tuple               # (left, right) link whose line gives that yaw
-    template: dict = None          # the engine config, complete and self-contained
+    gmr_config: Path = None        # the retargeting engine's own config for this robot, if it has one
 
 
 def load(path):
@@ -43,38 +43,54 @@ def load(path):
     if missing:
         raise SystemExit('%s: missing %s' % (path, ', '.join(missing)))
 
-    xml = Path(raw['xml'])
-    if not xml.is_absolute():
-        xml = (path.parent / xml).resolve()
+    def resolve(value):
+        candidate = Path(str(value))
+        return candidate if candidate.is_absolute() else (path.parent / candidate).resolve()
+
 
     return RobotProfile(
         name=str(raw['name']),
-        xml=xml,
+        xml=resolve(raw['xml']),
         links={str(link): str(bone) for link, bone in raw['links'].items()},
         segments=tuple(Segment(str(item['link']), str(item['to'])) for item in raw['segments']),
         root_links=tuple(raw.get('root_links', ())),
         bilateral=tuple(raw.get('bilateral_links', ())),
-        template=copy.deepcopy(raw.get('template') or {}),
+        gmr_config=resolve(raw['gmr_config']) if raw.get('gmr_config') else None,
     )
 
 
-def dump(profile):
-    """The complete profile as plain data - what a generator writes and a human reads."""
+def dump(profile, base=None):
+    """The profile as plain data. ``base`` makes the paths relative to it, as a reader expects."""
+    base = Path(base).resolve() if base else None
+
+    def show(value):
+        if value is None:
+            return None
+        value = Path(value)
+        if base:
+            try:
+                # a sibling directory is a *relative* path, not a subpath: relpath computes "..\\gmr\\x"
+                return os.path.relpath(str(value), str(base))
+            except ValueError:
+                return str(value)                       # another drive: keep it absolute
+        return str(value)
+
     return {
         'name': profile.name,
-        'xml': str(profile.xml),
+        'xml': show(profile.xml),
+        'gmr_config': show(profile.gmr_config),
         'links': profile.links,
         'segments': [{'link': segment.link, 'to': segment.to} for segment in profile.segments],
         'root_links': list(profile.root_links),
         'bilateral_links': list(profile.bilateral),
-        'template': profile.template,
     }
 
 
 def save(profile, path):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(dump(profile), indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+    path.write_text(json.dumps(dump(profile, base=path.parent), indent=2, ensure_ascii=False) + '\n',
+                    encoding='utf-8')
     return path
 
 
@@ -93,6 +109,8 @@ def validate(profile, model, mujoco):
     for link in profile.root_links:
         if link not in profile.links:
             problems.append('root link without a bone: %s' % link)
+    if profile.gmr_config is not None and not Path(profile.gmr_config).exists():
+        problems.append('gmr_config does not exist: %s' % profile.gmr_config)
     for segment in profile.segments:
         if segment.link not in profile.links:
             problems.append('segment start without a bone: %s' % segment.link)

@@ -206,6 +206,7 @@ FIELDS = (
     ('vmd', 'motion to retarget (.vmd)'),
     ('vpd', 'pose to calibrate against (.vpd)'),
     ('robot', 'robot profile (.json)'),
+    ('gmr_config', 'GMR config (.json, optional)'),
     ('pose', 'paired pose out (.json)'),
     ('calibration', 'calibration out (.json)'),
     ('qpos', 'retargeted qpos out (.npz)'),
@@ -310,11 +311,15 @@ class Launcher(tk.Tk):
         if not python.exists():
             self.report('no interpreter under %s' % (needed['gmr_root'] / '.venv'))
             return None
-        return [str(python), str(ROOT / 'src' / 'mmd' / 'retarget.py'),
-                '--pmx', str(needed['pmx']), '--vmd', str(needed['vmd']),
-                '--robot', str(needed['robot']), '--calibration', str(needed['calibration']),
-                '--gmr-root', str(needed['gmr_root']), '--bake-out', str(needed['qpos']),
-                '--view']
+        command = [str(python), str(ROOT / 'src' / 'mmd' / 'retarget.py'),
+                   '--pmx', str(needed['pmx']), '--vmd', str(needed['vmd']),
+                   '--robot', str(needed['robot']), '--calibration', str(needed['calibration']),
+                   '--gmr-root', str(needed['gmr_root']), '--bake-out', str(needed['qpos']),
+                   '--view']
+        engine = self.path('gmr_config')            # optional: the profile may name its own
+        if engine is not None:
+            command += ['--gmr-config', str(engine)]
+        return command
 
     def start_retarget(self):
         if self.process is not None and self.process.poll() is None:

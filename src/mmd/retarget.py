@@ -32,17 +32,17 @@ from config import load as load_profile                # noqa: E402
 from engine.constraints import ROOT_BONE, TORSO_BONE   # noqa: E402
 
 
-def build_config(profile, calibration):
-    """GMR's ik config, built from the profile's own template plus the neutral calibration.
+def build_config(engine_config, profile, calibration):
+    """GMR's ik config: the engine file plus the neutral calibration.
 
-    Only GMR's shape lives here: the profile template already carries the bone names, weights and
-    offsets for this robot (it is complete on its own), and the calibration supplies C and the body
-    scale. Nothing is read from GMR's checkout.
+    The engine file (``configs/gmr/<robot>.json``) carries the weight tables and offsets for this
+    robot; the calibration supplies C and the body scale. Nothing is read from GMR's checkout, and the
+    robot profile does not know this format exists.
     """
-    template = json.loads(json.dumps(profile.template))      # a private copy: callers mutate it
-    template['human_root_name'] = ROOT_BONE
+    template = json.loads(json.dumps(engine_config))          # a private copy: callers mutate it
+    template.setdefault('human_root_name', ROOT_BONE)
     template['human_height_assumption'] = float(calibration['heights']['source'])
-    template['ground_height'] = 0.0
+    template.setdefault('ground_height', 0.0)
     # human_scale_table is a *uniform body* scale, not a per-segment length ratio: GMR computes
     # (position - root) * scale[bone]
     bones = sorted(set(profile.links.values()) | {ROOT_BONE, TORSO_BONE})
@@ -53,7 +53,6 @@ def build_config(profile, calibration):
             if link in profile.links:
                 entry[0] = profile.links[link]
                 entry[4] = [1.0, 0.0, 0.0, 0.0]
-        # a profile lists only the places this robot deviates from GMR stock
     for link, info in calibration['links'].items():
         for table in ('ik_match_table1', 'ik_match_table2'):
             if link in template.get(table, {}):
@@ -69,6 +68,8 @@ def main():
     parser.add_argument('--robot', required=True,
                         help='robot profile, e.g. configs/robots/g1.json')
     parser.add_argument('--gmr-root', default=r'D:\MY_TOOL\GitHub_Tools\GMR')
+    parser.add_argument('--gmr-config', default=None,
+                        help="the engine config for this robot; defaults to the profile's gmr_config")
     parser.add_argument('--calibration', required=True,
                         help='neutral calibration json from `python -m calibration`')
     parser.add_argument('--bake-out', required=True)
@@ -90,7 +91,13 @@ def main():
     calibration = json.loads(Path(args.calibration).read_text(encoding='utf-8'))
     robot_key = args.gmr_robot or profile.name
 
-    config = build_config(profile, calibration)
+    engine_path = Path(args.gmr_config) if args.gmr_config else profile.gmr_config
+    if engine_path is None or not Path(engine_path).exists():
+        raise SystemExit('no GMR config for this robot: pass --gmr-config or set gmr_config in %s'
+                         % args.robot)
+    engine_config = json.loads(Path(engine_path).read_text(encoding='utf-8'))
+
+    config = build_config(engine_config, profile, calibration)
     config_path = Path(args.dump_config) if args.dump_config else \
         Path('runtime') / ('gmr_config_%s.json' % robot_key)
     config_path.parent.mkdir(parents=True, exist_ok=True)

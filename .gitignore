@@ -12,3 +12,4 @@ MUJOCO_LOG.TXT
 runtime/
 *.npz
 *.pkl
+assets/
