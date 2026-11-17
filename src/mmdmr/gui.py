@@ -225,6 +225,11 @@ class Launcher(tk.Tk):
     def __init__(self, initial):
         super().__init__()
         self.title('mmd -> humanoid')
+        # docked to the right edge, tall enough to show every field and the log
+        width, height = 640, 470
+        self.geometry('%dx%d+%d+%d' % (width, height,
+                                       max(0, self.winfo_screenwidth() - width - 24), 40))
+        self.minsize(560, 360)
         self.values = {name: tk.StringVar(value=str(initial.get(name) or ''))
                        for name, _label, _kind in FIELDS}
         self.calibration_window = None
@@ -232,9 +237,11 @@ class Launcher(tk.Tk):
 
         outer = ttk.Frame(self, padding=8)
         outer.pack(fill='both', expand=True)
+        outer.columnconfigure(1, weight=1)                 # the path entries take the extra width
+        outer.rowconfigure(len(FIELDS) + 1, weight=1)      # and so does the log
         for row, (name, label, _kind) in enumerate(FIELDS):
             ttk.Label(outer, text=label, width=30).grid(row=row, column=0, sticky='w', pady=2)
-            ttk.Entry(outer, textvariable=self.values[name], width=64).grid(row=row, column=1, sticky='we')
+            ttk.Entry(outer, textvariable=self.values[name]).grid(row=row, column=1, sticky='we')
             ttk.Button(outer, text='...', width=3,
                        command=lambda n=name: self.browse(n)).grid(row=row, column=2, padx=4)
 
@@ -244,10 +251,12 @@ class Launcher(tk.Tk):
         self.calibrate_button.pack(side='left')
         self.retarget_button = ttk.Button(buttons, text='开始重定向', command=self.start_retarget)
         self.retarget_button.pack(side='left', padx=6)
+        self.preview_button = ttk.Button(buttons, text='开始预览', command=self.start_preview)
+        self.preview_button.pack(side='left')
 
-        self.log = tk.Text(outer, height=10, width=96)
-        self.log.grid(row=len(FIELDS) + 1, column=0, columnspan=3, sticky='we', pady=(8, 0))
-        self.report('fill the paths, calibrate, then retarget')
+        self.log = tk.Text(outer, height=10)
+        self.log.grid(row=len(FIELDS) + 1, column=0, columnspan=3, sticky='nsew', pady=(8, 0))
+        self.report('fill the paths, calibrate, then retarget or preview')
 
 
     # ------------------------------------------------------------------ helpers
@@ -352,19 +361,57 @@ class Launcher(tk.Tk):
             self.report('failed to start: %s' % error)
             self.retarget_button.state(['!disabled'])
             return
-        self.after(POLL_MS, self.poll_retarget)
+        self.after(POLL_MS, self.poll_child)
 
-    def poll_retarget(self):
+    # ------------------------------------------------------------------ preview (this venv, view.py)
+    def preview_command(self):
+        """Play the source clip and the retargeted qpos side by side, exactly as ``mmdmr-view`` does."""
+        needed = {}
+        for name in ('pmx', 'vmd', 'robot', 'qpos'):
+            value = self.path(name)
+            if value is None:
+                self.report('missing: %s' % name)
+                return None
+            needed[name] = value
+        if not needed['qpos'].exists():
+            self.report('no qpos yet: run 开始重定向 first')
+            return None
+        return [sys.executable, '-m', 'mmdmr.view',
+                '--pmx', str(needed['pmx']), '--pose', str(needed['vmd']),
+                '--robot', str(needed['robot']), '--robot-qpos', str(needed['qpos']),
+                '--offset', '1.6', '--speed', '0.5', '--loop']
+
+    def start_preview(self):
+        if self.process is not None and self.process.poll() is None:
+            self.report('a child process is already running')
+            return
+        command = self.preview_command()
+        if command is None:
+            return
+        self.report('$ ' + ' '.join(command))
+        self.preview_button.state(['disabled'])
+        try:
+            self.process = subprocess.Popen(command, cwd=str(ROOT), text=True,
+                                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                            encoding='utf-8', errors='replace')
+        except OSError as error:
+            self.report('failed to start: %s' % error)
+            self.preview_button.state(['!disabled'])
+            return
+        self.after(POLL_MS, self.poll_child)
+
+    def poll_child(self):
         if self.process is None:
             return
         line = self.process.stdout.readline() if self.process.stdout else ''
         if line:
             self.report(line.rstrip())
         if self.process.poll() is None:
-            self.after(POLL_MS, self.poll_retarget)
+            self.after(POLL_MS, self.poll_child)
             return
-        self.report('retarget finished with %s' % self.process.returncode)
+        self.report('child finished with %s' % self.process.returncode)
         self.retarget_button.state(['!disabled'])
+        self.preview_button.state(['!disabled'])
         self.process = None
 
 
