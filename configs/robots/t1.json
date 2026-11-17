@@ -1,6 +1,6 @@
 {
   "name": "booster_t1_29dof",
-  "xml": "..\\..\\..\\..\\..\\MY_TOOL\\GitHub_Tools\\GMR\\assets\\booster_t1_29dof\\t1_mocap.xml",
+  "xml": "..\\..\\assets\\booster_t1_29dof\\t1_mocap.xml",
   "gmr_config": "..\\gmr\\t1.json",
   "links": {
     "Waist": "腰",

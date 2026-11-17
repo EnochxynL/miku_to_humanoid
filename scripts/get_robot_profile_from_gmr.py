@@ -55,10 +55,15 @@ WEIGHT_FIELD = {'pos_w': 1, 'rot_w': 2}
 
 
 def find_xml(gmr, robot):
+    """The robot's MJCF: the copy vendored in ``assets/`` wins over GMR's, so a profile can be used
+    without a GMR checkout."""
+    local = ROOT / 'assets' / robot
+    for candidate in sorted(local.glob('*.xml'), key=lambda path: ('mocap' not in path.name, path.name)):
+        return candidate.resolve()
     assets = gmr / 'assets' / robot
     xmls = sorted(assets.glob('*.xml'), key=lambda path: ('mocap' not in path.name, path.name))
     if not xmls:
-        raise SystemExit('no MJCF under %s' % assets)
+        raise SystemExit('no MJCF under %s or assets/%s' % (assets, robot))
     return xmls[0]
 
 

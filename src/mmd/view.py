@@ -26,7 +26,8 @@ import mujoco.viewer
 import numpy as np
 
 # The robot model lives in GMR's checkout; keep it as a default so this file needs no GMR import.
-DEFAULT_ROBOT_XML = r'D:\MY_TOOL\GitHub_Tools\GMR\assets\unitree_g1\g1_mocap_29dof.xml'
+DEFAULT_ROBOT_XML = str(Path(__file__).resolve().parents[2] / 'assets' / 'unitree_g1'
+                       / 'g1_mocap_29dof.xml')
 ROBOT_PREFIX = 'g1_'
 MMD_BONE_COLOUR = (0.98, 0.62, 0.16, 1.0)
 ROBOT_BONE_COLOUR = (0.20, 0.85, 0.95, 1.0)

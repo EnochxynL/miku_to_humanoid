@@ -1,6 +1,6 @@
 {
   "name": "unitree_g1",
-  "xml": "..\\..\\..\\..\\..\\MY_TOOL\\GitHub_Tools\\GMR\\assets\\unitree_g1\\g1_mocap_29dof.xml",
+  "xml": "..\\..\\assets\\unitree_g1\\g1_mocap_29dof.xml",
   "gmr_config": "..\\gmr\\g1.json",
   "links": {
     "pelvis": "腰",
