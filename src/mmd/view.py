@@ -2,7 +2,7 @@
 optionally the source skeleton drawn as capsules.
 
 Everything is read from files the pipeline already wrote - this module never imports GMR and never
-retargets anything. That separation is the point: ``gmr_retarget.py`` produces ``g1.npz``,
+retargets anything. That separation is the point: ``retarget.py`` produces ``g1.npz``,
 ``engine.mjcf`` builds the character in memory and ``engine.bake`` turns a pose into qpos;
 this file only composes and plays them.
 
@@ -261,7 +261,7 @@ def main():
                         help='robot profile, e.g. configs/robots/g1.json; '
                              'overrides --robot-xml')
     parser.add_argument('--robot-xml', default=DEFAULT_ROBOT_XML)
-    parser.add_argument('--robot-qpos', default=None, help='the retargeted robot clip (gmr_retarget)')
+    parser.add_argument('--robot-qpos', default=None, help='the retargeted robot clip (retarget)')
     parser.add_argument('--ghost', action='store_true',
                         help='render both figures translucent so the bones inside show through; where '
                              'they stand still comes from --offset')

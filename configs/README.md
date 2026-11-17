@@ -34,7 +34,7 @@ PMX + (VMD|VPD) ── engine.bake ──┤──→ 逐帧骨骼世界位姿 {
                               └── mmd_model ──→ MjModel（纯内存）──→ view（只为看）
 
 成对姿态 + robots/<robot>.json ── calibration ──→ generated/calibration_<robot>.json（中性 C + 尺度）
-源位姿 + C ──────────────────── gmr_retarget  ──→ 机器人 qpos ── export_gmr_pickle ──→ .pkl
+源位姿 + C ──────────────────── retarget  ──→ 机器人 qpos ── export_gmr_pickle ──→ .pkl
 ```
 
 **关键点：源侧不经过 qpos。** `Skeleton.world()` 直接给出世界位姿（朝向 0.0000° 与 MJCF 前向运动学一致），
@@ -73,7 +73,7 @@ PMX + (VMD|VPD) ── engine.bake ──┤──→ 逐帧骨骼世界位姿 {
 
 | 文件 | 用途 |
 |---|---|
-| `src/mmd/engine/mmd_model.py` | **PMX → MjModel（纯内存）**；qpos 由 `engine.bake` 现算 |
+| `src/mmd/engine/mjcf.py` | **PMX → MjModel（纯内存）**；qpos 由 `engine.bake` 现算 |
 | `src/mmd/view_model.py` / `view_skeleton.py` | 播放 / 机器人+源骨架对照 |
 
 ## 复现

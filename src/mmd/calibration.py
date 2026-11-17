@@ -157,7 +157,7 @@ class Calibration:
         errors = self.errors()
         return {
             'robot': {'name': self.profile.name, 'xml': Path(self.profile.xml).name},
-            'note': ('paired pose: joint angles in degrees, consumed by gmr_calibrate, which derives C '
+            'note': ('paired pose: joint angles in degrees, consumed by calibration, which derives C '
                      'from them'),
             'source_pose': str(source_pose) if source_pose else None,
             'joints': {joint: round(value, 4) for joint, value in self.values.items()},
