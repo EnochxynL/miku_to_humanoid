@@ -341,7 +341,7 @@ def main():
                         help='bone name fragments to skip; empty by default so the skeleton is complete')
     parser.add_argument('--skeleton-radius-mmd', type=float, default=0.002, help='MMD bone radius')
     parser.add_argument('--skeleton-radius-robot', type=float, default=0.010, help='robot bone radius')
-    parser.add_argument('--speed', type=float, default=0.6)
+    parser.add_argument('--speed', type=float, default=1)
     parser.add_argument('--stride', type=int, default=1)
     parser.add_argument('--loop', action='store_true')
     parser.add_argument('--distance', type=float, default=3.2)
