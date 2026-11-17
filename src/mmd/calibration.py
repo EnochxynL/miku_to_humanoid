@@ -285,11 +285,11 @@ def main():
     parser = argparse.ArgumentParser(
         description='Solve the paired pose if asked, then read C from it as engine-neutral data.')
     parser.add_argument('--pmx', required=True)
+    parser.add_argument('--vpd', default=None, help='the MMD pose the angles are solved for')
     parser.add_argument('--robot', required=True,
                         help='robot profile, e.g. configs/robots/g1.json')
     parser.add_argument('--pose', default=None,
                         help='paired pose (joint angles in degrees); also seeds --solve')
-    parser.add_argument('--vpd', default=None, help='the MMD pose the angles are solved for')
     parser.add_argument('--solve', action='store_true',
                         help='solve the pose numerically instead of reading --pose')
     parser.add_argument('--pose-out', default=None, help='where to write the solved pose')
