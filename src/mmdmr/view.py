@@ -90,18 +90,34 @@ def joint_slices(composed, source, prefix=''):
     """(destination address, source address, width) for every joint of one source model.
 
     ``source`` is an MjModel (the in-memory build) or a path to an MJCF.
+
+    A joint can be **unnamed** - ``<freejoint/>`` writes one with no name, and T1's model does exactly
+    that. Those still have to be matched, or a whole free base (seven qpos slots) silently drops out: the
+    robot would stand at the origin no matter what the clip or the placement says. They are matched by the
+    body they belong to, which does carry the prefix.
     """
     if not isinstance(source, mujoco.MjModel):
         source = mujoco.MjModel.from_xml_path(str(source))
+
+    def body_of(model, joint):
+        return mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, int(model.jnt_bodyid[joint]))
+
     pairs = []
     for joint in range(composed.njnt):
         name = mujoco.mj_id2name(composed, mujoco.mjtObj.mjOBJ_JOINT, joint)
         if name is None:
-            continue
-        if prefix and not name.startswith(prefix):
-            continue
-        raw = name[len(prefix):] if prefix else name
-        src = mujoco.mj_name2id(source, mujoco.mjtObj.mjOBJ_JOINT, raw)
+            body = body_of(composed, joint)
+            if body is None:
+                continue
+            raw = body[len(prefix):] if prefix and body.startswith(prefix) else body
+            src = next((other for other in range(source.njnt)
+                        if body_of(source, other) == raw
+                        and int(source.jnt_type[other]) == int(composed.jnt_type[joint])), -1)
+        else:
+            if prefix and not name.startswith(prefix):
+                continue
+            raw = name[len(prefix):] if prefix else name
+            src = mujoco.mj_name2id(source, mujoco.mjtObj.mjOBJ_JOINT, raw)
         if src < 0:
             continue
         pairs.append((int(composed.jnt_qposadr[joint]), int(source.jnt_qposadr[src]),
