@@ -2,7 +2,8 @@
 
 Two windows: the MuJoCo scene (character translucent, robot solid, both at the origin) and a panel with
 one slider per joint of the loaded model, in model order - no grouping, no joint names in the code. The
-objective and the solver live in ``mmd.calibration``, shared with ``scripts/paired_pose.py``.
+objective and the solver live in ``mmd.calibration``; ``python -m calibration --solve`` runs the same
+thing without a window.
 
     PYTHONPATH=src;src\\mmd;scripts uv run python scripts/calibrate_gui.py \
         --pmx <model.pmx> --vpd <pose.vpd> --robot configs/robots/g1.json
