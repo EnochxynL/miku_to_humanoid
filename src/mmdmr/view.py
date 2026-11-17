@@ -276,7 +276,7 @@ class BaseDisplay:
     """The window, the camera and the clock. Overlays supply the content."""
 
     def __init__(self, model, speed=0.6, loop=False, distance=3.0, azimuth=180.0,
-                 lookat=(0.6, 0.0, 0.95), show_ui=False, stride=1):
+                 lookat=(0.6, 0.0, 0.95), show_ui=False, stride=1, loop_pause=0.0):
         self.model = model
         self.data = mujoco.MjData(model)
         self.speed = speed
@@ -284,6 +284,7 @@ class BaseDisplay:
         self.camera = (distance, azimuth, lookat)
         self.show_ui = show_ui
         self.stride = max(1, stride)
+        self.loop_pause = loop_pause
         mujoco.mj_forward(self.model, self.data)
 
     def run(self, overlays):
@@ -307,10 +308,12 @@ class BaseDisplay:
                 mujoco.mj_forward(model, data)
                 viewer.user_scn.ngeom = 0
                 for overlay in overlays:
-                    if isinstance(overlay, SkeletonOverlay):
+                    if isinstance(overlay, SceneOverlay):
                         overlay.apply(data.qpos, data, viewer.user_scn, index)
                 viewer.sync()
                 index = (index + self.stride) % frames
+                if index < self.stride and self.loop_pause:
+                    time.sleep(self.loop_pause)     # a beat between loops, so the restart is not a blink
                 if not self.loop and index == 0:
                     return
                 time.sleep(max(0.0, 1.0 / 30.0 / self.speed - (time.perf_counter() - started)))

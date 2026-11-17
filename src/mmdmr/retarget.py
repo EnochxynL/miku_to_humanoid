@@ -80,7 +80,7 @@ def main():
     parser.add_argument('--view', action='store_true',
                         help='preview afterwards: character, robot and the intermediate '
                              'target skeleton the engine aims at (green)')
-    parser.add_argument('--offset', type=float, default=2.6,
+    parser.add_argument('--offset', type=float, default=1.6,
                         help='gap between the two figures in the preview (metres)')
     parser.add_argument('--pin-character', dest='pin_character', action='store_true',
                         default=True,
@@ -88,7 +88,10 @@ def main():
                              'the robot')
     parser.add_argument('--no-pin-character', dest='pin_character', action='store_false',
                         help='keep the source travelling through センター')
-    parser.add_argument('--speed', type=float, default=0.6)
+    parser.add_argument('--speed', type=float, default=0.5,
+                        help='playback speed against the 30 fps source')
+    parser.add_argument('--loop-pause', type=float, default=0.4,
+                        help='pause between loops, in seconds')
     args = parser.parse_args()
 
     profile = load_profile(args.robot)
@@ -151,7 +154,9 @@ def main():
                      if bundle.model.jnt_type[j] == mujoco.mjtJoint.mjJNT_FREE), None)
         if free is not None:
             character = character.copy()
-            character[:, free:free + 3] = character[0, free:free + 3]
+            # zero, not frame 0: the bind-pose root is the model origin, so the character stays centred
+            # over the floor origin instead of wherever its first frame happened to start
+            character[:, free:free + 3] = 0.0
     model = view.build_scene(bundle.spec, profile.xml, args.offset, None)
 
     # the engine's target poses live in robot space, so they are drawn where the robot stands
@@ -172,8 +177,11 @@ def main():
     for overlay in overlays:
         overlay.prepare(model)
 
-    view.BaseDisplay(model, speed=args.speed, loop=True, distance=3.4, azimuth=180.0,
-                     lookat=(args.offset * 0.5, 0.0, 0.9)).run(overlays)
+    # azimuth 90 keeps the offset horizontal on screen: at 180 the figures line up along the view axis
+    # and look like they are standing on top of each other even when they are 1.6 m apart
+    view.BaseDisplay(model, speed=args.speed, loop=True, distance=3.6, azimuth=90.0,
+                     lookat=(args.offset * 0.5, 0.0, 0.9),
+                     loop_pause=args.loop_pause).run(overlays)
 
 
 if __name__ == '__main__':
