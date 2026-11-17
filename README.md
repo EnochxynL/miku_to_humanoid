@@ -1,29 +1,33 @@
 # src/mmdmr — MMD 到机器人
 
+MMD 引擎解析借鉴 https://github.com/yohawing/mmd-anim 和 https://github.com/masaka1024/mmd2gltf-gui
+
 三层，**依赖方向只能从上往下**：`mmd_*` 只依赖引擎，`gmr_*` 才依赖 GMR 和机器人模型。
 
 | 层 | 文件 | 作用 |
 |---|---|---|
-| **MMD 原生** | `engine/bake.py` | `pmx + (vmd\|vpd)` → 逐帧骨骼世界位姿。源侧唯一入口，不碰 MuJoCo |
+| **MMD 原生** | `mmd/bake.py` | `pmx + (vmd\|vpd)` → 逐帧骨骼世界位姿。源侧唯一入口，不碰 MuJoCo |
 | | `mmd/constraints.py` | **MMD 侧知识**：哪几条肢体方向定义姿态、LaFAN1→MMD 一览、捩骨参考 |
 | | `src/mmdmr/mmd/mjcf.py` | **PMX → MjModel（纯内存）**：MJCF 文本 + MSH 网格 + PNG 贴图字节 |
 | | `view.py` | **一个窗口**：MMD 角色 + 机器人 + 可选骨架胶囊（三层 overlay，不跑 GMR）|
 | **GMR 桥接** | `uv run mmdmr-calibration --solve` | 解出"让机器人摆成 MMD 姿态"的关节角 → `paired_pose_*.json` |
 | | `calibration.py` | **消费**关节角文件 → **中性 C**（每链接旋转 + 尺度），不认任何引擎格式 |
 | | `retarget.py` | 源位姿 + C → G1 qpos |
-| | `export_gmr_pickle.py` | G1 qpos → GMR pickle |
-| **引擎** | `engine/` | vendored 自 mmd2gltf：`pmx` `vpd` `vmd` `mathutil` `animation` `bake` `mesh` `msh` `mjcf` |
-| | `engine/constraints.py` | MMD 事实（标准骨名）与项目选择（带权重的 `SEGMENT_BONES`）|
+| **引擎** | `mmd/` | vendored 自 mmd2gltf：`pmx` `vpd` `vmd` `mathutil` `animation` `bake` `mesh` `msh` `mjcf` |
+| | `mmd/constraints.py` | MMD 事实（标准骨名）与项目选择（带权重的 `SEGMENT_BONES`）|
 | | `config.py` | 机器人 profile 的格式、加载与校验（不认识 GMR）|
+| 辅助脚本 | 放在 `scripts/` 单独使用 | |
+| | `export_gmr_pickle.py` | G1 qpos → GMR pickle |
+| | `get_robot_profile_from_gmr.py` | 自动从 GMR 安装目录搜寻机器人和 GMR相关配置 |
 
 ## 数据流
 
 ```
-pmx + (vmd|vpd) ── engine/bake.py ──→ 世界位姿 ──┐
+pmx + (vmd|vpd) ── mmd/bake.py ──→ 世界位姿 ──┐
                                           ├─ retarget ──→ G1 qpos ──→ export_gmr_pickle ──→ .pkl
 pmx + pose ── calibration ──→ 关节角 → C（中性） ──┘
 
-pmx + (vpd|vmd) ── engine.mjcf ──→ MjModel ─┐
+pmx + (vpd|vmd) ── mmd.mjcf ──→ MjModel ─┐
                                          ├─ view（一个窗口并排显示，全在内存里）
 g1 qpos + robot xml ─────────────────────┘
 ```
