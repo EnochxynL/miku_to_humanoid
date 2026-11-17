@@ -295,7 +295,7 @@ class Launcher(tk.Tk):
             if self.path(needed) is None:
                 self.report('missing: %s' % needed)
                 return
-        paths = {name: self.values[name].get() for name, _ in FIELDS}
+        paths = {name: self.values[name].get() for name, _label, _kind in FIELDS}
         stem = Path(paths['robot']).stem or 'robot'
         if not paths['pose']:
             paths['pose'] = str(ROOT / 'configs' / 'generated' / ('paired_pose_%s.json' % stem))
