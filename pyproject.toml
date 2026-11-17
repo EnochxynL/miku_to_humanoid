@@ -9,6 +9,8 @@ dependencies = [
     "mujoco>=3.2",     # source-side MJCF for rendering, and the robot FK used to read C
     "pillow>=10.0",    # PMX textures are bmp/tga/jpg; they are normalised to PNG
 ]
+license = "MIT"
+authors = [{name = "Yinuo Xie"}]
 
 [project.scripts]
 mmdmr-gui = "mmdmr.gui:main"

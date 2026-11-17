@@ -8,7 +8,9 @@ GMR 的 IK 解出机器人 qpos。
 MMD 引擎解析借鉴 [yohawing/mmd-anim](https://github.com/yohawing/mmd-anim) 与
 [masaka1024/mmd2gltf-gui](https://github.com/masaka1024/mmd2gltf-gui)（`src/mmdmr/mmd/` 为 vendored）。计划编写 rust 后端，采用 mmd-anim 为直接 rust 依赖。
 
-## 预览
+## 使用例与预览
+
+![example](example.png)
 
 https://github.com/user-attachments/assets/50415e94-0bda-4738-a990-2a1fd74c138a
 
@@ -141,3 +143,42 @@ MMD 骨**没有静止旋转**，所以在配对姿态下每个骨坐标系都是
 - **MMD 双层材质**（`X` 与 `X+`）空间重合会 z-fighting，当前以半透明叠加渲染；细节见 `mmd/mesh.py`。
 - **`assets/` 未入库**（`.gitignore`），profile 里的 `..\..\assets\...` 在新克隆里会失效。
 - GMR 必须用它自己的 venv；`mmdmr` 在那边不可见，GUI 会给子进程设 `PYTHONPATH=<repo>/src`。
+
+## License
+
+Code in this repository is released under the **MIT License** (see `LICENSE`).
+
+It vendored a few modules from two MIT projects; their notices are reproduced in
+`THIRD_PARTY_NOTICES.md`:
+
+- [masaka1024/mmd2gltf-gui](https://github.com/masaka1024/mmd2gltf-gui) — MIT, Copyright (c) 2026 mmd2gltf-gui Contributors
+- [yohawing/mmd-anim](https://github.com/yohawing/mmd-anim) — MIT, Copyright (c) 2026 Yohawing
+
+The retargeting step calls [GMR](https://github.com/Yanjieze/GMR) (MIT), which is **not** redistributed
+here: it is expected as a separate checkout.
+
+**Third-party assets are not covered by the MIT license.** The MMD character models and motion files used
+for development are third-party works with their own terms (see `licenses/`); the motions are
+**non-commercial use only**, with attribution to MIHOYO / o狐妖o / Ponx迫奈熏 and to 翡水. They are kept
+out of version control and must not be treated as part of this project's licensed output.
+
+## Citation
+
+If you use this code, please cite the software:
+
+```bibtex
+@software{miku_to_humanoid,
+  title  = {MMDMR (miku-to-humanoid): MMD motion retargeting onto humanoid robots},
+  author = {Yinuo Xie},
+  year   = {2026},
+  version = {0.1.0},
+  url    = {https://github.com/EnochxynL/miku_to_humanoid},
+  note   = {Calibrates the frame correspondence from a paired pose, then hands the motion to GMR}
+}
+```
+
+Please also cite the work this builds on:
+
+- E. Todorov, T. Erez, Y. Tassa. *MuJoCo: A physics engine for model-based control.* IROS 2012.
+- GMR — General Motion Retargeting, <https://github.com/Yanjieze/GMR>
+- MMD / PMX format: <https://github.com/masaka1024/mmd2gltf-gui>, <https://github.com/yohawing/mmd-anim>
