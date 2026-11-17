@@ -1,0 +1,55 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "miku-to-humanoid"
+abstract: >-
+  MMD (PMX + VMD/VPD) motion retargeting onto humanoid robots. The source side never goes through
+  glTF or a MuJoCo qpos round trip: the deform pipeline yields per-bone world poses, the frame
+  correspondence C is read from one paired pose, and GMR's IK turns that into robot qpos.
+type: software
+authors:
+  - family-names: "Xie"
+    given-names: "Yinuo"
+version: "0.1.0"
+date-released: "2026-11-17"
+license: MIT
+keywords:
+  - motion retargeting
+  - MMD
+  - PMX
+  - VMD
+  - humanoid
+  - MuJoCo
+references:
+  - type: conference-paper
+    title: "MuJoCo: A physics engine for model-based control"
+    authors:
+      - family-names: "Todorov"
+        given-names: "Emanuel"
+      - family-names: "Erez"
+        given-names: "Tom"
+      - family-names: "Tassa"
+        given-names: "Yuval"
+    year: 2012
+    conference:
+      name: "IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)"
+  - type: software
+    title: "GMR: General Motion Retargeting"
+    authors:
+      - name: "Yanjieze"
+    year: 2025
+    repository-code: "https://github.com/Yanjieze/GMR"
+    license: MIT
+  - type: software
+    title: "mmd2gltf-gui"
+    authors:
+      - name: "mmd2gltf-gui Contributors"
+    year: 2026
+    repository-code: "https://github.com/masaka1024/mmd2gltf-gui"
+    license: MIT
+  - type: software
+    title: "mmd-anim"
+    authors:
+      - name: "Yohawing"
+    year: 2026
+    repository-code: "https://github.com/yohawing/mmd-anim"
+    license: MIT
