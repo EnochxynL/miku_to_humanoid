@@ -26,7 +26,7 @@ for extra in (ROOT / 'src', ROOT / 'src' / 'mmd'):
     sys.path.insert(0, str(extra))
 
 from calibration import Calibration                 # noqa: E402
-from engine.profile import load as load_profile, validate   # noqa: E402
+from config import load as load_profile, validate   # noqa: E402
 
 UPDATE_MS = 33
 

@@ -1,57 +1,24 @@
-"""The MMD side of the correspondence: what "the same pose" means, and how human bone names read.
+"""The robot side: what a robot profile file contains, and how it is read and checked.
 
-Nothing here depends on a robot. Two pieces of knowledge live here:
+A profile is an **authored** file, not something derived at run time: it pairs this robot's links with
+MMD bones, says which link pairs the paired pose compares, names the two links that form the hip line,
+and carries the engine template the retargeting engine needs (complete, so the file works with no other
+checkout present).
 
-* ``SEGMENT_BONES``  which limb directions define a pose. Directions are the only convention-free
-                    comparison available - orientations carry the C being calibrated - so a paired pose
-                    is "these eight directions agree". This is a property of the MMD (human) skeleton.
-* ``LAFAN1_TO_MMD``  how GMR's human naming (LaFAN1: Hips, LeftUpLeg, LeftArm ...) reads as MMD bone
-                    names. Both sides describe the same human, so this bridge is source-side knowledge
-                    too; it only ever runs while reading a robot profile.
-
-``NEXT_JOINT`` stays here as reference: the next real joint after a bone, skipping the twist (捩), sleeve
-chain and shoulder-helper bones MMD inserts. The segment table below states the resulting pairs directly,
-so nothing consumes ``NEXT_JOINT`` any more - but it explains *why* those pairs skip bones, which a new
-MMD rig will otherwise have to rediscover.
+``scripts/get_robot_profile_from_gmr.py`` can write one by reading GMR's IK configs, but that is a
+convenience: nothing here knows GMR exists, and a robot GMR has never seen is described by the same file.
 """
 from __future__ import annotations
 
-# the three bones the calibration needs by name: the root (GMR's human_root_name), the torso (the second
-# link a limb pose cannot move) and the scale reference (head height gives the body-size factor)
-ROOT_BONE = '腰'
-TORSO_BONE = '上半身2'
-SCALE_BONE = '頭'
-
-# the two thigh bones: their line gives the world-frame yaw of the links a pose cannot move
-BILATERAL_BONES = ('左足', '右足')
-
-# These bone pairs are **not** parent-child: MMD inserts twist bones (捩), sleeve chains and shoulder
-# helpers between what a human reads as consecutive joints, so "the next real joint" skips them:
-#     左腕 -> 左ひじ     跳过 左腕捩 / 左袖 / 左肩C
-#     左ひじ -> 左手首   跳过 左ひじ捩 / 左手捩
-#     左足 -> 左ひざ     跳过 左足捩 / 左足D
-#     左ひざ -> 左足首   跳过 左ひざD / 左足首D 等
-# A new MMD rig otherwise has to rediscover this; the table below states the resulting pairs directly.
-SEGMENT_BONES = (
-    ('左腕', '左ひじ'), ('左ひじ', '左手首'),
-    ('右腕', '右ひじ'), ('右ひじ', '右手首'),
-    ('左足', '左ひざ'), ('左ひざ', '左足首'),
-    ('右足', '右ひざ'), ('右ひざ', '右足首'),
-)
-
-# ---------------------------------------------------------------------------- robot profiles
-# A profile is an authored file, not something derived at run time: it holds the pairing, which limb
-# directions to compare, and the engine template this robot needs. A generator script can produce one by
-# reading GMR's checkout (``scripts/get_robot_profile_from_gmr.py``), but nothing here knows GMR exists.
-import copy                                            # noqa: E402
-import json                                            # noqa: E402
-from dataclasses import dataclass                      # noqa: E402
-from pathlib import Path                               # noqa: E402
+import copy
+import json
+from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass(frozen=True)
 class Segment:
-    """One limb the paired pose must align."""
+    """One link pair the paired pose aligns: the direction of ``link -> to``."""
 
     link: str
     to: str

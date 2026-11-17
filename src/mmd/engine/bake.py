@@ -233,20 +233,6 @@ def world_poses(pmx_path, pose_path, wanted, step=1, solve_ik=True, scale=DEFAUL
     return out, unmatched
 
 
-def wanted_bones(config_path):
-    """The bones an IK config actually drives (its bone-name field), plus the root chain."""
-    from engine.profile import ROOT_BONE, TORSO_BONE
-
-    config = json.loads(Path(config_path).read_text(encoding='utf-8'))
-    names = set()
-    for table in ('ik_match_table1', 'ik_match_table2'):
-        for entry in config.get(table, {}).values():
-            if entry and entry[0]:
-                names.add(entry[0])
-    names.update((ROOT_BONE, TORSO_BONE))
-    return sorted(names)
-
-
 # ---------------------------------------------------------------------------- readout: qpos
 def bake(pmx_path, pose_path, robot_model, step=1, solve_ik=True, scale=DEFAULT_SCALE):
     """(qpos frames, unmatched bone names, times, bones without a joint) for one compiled model.

@@ -64,11 +64,15 @@ class Calibration:
             self.address[short] = int(self.model.jnt_qposadr[joint])
             self.limits[short] = (np.degrees(low), np.degrees(high))
 
+        from engine.constraints import SEGMENT_BONES
+        weight_of = {(item.start, item.stop): item.weight for item in SEGMENT_BONES}
+
         self.segments = []
         for segment in profile.segments:
             if segment.link in profile.links and segment.to in profile.links:
-                self.segments.append((profile.links[segment.link], profile.links[segment.to],
-                                      segment.link, segment.to))
+                bone_a, bone_b = profile.links[segment.link], profile.links[segment.to]
+                self.segments.append((bone_a, bone_b, segment.link, segment.to,
+                                      weight_of.get((bone_a, bone_b), 1.0)))
         if not self.segments:
             raise SystemExit('the profile defines no usable segments (both links must map to bones)')
 
@@ -106,7 +110,7 @@ class Calibration:
     # ------------------------------------------------------------------ objective
     def errors(self):
         out = []
-        for bone_a, bone_b, link_a, link_b in self.segments:
+        for bone_a, bone_b, link_a, link_b, _weight in self.segments:
             want = self.direction(bone_a, bone_b, robot=False)
             got = self.direction(link_a, link_b, robot=True)
             if want is None or got is None:
@@ -116,7 +120,13 @@ class Calibration:
         return out
 
     def mean_error(self):
-        return float(np.nanmean(self.errors()))
+        """Weighted mean, so a future hand set can count for less than the eight limb directions."""
+        errors = np.array(self.errors(), dtype=float)
+        weights = np.array([segment[4] for segment in self.segments], dtype=float)
+        good = ~np.isnan(errors)
+        if not good.any():
+            return float('nan')
+        return float(np.sum(errors[good] * weights[good]) / np.sum(weights[good]))
 
     def solve(self):
         """L-BFGS-B over every joint, seeded from the current values, with the slider bounds."""
@@ -130,7 +140,10 @@ class Calibration:
             for joint, value in zip(names, x):
                 self.data.qpos[self.address[joint]] = value
             mujoco.mj_forward(self.model, self.data)
-            return float(np.sum(np.square(self.errors())))
+            errors = np.array(self.errors(), dtype=float)
+            weights = np.array([segment[4] for segment in self.segments], dtype=float)
+            good = ~np.isnan(errors)
+            return float(np.sum(weights[good] * np.square(errors[good])))
 
         result = minimize(cost, x0, method='L-BFGS-B', bounds=bounds,
                           options={'maxiter': 2000, 'ftol': 1e-12})
@@ -151,6 +164,8 @@ class Calibration:
             'limb_direction_error_deg': round(float(np.nanmean(errors)), 3),
             'per_segment_error_deg': {'%s-%s' % (segment[2], segment[3]): round(error, 3)
                                       for segment, error in zip(self.segments, errors)},
+            'segment_weights': {'%s-%s' % (segment[2], segment[3]): segment[4]
+                                for segment in self.segments},
         }
 
     def save(self, path, source_pose=None):
@@ -180,7 +195,7 @@ def read_c(pmx, robot_model, profile, pose_path, mdd_pose=None):
     thigh bones.
     """
     from engine.bake import bind_pose, world_poses
-    from engine.profile import BILATERAL_BONES, ROOT_BONE, SCALE_BONE, TORSO_BONE
+    from engine.constraints import BILATERAL_BONES, ROOT_BONE, SCALE_BONE, TORSO_BONE
 
     wanted = sorted(set(profile.links.values()) | {ROOT_BONE, TORSO_BONE, SCALE_BONE})
     bind_frame = bind_pose(pmx, wanted)[0]
@@ -260,7 +275,7 @@ def save_c(path, c):
 def main():
     import argparse
 
-    from engine.profile import load as load_profile, validate
+    from config import load as load_profile, validate
 
     parser = argparse.ArgumentParser(
         description='Read C from a paired pose and write it as engine-neutral data.')

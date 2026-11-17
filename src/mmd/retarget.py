@@ -27,8 +27,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from engine.bake import world_poses                    # noqa: E402
-from engine.profile import load as load_profile        # noqa: E402
-from engine.profile import ROOT_BONE, TORSO_BONE       # noqa: E402
+from config import load as load_profile                # noqa: E402
+from engine.constraints import ROOT_BONE, TORSO_BONE   # noqa: E402
 
 
 def build_config(profile, calibration):

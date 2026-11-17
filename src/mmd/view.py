@@ -282,7 +282,7 @@ def main():
     parser.add_argument('--show-ui', action='store_true')
     args = parser.parse_args()
     if args.robot:
-        from engine.profile import load as load_profile
+        from config import load as load_profile
         args.robot_xml = str(load_profile(args.robot).xml)
 
     if not args.robot_qpos and not args.pmx:

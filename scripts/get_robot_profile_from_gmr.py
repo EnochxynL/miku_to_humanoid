@@ -26,8 +26,9 @@ sys.path.insert(0, str(ROOT / 'src' / 'mmd'))
 
 import mujoco                                          # noqa: E402
 
-from engine import profile as profile_module           # noqa: E402
-from engine.profile import (BILATERAL_BONES, ROOT_BONE, SEGMENT_BONES, TORSO_BONE)   # noqa: E402
+import config as config_module                          # noqa: E402
+from engine.constraints import (BILATERAL_BONES, ROOT_BONE, SEGMENT_BONES,   # noqa: E402
+                                TORSO_BONE)
 
 # How GMR names the human side reads as MMD bone names. This table is only needed while borrowing GMR's
 # configs, so it lives here rather than in the profile format: a finished profile already carries MMD
@@ -120,12 +121,13 @@ def build(gmr, robot, overrides):
             else:
                 raise SystemExit('--override names a link that is not in %s: %s' % (table, link))
 
-    return profile_module.RobotProfile(
+    return config_module.RobotProfile(
         name=robot,
         xml=xml.resolve(),
         links=links,
-        segments=tuple(profile_module.Segment(by_bone[start], by_bone[stop])
-                       for start, stop in SEGMENT_BONES if start in by_bone and stop in by_bone),
+        segments=tuple(config_module.Segment(by_bone[item.start], by_bone[item.stop])
+                       for item in SEGMENT_BONES
+                       if item.start in by_bone and item.stop in by_bone),
         root_links=tuple(by_bone[bone] for bone in (ROOT_BONE, TORSO_BONE) if bone in by_bone),
         bilateral=(tuple(by_bone[bone] for bone in BILATERAL_BONES)
                    if all(bone in by_bone for bone in BILATERAL_BONES) else ()),
@@ -144,7 +146,7 @@ def main():
     args = parser.parse_args()
 
     profile, config_path = build(args.gmr_root, args.robot, args.override)
-    profile_module.save(profile, args.out)
+    config_module.save(profile, args.out)
 
     print('wrote %s' % args.out)
     print('  borrowed  %s' % config_path)
