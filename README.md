@@ -86,6 +86,11 @@ assets/                 模型与动作（**未入库**，见 .gitignore）
 | `configs/gmr/<robot>.json` | **GMR 专属**：`ik_match_table1/2`（`[骨名, pos_w, rot_w, pos_offset, C_quat]`）、`robot_root_name`、`human_root_name`、`ground_height`、`use_ik_match_table1/2` | 生成器写出；换引擎时整个作废 |
 | `configs/generated/*.json` | **产物**：配对姿态、中性 C | 不要手改，随时可重算 |
 
+**中性 C 是绑在「PMX × 机器人」这一对上的**，不是机器人的属性：C 由源骨架的绑定姿态与配对姿态共同决定。
+实测同一个 T1 profile，换一个 PMX（`頭` 高 1.2643 m ↔ 1.0431 m）会让 scale 从 0.7948 变 0.9633、脚与小腿
+的 C 差到 7°。所以 `calibration_<robot>.json` 里记录了 `source_model`（文件名 + 路径）与 `heights.source`，
+重算时必须用同一个 PMX，否则数值不可比。
+
 换一台 GMR 支持的机器人（零手写）：
 
 ```powershell

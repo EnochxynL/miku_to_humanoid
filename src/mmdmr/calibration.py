@@ -256,6 +256,9 @@ def read_c(pmx, robot_model, profile, pose, mdd_pose=None):
                        'angle_deg': round(float(np.degrees(constant.magnitude())), 4)}
 
     return {
+        # which PMX this calibration belongs to: C depends on the source rig's bind pose, so a file made
+        # from another model is not interchangeable (the head height alone already differs between ours)
+        'source_model': {'name': Path(pmx).name, 'path': str(pmx)},
         'robot': {'name': profile.name, 'xml': Path(profile.xml).name},
         'method': 'paired pose -> C = R_source(P)^-1 * R_link(P)',
         'why': ('MMD bones carry no rest rotation, so at the paired pose every bone frame is the identity '
@@ -326,8 +329,9 @@ def main():
     save_c(args.out, c)
 
     if args.report:
-        print('robot %s   scale %.4f   root yaw %.2f deg   links %d'
-              % (c['robot']['name'], c['scale'], c['root_yaw_deg'], len(c['links'])))
+        print('robot %s   source %s (head %.4f m)   scale %.4f   root yaw %.2f deg   links %d'
+              % (c['robot']['name'], c['source_model']['name'], c['heights']['source'],
+                 c['scale'], c['root_yaw_deg'], len(c['links'])))
         for link, info in c['links'].items():
             print('  %-26s %-10s C %7.2f deg' % (link, info['bone'], info['angle_deg']))
     print('written %s' % args.out)
