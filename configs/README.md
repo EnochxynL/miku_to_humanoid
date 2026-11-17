@@ -63,10 +63,9 @@ PMX + (VMD|VPD) ── engine.bake ──┤──→ 逐帧骨骼世界位姿 {
 |---|---|
 | `src/mmd/engine/` | vendored MMD 引擎：`pmx` `vmd` `mathutil` `animation`（形变管线）`bake` `mesh` |
 | `src/mmd/engine/bake.py` | `pmx + (vmd\|vpd)` → 逐帧世界位姿（已换算到机器人空间）|
-| src/mmd/gmr_paired_pose.py | 解出"机器人摆成 MMD 姿态"的关节角（肢体方向匹配）|
+| `python -m calibration --solve` | 解出"机器人摆成 MMD 姿态"的关节角（肢体方向匹配）|
 | src/mmd/calibration.py | **消费**该关节角 → **中性 C**（不认引擎格式）|
-| `src/mmd/gmr_retarget.py` | + 中性 C → 构建 GMR 配置并重定向（唯一认识 GMR 格式的地方）|
-| `src/mmd/gmr_retarget.py` | 源位姿 + C → G1 qpos |
+| `src/mmd/retarget.py` | + 中性 C → 构建 GMR 配置并重定向（唯一认识 GMR 格式的地方）|
 | `src/mmd/export_gmr_pickle.py` | G1 qpos → GMR pickle |
 | `src/mmd/mmd_profile.py` | **MMD 侧知识**：肢体方向段（`SEGMENT_BONES`）、LaFAN1→MMD 桥 |
 
@@ -94,7 +93,7 @@ uv run python src/mmd/calibration.py --pmx $pmx --robot configs/robots/g1.json `
     --record configs/generated/calibration_g1.json --report
 
 # 3. 重定向（源侧无 MuJoCo，无 qpos）
-<gmr>/.venv/Scripts/python.exe src/mmd/gmr_retarget.py --pmx $pmx --vmd $vmd `
+<gmr>/.venv/Scripts/python.exe src/mmd/retarget.py --pmx $pmx --vmd $vmd `
     --calibration configs/generated/calibration_g1.json --bake-out runtime/pmx/g1.npz
 
 # 4. 交付

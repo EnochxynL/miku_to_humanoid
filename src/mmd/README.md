@@ -6,7 +6,7 @@
 |---|---|---|
 | **MMD 原生** | `engine/bake.py` | `pmx + (vmd\|vpd)` → 逐帧骨骼世界位姿。源侧唯一入口，不碰 MuJoCo |
 | | `mmd_profile.py` | **MMD 侧知识**：哪几条肢体方向定义姿态、LaFAN1→MMD 一览、捩骨参考 |
-| | `engine/mmd_model.py` | **PMX → MjModel（纯内存）**：MJCF 文本 + MSH 网格 + PNG 贴图字节 |
+| | `engine/mjcf.py` | **PMX → MjModel（纯内存）**：MJCF 文本 + MSH 网格 + PNG 贴图字节 |
 | | `view.py` | **一个窗口**：MMD 角色 + 机器人 + 可选骨架胶囊（三层 overlay，不跑 GMR）|
 | **GMR 桥接** | `gmr_paired_pose.py` | 解出"让机器人摆成 MMD 姿态"的关节角 → `paired_pose_*.json` |
 | | `calibration.py` | **消费**关节角文件 → **中性 C**（每链接旋转 + 尺度），不认任何引擎格式 |
@@ -39,7 +39,7 @@ g1 qpos + robot xml ────────────────────
 
 ## 成对姿态不是唯一的（重要）
 
-`gmr_paired_pose.py` 只用**肢体方向**判定"同一姿态"，而绕肢体轴的**扭转**不改变方向，所以解的零空间
+`calibration.py` 只用**肢体方向**判定"同一姿态"，而绕肢体轴的**扭转**不改变方向，所以解的零空间
 是自由的实际自由：同一组方向可以对应相差 70° 以上的关节角，且残差都是 0.00°。
 
 两条推论：
