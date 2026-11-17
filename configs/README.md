@@ -13,8 +13,8 @@
 `generated/` 里的三个文件各自的重算方式：
 
 ```powershell
-uv run python scripts/paired_pose.py --pmx $pmx --robot configs/robots/g1.json `
-    --out configs/generated/paired_pose_g1.json          # 配对姿态（关节角）
+uv run python -m calibration --pmx $pmx --robot configs/robots/g1.json `
+    --solve --pose-out configs/generated/paired_pose_g1.json          # 配对姿态（关节角）
 uv run python -m calibration --pmx $pmx --robot configs/robots/g1.json `
     --pose configs/generated/paired_pose_g1.json `
     --out configs/generated/calibration_g1.json       # C 配置 + 记录

@@ -184,7 +184,7 @@ def _rotation(quaternion):
     return Rotation.from_quat([x, y, z, w])
 
 
-def read_c(pmx, robot_model, profile, pose_path, mdd_pose=None):
+def read_c(pmx, robot_model, profile, pose, mdd_pose=None):
     """Read C for every linked pair: ``C = R_source(P)^-1 · R_link(P)``, and the uniform scale.
 
     This is engine-neutral data - the fixed frame relation between an MMD bone and a robot link at one
@@ -213,8 +213,13 @@ def read_c(pmx, robot_model, profile, pose_path, mdd_pose=None):
     source_height = float(bind_frame[SCALE_BONE][0][2])
     scale = robot_height / source_height if source_height > 1e-6 else 0.9
 
-    supplied = json.loads(Path(pose_path).read_text(encoding='utf-8'))
-    angles = supplied.get('joints', supplied)
+    if isinstance(pose, dict):
+        angles = pose.get('joints', pose)
+        pose_name = '<in memory>'
+    else:
+        supplied = json.loads(Path(pose).read_text(encoding='utf-8'))
+        angles = supplied.get('joints', supplied)
+        pose_name = str(pose)
     unknown = [name for name in angles
                if mujoco.mj_name2id(robot_model, mujoco.mjtObj.mjOBJ_JOINT, name) < 0]
     if unknown:
@@ -259,7 +264,7 @@ def read_c(pmx, robot_model, profile, pose_path, mdd_pose=None):
         'heights': {'source': float(source_height), 'robot': float(robot_height)},
         'root_yaw_deg': round(float(np.degrees(delta)), 3),
         'root_links': list(profile.root_links),
-        'pose_file': str(pose_path),
+        'pose_file': pose_name,
         'source_pose': str(mdd_pose) if mdd_pose else None,
         'links': links,
     }
@@ -278,15 +283,24 @@ def main():
     from config import load as load_profile, validate
 
     parser = argparse.ArgumentParser(
-        description='Read C from a paired pose and write it as engine-neutral data.')
+        description='Solve the paired pose if asked, then read C from it as engine-neutral data.')
     parser.add_argument('--pmx', required=True)
     parser.add_argument('--robot', required=True,
                         help='robot profile, e.g. configs/robots/g1.json')
-    parser.add_argument('--pose', required=True, help='paired pose (joint angles in degrees)')
-    parser.add_argument('--vpd', default=None, help='the MMD pose the angles were solved for')
+    parser.add_argument('--pose', default=None,
+                        help='paired pose (joint angles in degrees); also seeds --solve')
+    parser.add_argument('--vpd', default=None, help='the MMD pose the angles are solved for')
+    parser.add_argument('--solve', action='store_true',
+                        help='solve the pose numerically instead of reading --pose')
+    parser.add_argument('--pose-out', default=None, help='where to write the solved pose')
+    parser.add_argument('--seed', default=None,
+                        help='start the solve from this pose (default: --pose)')
     parser.add_argument('--out', required=True, help='where to write the neutral calibration')
     parser.add_argument('--report', action='store_true')
     args = parser.parse_args()
+
+    if not args.solve and not args.pose:
+        raise SystemExit('pass --pose (read C from it) or --solve (produce it first)')
 
     profile = load_profile(args.robot)
     model = mujoco.MjModel.from_xml_path(str(profile.xml))
@@ -294,7 +308,21 @@ def main():
     if problems:
         raise SystemExit('profile does not match the model:\n  ' + '\n  '.join(problems))
 
-    c = read_c(args.pmx, model, profile, args.pose, args.vpd)
+    if args.solve:
+        instance = Calibration(args.pmx, args.vpd, profile, args.seed or args.pose)
+        before = instance.mean_error()
+        after = instance.solve()
+        pose = instance.payload(args.vpd)
+        if args.pose_out:
+            instance.save(args.pose_out, args.vpd)
+            print('wrote %s (mean direction error %.3f -> %.3f deg)'
+                  % (args.pose_out, before, after))
+        if args.report:
+            for segment, error in zip(instance.segments, instance.errors()):
+                print('  %-30s %6.2f' % ('%s -> %s' % (segment[2], segment[3]), error))
+        c = read_c(args.pmx, model, profile, pose, args.vpd)
+    else:
+        c = read_c(args.pmx, model, profile, args.pose, args.vpd)
     save_c(args.out, c)
 
     if args.report:
