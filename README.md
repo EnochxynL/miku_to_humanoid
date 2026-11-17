@@ -12,6 +12,12 @@ MMD 引擎解析借鉴 [yohawing/mmd-anim](https://github.com/yohawing/mmd-anim)
 
 ![example](example.png)
 
+校准，就是让机器人做出和模型人物一模一样的姿态，软件会自动计算各个身体部位的位置差（下面称为 C），用于传给 GMR。产物为 `paired_pose_t1.json` 和 `calibration_t1.json`。
+
+![如何校准](example1.png)
+
+得到校准数据后，就可以开始重定向了。GMR 采用自己的仓库和 venv，本软件只负责 cli 调用。
+
 https://github.com/user-attachments/assets/50415e94-0bda-4738-a990-2a1fd74c138a
 
 测试借物表：
