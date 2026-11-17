@@ -12,6 +12,13 @@ MMD 引擎解析借鉴 [yohawing/mmd-anim](https://github.com/yohawing/mmd-anim)
 
 https://github.com/user-attachments/assets/50415e94-0bda-4738-a990-2a1fd74c138a
 
+测试借物表：
+
+- [胡桃待機モーション.vmd](https://bowlroll.net/file/257704) by 翡水
+- [丘丘摇.vmd](https://www.aplaybox.com/details/motion/HDLRono2SdAG) by MIHOYO、o狐妖o、Ponx迫奈熏
+- default.vpd 是 [MikuMikuDance 9.26](https://github.com/ayaka-mmd/MikuMikuDance-926-CHS) 保存的空白动作
+- 参与测试的人物模型是崩坏：星穹铁道官方的 https://www.aplaybox.com/details/model/bnX7ynEPaP1C 和 https://www.aplaybox.com/details/model/0dSde2NajZJV
+
 ## 安装
 
 ```powershell
